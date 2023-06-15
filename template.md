@@ -24,7 +24,7 @@ cargo install cargo-run-script
 Now, use it to create your new contract.
 Go to the folder in which you want to place it and run:
 
-**Latest**
+### Latest
 
 ```sh
 cargo generate --git https://github.com/CosmWasm/cw-template.git --name PROJECT_NAME
@@ -36,7 +36,7 @@ For cloning minimal code repo:
 cargo generate --git https://github.com/CosmWasm/cw-template.git --name PROJECT_NAME -d minimal=true
 ```
 
-**Older Version**
+### Older Version
 
 Pass version as branch flag:
 
