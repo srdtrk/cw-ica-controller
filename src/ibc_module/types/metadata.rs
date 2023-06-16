@@ -34,6 +34,16 @@ impl IcaMetadata {
             tx_type,
         }
     }
+    pub fn from_channel(channel: &IbcChannel) -> Self {
+        Self {
+            version: ICA_VERSION.to_string(),
+            controller_connection_id: channel.connection_id.clone(),
+            host_connection_id: channel.counterparty_endpoint.channel_id.clone(),
+            address: "".to_string(),
+            encoding: "json".to_string(),
+            tx_type: "sdk_multi_msg".to_string(),
+        }
+    }
 
     pub fn validate(&self, channel: &IbcChannel) -> Result<(), ContractError> {
         if self.version != ICA_VERSION {
