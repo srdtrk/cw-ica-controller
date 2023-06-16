@@ -127,15 +127,34 @@ fn ibc_on_channel_open_acknowledgement(
     Ok(IbcBasicResponse::default())
 }
 
-/// Handles the `OnChanCloseConfirm` for the IBC module.
+/// Handles the `ChanCloseInit` and `ChanCloseConfirm` for the IBC module.
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn ibc_channel_close(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
     msg: IbcChannelCloseMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
     match msg {
         IbcChannelCloseMsg::CloseInit { .. } => unimplemented!(),
-        IbcChannelCloseMsg::CloseConfirm { channel } => todo!(),
+        IbcChannelCloseMsg::CloseConfirm { channel } => ibc_channel_close_confirm(deps, channel),
     }
+}
+
+/// Handles the `ChanCloseConfirm` for the IBC module.
+fn ibc_channel_close_confirm(
+    deps: DepsMut,
+    channel: IbcChannel,
+) -> Result<IbcBasicResponse, ContractError> {
+    // Validate that this is the stored channel
+    let mut contract_state = STATE.load(deps.storage)?;
+    if contract_state.channel != channel {
+        return Err(ContractError::InvalidChannelInContractState {});
+    }
+
+    // Update the channel state
+    contract_state.channel_state = ChannelState::Closed;
+    STATE.save(deps.storage, &contract_state)?;
+
+    // Return the response, emit events if needed
+    Ok(IbcBasicResponse::default())
 }

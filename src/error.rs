@@ -38,4 +38,7 @@ pub enum ContractError {
 
     #[error("active channel already set for this contract")]
     ActiveChannelAlreadySet {},
+
+    #[error("invalid channel in contract state")]
+    InvalidChannelInContractState {},
 }
