@@ -19,7 +19,7 @@ pub fn instantiate(
     _info: MessageInfo,
     _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    unimplemented!()
+    Ok(Response::default())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
