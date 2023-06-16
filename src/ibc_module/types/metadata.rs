@@ -17,6 +17,7 @@ pub struct IcaMetadata {
 }
 
 impl IcaMetadata {
+    /// Creates a new IcaMetadata
     pub fn new(
         version: String,
         controller_connection_id: String,
@@ -34,6 +35,7 @@ impl IcaMetadata {
             tx_type,
         }
     }
+    /// Creates a new IcaMetadata from an IbcChannel
     pub fn from_channel(channel: &IbcChannel) -> Self {
         Self {
             version: ICA_VERSION.to_string(),
@@ -45,6 +47,7 @@ impl IcaMetadata {
         }
     }
 
+    /// Validates the IcaMetadata
     pub fn validate(&self, channel: &IbcChannel) -> Result<(), ContractError> {
         if self.version != ICA_VERSION {
             return Err(ContractError::InvalidVersion {
@@ -71,6 +74,13 @@ impl IcaMetadata {
     }
 }
 
+impl ToString for IcaMetadata {
+    fn to_string(&self) -> String {
+        serde_json::to_string(self).unwrap()
+    }
+}
+
+/// Validates an ICA address
 fn validate_ica_address(address: &str) -> Result<(), ContractError> {
     const DEFAULT_MAX_LENGTH: usize = 128;
     if address.len() > DEFAULT_MAX_LENGTH || !address.chars().all(|c| c.is_alphanumeric()) {

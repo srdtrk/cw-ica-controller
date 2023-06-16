@@ -5,7 +5,7 @@ use cosmwasm_std::{
     IbcChannelOpenMsg, IbcChannelOpenResponse, IbcOrder,
 };
 
-use super::types::keys::HOST_PORT_ID;
+use super::types::{keys::HOST_PORT_ID, metadata::IcaMetadata};
 use crate::ContractError;
 
 /// Handles the `OpenInit` and `OpenTry` parts of the IBC handshake.
@@ -22,12 +22,22 @@ pub fn ibc_channel_open(
     }
 }
 
+/// Handles the `OpenInit` part of the IBC handshake.
 fn ibc_channel_open_init(channel: IbcChannel) -> Result<IbcChannelOpenResponse, ContractError> {
     if channel.order != IbcOrder::Ordered {
         return Err(ContractError::InvalidChannelOrdering {});
     }
     if channel.counterparty_endpoint.port_id != HOST_PORT_ID {
         return Err(ContractError::InvalidHostPort {});
+    }
+
+    let metadata: IcaMetadata;
+    if channel.version.is_empty() {
+        metadata = IcaMetadata::from_channel(&channel);
+    } else {
+        metadata = serde_json::from_str(&channel.version)
+            .map_err(|_| ContractError::UnknownDataType {})?;
+        metadata.validate(&channel)?;
     }
 
     todo!()

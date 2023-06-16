@@ -29,4 +29,7 @@ pub enum ContractError {
 
     #[error("invalid connection")]
     InvalidConnection {},
+
+    #[error("unknown data type")]
+    UnknownDataType {},
 }
