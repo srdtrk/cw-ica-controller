@@ -107,7 +107,6 @@ version = "0.1.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
- "cosmwasm-storage",
  "cw-multi-test",
  "cw-storage-plus",
  "cw2",
@@ -158,16 +157,6 @@ dependencies = [
  "sha2 0.10.6",
  "thiserror",
  "uint",
-]
-
-[[package]]
-name = "cosmwasm-storage"
-version = "1.2.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af9e21c4f58986fd20184d7685e1c43c5732c9309337b09307d5952fd34dba6e"
-dependencies = [
- "cosmwasm-std",
- "serde",
 ]
 
 [[package]]
