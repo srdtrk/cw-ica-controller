@@ -72,6 +72,21 @@ impl IcaMetadata {
         }
         Ok(())
     }
+
+    /// Checks if the previous version of the IcaMetadata is equal to the current one
+    pub fn is_previous_version_equal(&self, previous_version: String) -> bool {
+        let maybe_previous_metadata: Result<Self, _> = serde_json::from_str(&previous_version);
+        match maybe_previous_metadata {
+            Ok(previous_metadata) => {
+                self.version == previous_metadata.version
+                    && self.controller_connection_id == previous_metadata.controller_connection_id
+                    && self.host_connection_id == previous_metadata.host_connection_id
+                    && self.encoding == previous_metadata.encoding
+                    && self.tx_type == previous_metadata.tx_type
+            }
+            Err(_) => false,
+        }
+    }
 }
 
 impl ToString for IcaMetadata {
