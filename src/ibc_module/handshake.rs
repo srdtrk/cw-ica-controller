@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse, IbcChannel,
-    IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcChannelOpenResponse, IbcOrder,
+    DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse, IbcChannel, IbcChannelCloseMsg,
+    IbcChannelConnectMsg, IbcChannelOpenMsg, IbcChannelOpenResponse, IbcOrder,
 };
 
 use super::types::{keys::HOST_PORT_ID, metadata::IcaMetadata};
@@ -112,6 +112,7 @@ fn ibc_on_channel_open_acknowledgement(
     if metadata.address.is_empty() {
         return Err(ContractError::InvalidAddress {});
     }
+    // TODO: save the address to the contract state
 
     // Save the channel state
     STATE.save(
