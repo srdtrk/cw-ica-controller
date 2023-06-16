@@ -15,6 +15,9 @@ pub enum ContractError {
     #[error("invalid host port")]
     InvalidHostPort {},
 
+    #[error("invalid controller port")]
+    InvalidControllerPort {},
+
     #[error("invalid interchain accounts version: expected {expected}, got {actual}")]
     InvalidVersion { expected: String, actual: String },
 
@@ -30,8 +33,8 @@ pub enum ContractError {
     #[error("invalid connection")]
     InvalidConnection {},
 
-    #[error("unknown data type")]
-    UnknownDataType {},
+    #[error("unknown data type: {0}")]
+    UnknownDataType(String),
 
     #[error("active channel already set for this contract")]
     ActiveChannelAlreadySet {},

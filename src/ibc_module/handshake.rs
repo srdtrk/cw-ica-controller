@@ -1,13 +1,13 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse, IbcChannel, IbcChannelCloseMsg,
-    IbcChannelConnectMsg, IbcChannelOpenMsg, IbcChannelOpenResponse, IbcOrder,
+    to_binary, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse, IbcChannel,
+    IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcChannelOpenResponse, IbcOrder,
 };
 
 use super::types::{keys::HOST_PORT_ID, metadata::IcaMetadata};
 use crate::{
-    state::{ChannelState, STATE},
+    state::{ChannelState, ContractState, STATE},
     ContractError,
 };
 
@@ -43,12 +43,18 @@ fn ibc_channel_open_init(
     let metadata: IcaMetadata = if channel.version.is_empty() {
         IcaMetadata::from_channel(&channel)
     } else {
-        serde_json::from_str(&channel.version).map_err(|_| ContractError::UnknownDataType {})?
+        serde_json::from_str(&channel.version).map_err(|_| {
+            ContractError::UnknownDataType(
+                "cannot unmarshal ICS-27 interchain accounts metadata".to_string(),
+            )
+        })?
     };
     metadata.validate(&channel)?;
 
     // Check if the channel is already exists
     if let Some(contract_state) = STATE.may_load(deps.storage)? {
+        // this contract can only store one active channel
+        // if the channel is already open, return an error
         if contract_state.channel_state == ChannelState::Open {
             return Err(ContractError::ActiveChannelAlreadySet {});
         }
@@ -61,6 +67,15 @@ fn ibc_channel_open_init(
         }
     }
 
+    // Save the channel state
+    STATE.save(
+        deps.storage,
+        &ContractState {
+            channel,
+            channel_state: ChannelState::Init,
+        },
+    )?;
+
     Ok(IbcChannelOpenResponse::Some(Ibc3ChannelOpenResponse {
         version: metadata.to_string(),
     }))
@@ -70,7 +85,7 @@ fn ibc_channel_open_init(
 /// In this application, we only handle `OpenAck` messages.
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn ibc_channel_connect(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
     msg: IbcChannelConnectMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
@@ -78,9 +93,30 @@ pub fn ibc_channel_connect(
         IbcChannelConnectMsg::OpenAck {
             channel,
             counterparty_version,
-        } => todo!(),
+        } => ibc_on_channel_open_acknowledgement(deps, channel, counterparty_version),
         IbcChannelConnectMsg::OpenConfirm { .. } => unimplemented!(),
     }
+}
+
+fn ibc_on_channel_open_acknowledgement(
+    deps: DepsMut,
+    channel: IbcChannel,
+    counterparty_version: String,
+) -> Result<IbcBasicResponse, ContractError> {
+    // portID cannot be host chain portID
+    if channel.endpoint.port_id != HOST_PORT_ID {
+        return Err(ContractError::InvalidControllerPort {});
+    }
+
+    // Deserialize the metadata
+    let metadata: IcaMetadata = serde_json::from_str(&counterparty_version).map_err(|_| {
+        ContractError::UnknownDataType(
+            "cannot unmarshal ICS-27 interchain accounts metadata".to_string(),
+        )
+    })?;
+    metadata.validate(&channel)?;
+
+    todo!()
 }
 
 /// Handles the `OnChanCloseConfirm` for the IBC module.
