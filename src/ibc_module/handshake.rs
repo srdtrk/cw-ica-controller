@@ -51,6 +51,13 @@ fn ibc_channel_open_init(
         if contract_state.channel_state == ChannelState::Open {
             return Err(ContractError::ActiveChannelAlreadySet {});
         }
+        let app_version = contract_state.channel.version;
+        if !metadata.is_previous_version_equal(&app_version) {
+            return Err(ContractError::InvalidVersion {
+                expected: app_version,
+                actual: metadata.version,
+            });
+        }
     }
 
     todo!()

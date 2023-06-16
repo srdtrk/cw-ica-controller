@@ -74,8 +74,8 @@ impl IcaMetadata {
     }
 
     /// Checks if the previous version of the IcaMetadata is equal to the current one
-    pub fn is_previous_version_equal(&self, previous_version: String) -> bool {
-        let maybe_previous_metadata: Result<Self, _> = serde_json::from_str(&previous_version);
+    pub fn is_previous_version_equal(&self, previous_version: &str) -> bool {
+        let maybe_previous_metadata: Result<Self, _> = serde_json::from_str(previous_version);
         match maybe_previous_metadata {
             Ok(previous_metadata) => {
                 self.version == previous_metadata.version
