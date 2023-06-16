@@ -1,10 +1,11 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    DepsMut, Env, IbcBasicResponse, IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg,
-    IbcChannelOpenResponse,
+    DepsMut, Env, IbcBasicResponse, IbcChannel, IbcChannelCloseMsg, IbcChannelConnectMsg,
+    IbcChannelOpenMsg, IbcChannelOpenResponse, IbcOrder,
 };
 
+use super::types::keys::HOST_PORT_ID;
 use crate::ContractError;
 
 /// Handles the `OpenInit` and `OpenTry` parts of the IBC handshake.
@@ -16,9 +17,20 @@ pub fn ibc_channel_open(
     msg: IbcChannelOpenMsg,
 ) -> Result<IbcChannelOpenResponse, ContractError> {
     match msg {
-        IbcChannelOpenMsg::OpenInit { channel } => todo!(),
+        IbcChannelOpenMsg::OpenInit { channel } => ibc_channel_open_init(channel),
         IbcChannelOpenMsg::OpenTry { .. } => unimplemented!(),
     }
+}
+
+fn ibc_channel_open_init(channel: IbcChannel) -> Result<IbcChannelOpenResponse, ContractError> {
+    if channel.order != IbcOrder::Ordered {
+        return Err(ContractError::InvalidChannelOrdering {});
+    }
+    if channel.counterparty_endpoint.port_id != HOST_PORT_ID {
+        return Err(ContractError::InvalidHostPort {});
+    }
+
+    todo!()
 }
 
 /// Handles the `OpenAck` and `OpenConfirm` parts of the IBC handshake.
