@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    DepsMut, Env, IbcBasicResponse, IbcChannel, IbcChannelCloseMsg, IbcChannelConnectMsg,
-    IbcChannelOpenMsg, IbcChannelOpenResponse, IbcOrder,
+    DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse, IbcChannel, IbcChannelCloseMsg,
+    IbcChannelConnectMsg, IbcChannelOpenMsg, IbcChannelOpenResponse, IbcOrder,
 };
 
 use super::types::{keys::HOST_PORT_ID, metadata::IcaMetadata};
@@ -47,6 +47,7 @@ fn ibc_channel_open_init(
     };
     metadata.validate(&channel)?;
 
+    // Check if the channel is already exists
     if let Some(contract_state) = STATE.may_load(deps.storage)? {
         if contract_state.channel_state == ChannelState::Open {
             return Err(ContractError::ActiveChannelAlreadySet {});
@@ -55,12 +56,14 @@ fn ibc_channel_open_init(
         if !metadata.is_previous_version_equal(&app_version) {
             return Err(ContractError::InvalidVersion {
                 expected: app_version,
-                actual: metadata.version,
+                actual: metadata.to_string(),
             });
         }
     }
 
-    todo!()
+    Ok(IbcChannelOpenResponse::Some(Ibc3ChannelOpenResponse {
+        version: metadata.to_string(),
+    }))
 }
 
 /// Handles the `OpenAck` and `OpenConfirm` parts of the IBC handshake.
