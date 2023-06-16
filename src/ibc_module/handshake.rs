@@ -41,7 +41,7 @@ pub fn ibc_channel_connect(
 /// Handles the `OnChanCloseConfirm` for the IBC module.
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn ibc_channel_close(
-    deps: DepsMut,
+    _deps: DepsMut,
     _env: Env,
     msg: IbcChannelCloseMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
