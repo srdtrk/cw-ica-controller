@@ -1,4 +1,4 @@
-use cosmwasm_std::{IbcOrder, StdError};
+use cosmwasm_std::StdError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -32,4 +32,7 @@ pub enum ContractError {
 
     #[error("unknown data type")]
     UnknownDataType {},
+
+    #[error("active channel already set for this contract")]
+    ActiveChannelAlreadySet {},
 }
