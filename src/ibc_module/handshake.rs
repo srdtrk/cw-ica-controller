@@ -66,15 +66,7 @@ fn ibc_channel_open_init(
             });
         }
     }
-
-    // Save the channel state
-    STATE.save(
-        deps.storage,
-        &ContractState {
-            channel,
-            channel_state: ChannelState::Init,
-        },
-    )?;
+    // Channel state need not be saved here, as it is tracked by wasmd during the handshake
 
     Ok(IbcChannelOpenResponse::Some(Ibc3ChannelOpenResponse {
         version: metadata.to_string(),
@@ -116,7 +108,22 @@ fn ibc_on_channel_open_acknowledgement(
     })?;
     metadata.validate(&channel)?;
 
-    todo!()
+    // Check if the address is empty
+    if metadata.address.is_empty() {
+        return Err(ContractError::InvalidAddress {});
+    }
+
+    // Save the channel state
+    STATE.save(
+        deps.storage,
+        &ContractState {
+            channel,
+            channel_state: ChannelState::Open,
+        },
+    )?;
+
+    // Return the response, emit events if needed
+    Ok(IbcBasicResponse::default())
 }
 
 /// Handles the `OnChanCloseConfirm` for the IBC module.
