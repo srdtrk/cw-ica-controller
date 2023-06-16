@@ -74,8 +74,9 @@ impl IcaMetadata {
     }
 
     /// Checks if the previous version of the IcaMetadata is equal to the current one
-    pub fn is_previous_version_equal(&self, previous_version: &str) -> bool {
-        let maybe_previous_metadata: Result<Self, _> = serde_json::from_str(previous_version);
+    pub fn is_previous_version_equal(&self, previous_version: impl Into<String>) -> bool {
+        let maybe_previous_metadata: Result<Self, _> =
+            serde_json::from_str(&previous_version.into());
         match maybe_previous_metadata {
             Ok(previous_metadata) => {
                 self.version == previous_metadata.version
@@ -102,4 +103,115 @@ fn validate_ica_address(address: &str) -> Result<(), ContractError> {
         return Err(ContractError::InvalidAddress {});
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use cosmwasm_std::{IbcEndpoint, IbcOrder};
+
+    use super::*;
+
+    fn mock_channel(
+        version: impl Into<String>,
+        connection_id: impl Into<String>,
+        channel_id: impl Into<String>,
+        port_id: impl Into<String>,
+        counterparty_channel_id: impl Into<String>,
+        counterparty_port_id: impl Into<String>,
+    ) -> IbcChannel {
+        let mock_endpoint = IbcEndpoint {
+            port_id: port_id.into(),
+            channel_id: channel_id.into(),
+        };
+        let mock_counterparty_endpoint = IbcEndpoint {
+            port_id: counterparty_port_id.into(),
+            channel_id: counterparty_channel_id.into(),
+        };
+
+        IbcChannel::new(
+            mock_endpoint,
+            mock_counterparty_endpoint,
+            IbcOrder::Ordered,
+            version,
+            connection_id,
+        )
+    }
+
+    fn mock_metadata() -> IcaMetadata {
+        IcaMetadata::new(
+            ICA_VERSION.to_string(),
+            "connection-0".to_string(),
+            "connection-1".to_string(),
+            "".to_string(),
+            "json".to_string(),
+            "sdk_multi_msg".to_string(),
+        )
+    }
+
+    #[test]
+    fn test_validate_success() {
+        let channel = mock_channel(
+            "ics27-1",
+            "connection-0",
+            "channel-0",
+            "port-0",
+            "channel-1",
+            "port-1",
+        );
+        let metadata = IcaMetadata::from_channel(&channel);
+        assert!(metadata.validate(&channel).is_ok());
+    }
+
+    #[test]
+    fn test_validate_fail() {
+        let channel_1 = mock_channel(
+            "ics27-1",
+            "connection-0",
+            "channel-0",
+            "port-0",
+            "channel-1",
+            "port-1",
+        );
+        let channel_2 = mock_channel(
+            "ics27-1",
+            "connection-1",
+            "channel-0",
+            "port-0",
+            "channel-1",
+            "port-1",
+        );
+        let metadata = IcaMetadata::from_channel(&channel_1);
+        assert!(metadata.validate(&channel_2).is_err());
+    }
+
+    #[test]
+    fn test_to_string() {
+        let metadata = mock_metadata();
+        let serialized_metadata = metadata.to_string();
+        assert_eq!(
+            serialized_metadata,
+            r#"{"version":"ics27-1","controller_connection_id":"connection-0","host_connection_id":"connection-1","address":"","encoding":"json","tx_type":"sdk_multi_msg"}"#
+        );
+    }
+
+    #[test]
+    fn test_deserialize_str() {
+        let serialized_metadata = r#"{"version":"ics27-1","controller_connection_id":"connection-0","host_connection_id":"connection-1","address":"","encoding":"json","tx_type":"sdk_multi_msg"}"#;
+        let metadata: IcaMetadata = serde_json::from_str(serialized_metadata).unwrap();
+        assert_eq!(metadata, mock_metadata());
+    }
+
+    #[test]
+    fn test_is_previous_version_equal_success() {
+        let metadata = mock_metadata();
+        let previous_version = r#"{"version":"ics27-1","controller_connection_id":"connection-0","host_connection_id":"connection-1","address":"different","encoding":"json","tx_type":"sdk_multi_msg"}"#;
+        assert!(metadata.is_previous_version_equal(previous_version));
+    }
+
+    #[test]
+    fn test_is_previous_version_equal_failure() {
+        let metadata = mock_metadata();
+        let previous_version = r#"{"version":"ics27-2","controller_connection_id":"connection-123","host_connection_id":"connection-11","address":"different","encoding":"json","tx_type":"sdk_multi_msg"}"#;
+        assert!(!metadata.is_previous_version_equal(previous_version));
+    }
 }
