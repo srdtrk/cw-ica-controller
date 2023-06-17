@@ -9,7 +9,7 @@ use crate::types::ContractError;
 
 /*
 // version info for migration info
-const CONTRACT_NAME: &str = "crates.io:cosmwasm-ica-controller";
+const CONTRACT_NAME: &str = "crates.io:cw-ica-controller";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 */
 

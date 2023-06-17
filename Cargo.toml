@@ -1,5 +1,5 @@
 [package]
-name = "cosmwasm-ica-controller"
+name = "cw-ica-controller"
 version = "0.1.0"
 authors = ["srdtrk <srdtrk@hotmail.com>"]
 edition = "2021"
