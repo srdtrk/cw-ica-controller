@@ -7,7 +7,7 @@ use cosmwasm_std::{
 
 use super::types::{keys::HOST_PORT_ID, metadata::IcaMetadata};
 use crate::{
-    state::{ChannelState, ContractChannelState, CHANNEL_STATE},
+    state::{ChannelState, ContractChannelState, CHANNEL_STATE, STATE},
     ContractError,
 };
 
@@ -112,7 +112,14 @@ fn ibc_on_channel_open_acknowledgement(
     if metadata.address.is_empty() {
         return Err(ContractError::InvalidAddress {});
     }
-    // TODO: save the address to the contract state
+    // save the address to the contract state
+    STATE.update(
+        deps.storage,
+        |mut contract_state| -> Result<_, ContractError> {
+            contract_state.ica_address = Some(metadata.address);
+            Ok(contract_state)
+        },
+    )?;
 
     // Save the channel state
     CHANNEL_STATE.save(
