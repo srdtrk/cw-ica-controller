@@ -76,7 +76,7 @@ mod ibc_channel_open {
         let metadata: IcaMetadata = if channel.version.is_empty() {
             IcaMetadata::from_channel(&channel)
         } else {
-            serde_json::from_str(&channel.version).map_err(|_| {
+            serde_json_wasm::from_str(&channel.version).map_err(|_| {
                 ContractError::UnknownDataType(
                     "cannot unmarshal ICS-27 interchain accounts metadata".to_string(),
                 )
@@ -118,11 +118,12 @@ mod ibc_channel_open {
         }
 
         // Deserialize the metadata
-        let metadata: IcaMetadata = serde_json::from_str(&counterparty_version).map_err(|_| {
-            ContractError::UnknownDataType(
-                "cannot unmarshal ICS-27 interchain accounts metadata".to_string(),
-            )
-        })?;
+        let metadata: IcaMetadata =
+            serde_json_wasm::from_str(&counterparty_version).map_err(|_| {
+                ContractError::UnknownDataType(
+                    "cannot unmarshal ICS-27 interchain accounts metadata".to_string(),
+                )
+            })?;
         metadata.validate(&channel)?;
 
         // Check if the address is empty

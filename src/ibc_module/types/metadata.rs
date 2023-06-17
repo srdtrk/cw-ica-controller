@@ -77,7 +77,7 @@ impl IcaMetadata {
     /// Checks if the previous version of the IcaMetadata is equal to the current one
     pub fn is_previous_version_equal(&self, previous_version: impl Into<String>) -> bool {
         let maybe_previous_metadata: Result<Self, _> =
-            serde_json::from_str(&previous_version.into());
+            serde_json_wasm::from_str(&previous_version.into());
         match maybe_previous_metadata {
             Ok(previous_metadata) => {
                 self.version == previous_metadata.version
@@ -93,7 +93,7 @@ impl IcaMetadata {
 
 impl ToString for IcaMetadata {
     fn to_string(&self) -> String {
-        serde_json::to_string(self).unwrap()
+        serde_json_wasm::to_string(self).unwrap()
     }
 }
 
@@ -198,7 +198,7 @@ mod tests {
     #[test]
     fn test_deserialize_str() {
         let serialized_metadata = r#"{"version":"ics27-1","controller_connection_id":"connection-0","host_connection_id":"connection-1","address":"","encoding":"json","tx_type":"sdk_multi_msg"}"#;
-        let metadata: IcaMetadata = serde_json::from_str(serialized_metadata).unwrap();
+        let metadata: IcaMetadata = serde_json_wasm::from_str(serialized_metadata).unwrap();
         assert_eq!(metadata, mock_metadata());
     }
 
