@@ -133,7 +133,7 @@ mod ibc_channel_open {
         STATE.update(
             deps.storage,
             |mut contract_state| -> Result<_, ContractError> {
-                contract_state.ica_address = Some(metadata.address);
+                contract_state.set_ica_address(metadata.address);
                 Ok(contract_state)
             },
         )?;

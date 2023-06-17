@@ -35,12 +35,17 @@ mod contract {
         }
 
         /// Gets the ICA address
-        pub fn ica_address(&self) -> Result<String, ContractError> {
+        pub fn get_ica_address(&self) -> Result<String, ContractError> {
             if let Some(ica_address) = &self.ica_address {
                 Ok(ica_address.clone())
             } else {
                 Err(ContractError::IcaAddressNotSet {})
             }
+        }
+
+        /// Sets the ICA address
+        pub fn set_ica_address(&mut self, ica_address: String) {
+            self.ica_address = Some(ica_address);
         }
     }
 }
