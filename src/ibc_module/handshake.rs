@@ -7,7 +7,7 @@ use cosmwasm_std::{
 
 use super::types::{keys::HOST_PORT_ID, metadata::IcaMetadata};
 use crate::{
-    state::{ChannelState, ContractChannelState, STATE},
+    state::{ChannelState, ContractChannelState, CHANNEL_STATE},
     ContractError,
 };
 
@@ -52,13 +52,13 @@ fn ibc_channel_open_init(
     metadata.validate(&channel)?;
 
     // Check if the channel is already exists
-    if let Some(contract_state) = STATE.may_load(deps.storage)? {
+    if let Some(channel_state) = CHANNEL_STATE.may_load(deps.storage)? {
         // this contract can only store one active channel
         // if the channel is already open, return an error
-        if contract_state.channel_state == ChannelState::Open {
+        if channel_state.channel_state == ChannelState::Open {
             return Err(ContractError::ActiveChannelAlreadySet {});
         }
-        let app_version = contract_state.channel.version;
+        let app_version = channel_state.channel.version;
         if !metadata.is_previous_version_equal(&app_version) {
             return Err(ContractError::InvalidVersion {
                 expected: app_version,
@@ -115,7 +115,7 @@ fn ibc_on_channel_open_acknowledgement(
     // TODO: save the address to the contract state
 
     // Save the channel state
-    STATE.save(
+    CHANNEL_STATE.save(
         deps.storage,
         &ContractChannelState {
             channel,
@@ -146,14 +146,14 @@ fn ibc_channel_close_confirm(
     channel: IbcChannel,
 ) -> Result<IbcBasicResponse, ContractError> {
     // Validate that this is the stored channel
-    let mut contract_state = STATE.load(deps.storage)?;
-    if contract_state.channel != channel {
+    let mut channel_state = CHANNEL_STATE.load(deps.storage)?;
+    if channel_state.channel != channel {
         return Err(ContractError::InvalidChannelInContractState {});
     }
 
     // Update the channel state
-    contract_state.channel_state = ChannelState::Closed;
-    STATE.save(deps.storage, &contract_state)?;
+    channel_state.channel_state = ChannelState::Closed;
+    CHANNEL_STATE.save(deps.storage, &channel_state)?;
 
     // Return the response, emit events if needed
     Ok(IbcBasicResponse::default())

@@ -6,7 +6,7 @@ use cosmwasm_std::{
 };
 
 use crate::{
-    state::{ChannelState, STATE},
+    state::{ChannelState, CHANNEL_STATE},
     ContractError,
 };
 
@@ -18,11 +18,11 @@ pub fn ibc_packet_timeout(
     _msg: IbcPacketTimeoutMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
     // Due to the semantics of ordered channels, the underlying channel end is closed.
-    STATE.update(
+    CHANNEL_STATE.update(
         deps.storage,
-        |mut contract_state| -> Result<_, ContractError> {
-            contract_state.channel_state = ChannelState::Closed;
-            Ok(contract_state)
+        |mut channel_state| -> Result<_, ContractError> {
+            channel_state.channel_state = ChannelState::Closed;
+            Ok(channel_state)
         },
     )?;
 
