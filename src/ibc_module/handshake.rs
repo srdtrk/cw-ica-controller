@@ -8,7 +8,7 @@ use cosmwasm_std::{
 use super::types::{keys::HOST_PORT_ID, metadata::IcaMetadata};
 use crate::{
     state::{ChannelState, ContractChannelState, CHANNEL_STATE, STATE},
-    ContractError,
+    types::ContractError,
 };
 
 /// Handles the `OpenInit` and `OpenTry` parts of the IBC handshake.

@@ -1,7 +1,7 @@
 use cosmwasm_std::IbcChannel;
 use serde::{Deserialize, Serialize};
 
-use crate::ContractError;
+use crate::types::ContractError;
 
 use super::keys::ICA_VERSION;
 

@@ -3,9 +3,9 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 // use cw2::set_contract_version;
 
-use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{ContractChannelState, ContractState, CHANNEL_STATE, STATE};
+use crate::types::ContractError;
 
 /*
 // version info for migration info
