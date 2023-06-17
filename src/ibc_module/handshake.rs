@@ -90,6 +90,7 @@ pub fn ibc_channel_connect(
     }
 }
 
+/// Handles the `OpenAck` part of the IBC handshake.
 fn ibc_on_channel_open_acknowledgement(
     deps: DepsMut,
     channel: IbcChannel,
@@ -130,7 +131,7 @@ fn ibc_on_channel_open_acknowledgement(
         },
     )?;
 
-    // Return the response, emit events if needed
+    // Return the response, emit events if needed. Core IBC modules will emit the events regardless.
     Ok(IbcBasicResponse::default())
 }
 

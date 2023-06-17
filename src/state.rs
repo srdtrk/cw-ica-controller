@@ -2,7 +2,10 @@ use cosmwasm_std::{Addr, IbcChannel};
 use cw_storage_plus::Item;
 use serde::{Deserialize, Serialize};
 
+/// STATE is the key used to store the state of the IBC application.
 pub const STATE: Item<ContractState> = Item::new("state");
+
+/// CHANNEL_STATE is the key used to store the state of the IBC application's channel.
 pub const CHANNEL_STATE: Item<ContractChannelState> = Item::new("ica_channel");
 
 /// ContractState is the state of the IBC application.

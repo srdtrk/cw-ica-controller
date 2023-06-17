@@ -35,6 +35,7 @@ impl IcaMetadata {
             tx_type,
         }
     }
+
     /// Creates a new IcaMetadata from an IbcChannel
     pub fn from_channel(channel: &IbcChannel) -> Self {
         Self {
