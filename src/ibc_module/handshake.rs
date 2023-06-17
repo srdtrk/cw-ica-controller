@@ -7,7 +7,7 @@ use cosmwasm_std::{
 
 use super::types::{keys::HOST_PORT_ID, metadata::IcaMetadata};
 use crate::{
-    state::{ChannelState, ContractState, STATE},
+    state::{ChannelState, ContractChannelState, STATE},
     ContractError,
 };
 
@@ -117,7 +117,7 @@ fn ibc_on_channel_open_acknowledgement(
     // Save the channel state
     STATE.save(
         deps.storage,
-        &ContractState {
+        &ContractChannelState {
             channel,
             channel_state: ChannelState::Open,
         },
