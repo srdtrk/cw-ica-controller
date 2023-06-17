@@ -5,9 +5,9 @@ use cosmwasm_std::{
     Never,
 };
 
-use crate::{
+use crate::types::{
     state::{ChannelState, CHANNEL_STATE},
-    types::ContractError,
+    ContractError,
 };
 
 /// Handles the `PacketTimeout` for the IBC module.

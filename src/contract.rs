@@ -4,7 +4,7 @@ use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
 // use cw2::set_contract_version;
 
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{ContractChannelState, ContractState, CHANNEL_STATE, STATE};
+use crate::types::state::{ContractChannelState, ContractState, CHANNEL_STATE, STATE};
 use crate::types::ContractError;
 
 /*

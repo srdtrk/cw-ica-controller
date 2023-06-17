@@ -1,6 +1,6 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 
-use crate::state::{ContractChannelState, ContractState};
+use crate::types::state::{ContractChannelState, ContractState};
 
 #[cw_serde]
 pub struct InstantiateMsg {
