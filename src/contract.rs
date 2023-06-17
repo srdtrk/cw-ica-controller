@@ -27,13 +27,7 @@ pub fn instantiate(
     };
 
     // Save the admin. Ica address is determined during handshake.
-    STATE.save(
-        deps.storage,
-        &ContractState {
-            admin,
-            ica_address: None,
-        },
-    )?;
+    STATE.save(deps.storage, &ContractState::new(admin, None))?;
 
     Ok(Response::default())
 }
