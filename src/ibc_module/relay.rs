@@ -5,10 +5,7 @@ use cosmwasm_std::{
     Never,
 };
 
-use crate::types::{
-    state::{ChannelState, CHANNEL_STATE},
-    ContractError,
-};
+use crate::types::{state::CHANNEL_STATE, ContractError};
 
 /// Handles the `PacketTimeout` for the IBC module.
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -21,7 +18,7 @@ pub fn ibc_packet_timeout(
     CHANNEL_STATE.update(
         deps.storage,
         |mut channel_state| -> Result<_, ContractError> {
-            channel_state.channel_state = ChannelState::Closed;
+            channel_state.close();
             Ok(channel_state)
         },
     )?;

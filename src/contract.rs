@@ -4,7 +4,7 @@ use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
 // use cw2::set_contract_version;
 
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::types::state::{ContractChannelState, ContractState, CHANNEL_STATE, STATE};
+use crate::types::state::{ChannelState, ContractState, CHANNEL_STATE, STATE};
 use crate::types::ContractError;
 
 /*
@@ -65,7 +65,7 @@ mod query {
     }
 
     /// Returns the saved channel state if it exists.
-    pub fn channel(deps: Deps) -> StdResult<ContractChannelState> {
+    pub fn channel(deps: Deps) -> StdResult<ChannelState> {
         CHANNEL_STATE.load(deps.storage)
     }
 }

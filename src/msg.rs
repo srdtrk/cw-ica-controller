@@ -1,6 +1,6 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 
-use crate::types::state::{ContractChannelState, ContractState};
+use crate::types::state::{ChannelState, ContractState};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -13,7 +13,7 @@ pub enum ExecuteMsg {}
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    #[returns(ContractChannelState)]
+    #[returns(ChannelState)]
     GetChannel {},
     #[returns(ContractState)]
     GetContractState {},

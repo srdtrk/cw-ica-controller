@@ -7,7 +7,7 @@ use cosmwasm_std::{
 
 use super::types::{keys::HOST_PORT_ID, metadata::IcaMetadata};
 use crate::types::{
-    state::{ChannelState, ContractChannelState, CHANNEL_STATE, STATE},
+    state::{ChannelState, CHANNEL_STATE, STATE},
     ContractError,
 };
 
@@ -55,7 +55,7 @@ fn ibc_channel_open_init(
     if let Some(channel_state) = CHANNEL_STATE.may_load(deps.storage)? {
         // this contract can only store one active channel
         // if the channel is already open, return an error
-        if channel_state.channel_state == ChannelState::Open {
+        if channel_state.is_open() {
             return Err(ContractError::ActiveChannelAlreadySet {});
         }
         let app_version = channel_state.channel.version;
@@ -123,13 +123,7 @@ fn ibc_on_channel_open_acknowledgement(
     )?;
 
     // Save the channel state
-    CHANNEL_STATE.save(
-        deps.storage,
-        &ContractChannelState {
-            channel,
-            channel_state: ChannelState::Open,
-        },
-    )?;
+    CHANNEL_STATE.save(deps.storage, &ChannelState::new_open_channel(channel))?;
 
     // Return the response, emit events if needed. Core IBC modules will emit the events regardless.
     Ok(IbcBasicResponse::default())
@@ -160,7 +154,7 @@ fn ibc_channel_close_confirm(
     }
 
     // Update the channel state
-    channel_state.channel_state = ChannelState::Closed;
+    channel_state.close();
     CHANNEL_STATE.save(deps.storage, &channel_state)?;
 
     // Return the response, emit events if needed
