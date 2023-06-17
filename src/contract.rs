@@ -1,11 +1,11 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 // use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{ContractState, STATE};
+use crate::state::{ContractChannelState, ContractState, CHANNEL_STATE, STATE};
 
 /*
 // version info for migration info
@@ -49,8 +49,25 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
-    unimplemented!()
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::GetContractState {} => to_binary(&query::state(deps)?),
+        QueryMsg::GetChannel {} => to_binary(&query::channel(deps)?),
+    }
+}
+
+mod query {
+    use super::*;
+
+    /// Returns the saved contract state.
+    pub fn state(deps: Deps) -> StdResult<ContractState> {
+        STATE.load(deps.storage)
+    }
+
+    /// Returns the saved channel state if it exists.
+    pub fn channel(deps: Deps) -> StdResult<ContractChannelState> {
+        CHANNEL_STATE.load(deps.storage)
+    }
 }
 
 #[cfg(test)]
