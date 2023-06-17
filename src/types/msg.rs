@@ -8,7 +8,11 @@ pub struct InstantiateMsg {
 }
 
 #[cw_serde]
-pub enum ExecuteMsg {}
+pub enum ExecuteMsg {
+    /// SendCustomIcaMessages sends custom messages from the ICA controller to the ICA host
+    /// It works by replacing `"$ICA_ADDRESS"` in each message with the ICA address
+    SendCustomIcaMessages { messages: Vec<String> },
+}
 
 #[cw_serde]
 #[derive(QueryResponses)]
