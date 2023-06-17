@@ -1,6 +1,6 @@
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, IbcChannel};
 use cw_storage_plus::Item;
-use serde::{Deserialize, Serialize};
 
 /// STATE is the key used to store the state of the IBC application.
 pub const STATE: Item<ContractState> = Item::new("state");
@@ -9,7 +9,7 @@ pub const STATE: Item<ContractState> = Item::new("state");
 pub const CHANNEL_STATE: Item<ContractChannelState> = Item::new("ica_channel");
 
 /// ContractState is the state of the IBC application.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[cw_serde]
 pub struct ContractState {
     pub admin: Addr,
     pub ica_address: Option<String>,
@@ -17,14 +17,14 @@ pub struct ContractState {
 
 /// ContractChannelState is the state of the IBC application's channel.
 /// This application only supports one channel.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[cw_serde]
 pub struct ContractChannelState {
     pub channel: IbcChannel,
     pub channel_state: ChannelState,
 }
 
 /// ChannelState is the state of the IBC channel.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[cw_serde]
 pub enum ChannelState {
     Uninitialized,
     Init,
