@@ -84,7 +84,7 @@ impl InterchainAccountPacketData {
     pub fn to_ibc_msg(
         &self,
         env: &Env,
-        channel_id: String,
+        channel_id: impl Into<String>,
         timeout_seconds: Option<u64>,
     ) -> Result<IbcMsg, ContractError> {
         let timeout_timestamp = env
@@ -92,7 +92,7 @@ impl InterchainAccountPacketData {
             .time
             .plus_seconds(timeout_seconds.unwrap_or(DEFAULT_TIMEOUT_SECONDS));
         Ok(IbcMsg::SendPacket {
-            channel_id,
+            channel_id: channel_id.into(),
             data: to_binary(&self)?,
             timeout: IbcTimeout::with_timestamp(timeout_timestamp),
         })
