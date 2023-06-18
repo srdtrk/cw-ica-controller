@@ -154,3 +154,14 @@ pub mod ica_cosmos_tx {
         }
     }
 }
+
+pub mod acknowledgement {
+    use super::*;
+
+    /// Acknowledgement is the response to an ibc packet. It either contains a result or an error.
+    #[cw_serde]
+    pub enum Acknowledgement {
+        Result(Vec<u8>),
+        Error(String),
+    }
+}
