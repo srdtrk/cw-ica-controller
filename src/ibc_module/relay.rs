@@ -7,7 +7,7 @@ use cosmwasm_std::{
 
 use crate::types::{state::CHANNEL_STATE, ContractError};
 
-use super::types::packet::acknowledgement::Acknowledgement;
+use super::types::packet::acknowledgement::AcknowledgementData;
 
 /// Implements the IBC module's `OnAcknowledgementPacket` handler.
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -18,8 +18,8 @@ pub fn ibc_packet_ack(
 ) -> Result<IbcBasicResponse, ContractError> {
     // This lets the ICA controller know whether or not the sent transactions succeeded.
     match from_binary(&ack.acknowledgement.data)? {
-        Acknowledgement::Result(_base64) => ibc_packet_ack::success(),
-        Acknowledgement::Error(_err) => ibc_packet_ack::error(),
+        AcknowledgementData::Result(_base64) => ibc_packet_ack::success(),
+        AcknowledgementData::Error(_err) => ibc_packet_ack::error(),
     }
 }
 
