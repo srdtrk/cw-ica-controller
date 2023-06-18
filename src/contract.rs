@@ -34,12 +34,29 @@ pub fn instantiate(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
-    _msg: ExecuteMsg,
+    info: MessageInfo,
+    msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    unimplemented!()
+    match msg {
+        ExecuteMsg::SendCustomIcaMessages { messages } => {
+            execute::send_custom_ica_messages(deps, info, messages)
+        }
+    }
+}
+
+mod execute {
+    use super::*;
+
+    // send_custom_ica_messages sends custom messages from the ICA controller to the ICA host.
+    pub fn send_custom_ica_messages(
+        deps: DepsMut,
+        info: MessageInfo,
+        messages: Vec<String>,
+    ) -> Result<Response, ContractError> {
+        todo!()
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
