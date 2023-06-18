@@ -31,3 +31,45 @@ impl InterchainAccountPacketData {
         }
     }
 }
+
+pub mod ica_cosmos_tx {
+    use super::*;
+
+    /// IcaCosmosTx is a list of Cosmos messages that is sent to the ICA host.
+    ///
+    /// ## Example
+    ///
+    /// The messages must be serialized as JSON strings in the format expected by the ICA host.
+    /// The following is an example of a serialized IcaCosmosTx with one legacy gov proposal message:
+    ///
+    ///
+    /// ```json
+    /// {
+    ///   "messages": [
+    ///     {
+    ///       "@type": "/cosmos.gov.v1beta1.MsgSubmitProposal",
+    ///       "content": {
+    ///         "@type": "/cosmos.gov.v1beta1.TextProposal",
+    ///         "title": "IBC Gov Proposal",
+    ///         "description": "tokens for all!"
+    ///       },
+    ///       "initial_deposit": [{ "denom": "stake", "amount": "5000" }],
+    ///       "proposer": "cosmos1k4epd6js8aa7fk4e5l7u6dwttxfarwu6yald9hlyckngv59syuyqnlqvk8"
+    ///     }
+    ///   ]
+    /// }
+    /// ```
+    /// In this example, the proposer must be the ICA controller's address.
+    ///
+    /// We leave it to the user to serialize the messages in the format expected by the ICA host.
+    #[cw_serde]
+    pub struct IcaCosmosTx {
+        pub messages: Vec<serde_json::Value>,
+    }
+
+    impl IcaCosmosTx {
+        pub fn new(messages: Vec<serde_json::Value>) -> Self {
+            Self { messages }
+        }
+    }
+}
