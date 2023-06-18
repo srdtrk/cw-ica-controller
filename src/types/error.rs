@@ -51,6 +51,6 @@ pub enum ContractError {
     #[error("invalid channel in contract state")]
     InvalidChannelInContractState {},
 
-    #[error("ica address not set")]
-    IcaAddressNotSet {},
+    #[error("ica information is not set")]
+    IcaInfoNotSet {},
 }

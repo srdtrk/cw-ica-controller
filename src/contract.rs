@@ -27,7 +27,7 @@ pub fn instantiate(
     };
 
     // Save the admin. Ica address is determined during handshake.
-    STATE.save(deps.storage, &ContractState::new(admin, None))?;
+    STATE.save(deps.storage, &ContractState::new(admin))?;
 
     Ok(Response::default())
 }
@@ -35,27 +35,55 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::SendCustomIcaMessages { messages } => {
-            execute::send_custom_ica_messages(deps, info, messages)
-        }
+        ExecuteMsg::SendCustomIcaMessages {
+            messages,
+            packet_memo,
+            timeout_seconds,
+        } => execute::send_custom_ica_messages(
+            deps,
+            env,
+            info,
+            messages,
+            packet_memo,
+            timeout_seconds,
+        ),
     }
 }
 
 mod execute {
+    use crate::{
+        ibc_module::types::packet::InterchainAccountPacketData, types::keys::ICA_PLACEHOLDER,
+    };
+
     use super::*;
 
-    // send_custom_ica_messages sends custom messages from the ICA controller to the ICA host.
+    // Sends custom messages to the ICA host.
     pub fn send_custom_ica_messages(
         deps: DepsMut,
+        env: Env,
         info: MessageInfo,
         messages: Vec<String>,
+        packet_memo: Option<String>,
+        timeout_seconds: Option<u64>,
     ) -> Result<Response, ContractError> {
-        todo!()
+        let contract_state = STATE.load(deps.storage)?;
+        contract_state.verify_admin(info.sender)?;
+
+        let ica_info = contract_state.get_ica_info()?;
+        let ica_messages: Vec<String> = messages
+            .into_iter()
+            .map(|msg| msg.replace(ICA_PLACEHOLDER, &ica_info.ica_address))
+            .collect();
+
+        let ica_packet = InterchainAccountPacketData::from_strings(ica_messages, packet_memo)?;
+        let send_packet_msg = ica_packet.to_ibc_msg(&env, &ica_info.channel_id, timeout_seconds)?;
+
+        Ok(Response::default().add_message(send_packet_msg))
     }
 }
 

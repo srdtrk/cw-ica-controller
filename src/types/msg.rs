@@ -11,7 +11,11 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     /// SendCustomIcaMessages sends custom messages from the ICA controller to the ICA host.
     /// It works by replacing `"$ICA_ADDRESS"` in each message with the ICA address.
-    SendCustomIcaMessages { messages: Vec<String> },
+    SendCustomIcaMessages {
+        messages: Vec<String>,
+        packet_memo: Option<String>,
+        timeout_seconds: Option<u64>,
+    },
 }
 
 #[cw_serde]

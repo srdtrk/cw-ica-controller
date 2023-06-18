@@ -20,32 +20,65 @@ mod contract {
     #[cw_serde]
     pub struct ContractState {
         pub admin: Addr,
-        pub ica_address: Option<String>,
+        pub ica_info: Option<IcaInfo>,
     }
 
     impl ContractState {
         /// Creates a new ContractState
-        pub fn new(admin: Addr, ica_address: Option<String>) -> Self {
-            Self { admin, ica_address }
-        }
-
-        /// Checks if the address is the admin
-        pub fn is_admin(&self, sender: impl Into<String>) -> bool {
-            self.admin == sender.into()
-        }
-
-        /// Gets the ICA address
-        pub fn get_ica_address(&self) -> Result<String, ContractError> {
-            if let Some(ica_address) = &self.ica_address {
-                Ok(ica_address.clone())
-            } else {
-                Err(ContractError::IcaAddressNotSet {})
+        pub fn new(admin: Addr) -> Self {
+            Self {
+                admin,
+                ica_info: None,
             }
         }
 
-        /// Sets the ICA address
-        pub fn set_ica_address(&mut self, ica_address: String) {
-            self.ica_address = Some(ica_address);
+        /// Checks if the address is the admin
+        pub fn verify_admin(&self, sender: impl Into<String>) -> Result<(), ContractError> {
+            if self.admin == sender.into() {
+                Ok(())
+            } else {
+                Err(ContractError::Unauthorized {})
+            }
+        }
+
+        /// Gets the ICA info
+        pub fn get_ica_info(&self) -> Result<IcaInfo, ContractError> {
+            if let Some(ica_info) = &self.ica_info {
+                Ok(ica_info.clone())
+            } else {
+                Err(ContractError::IcaInfoNotSet {})
+            }
+        }
+
+        /// Sets the ICA info
+        pub fn set_ica_info(
+            &mut self,
+            ica_address: impl Into<String>,
+            channel_id: impl Into<String>,
+        ) {
+            self.ica_info = Some(IcaInfo::new(ica_address, channel_id));
+        }
+
+        /// Deletes the ICA info
+        pub fn delete_ica_info(&mut self) {
+            self.ica_info = None;
+        }
+    }
+
+    /// IcaInfo is the ICA address and channel ID.
+    #[cw_serde]
+    pub struct IcaInfo {
+        pub ica_address: String,
+        pub channel_id: String,
+    }
+
+    impl IcaInfo {
+        /// Creates a new IcaInfo
+        pub fn new(ica_address: impl Into<String>, channel_id: impl Into<String>) -> Self {
+            Self {
+                ica_address: ica_address.into(),
+                channel_id: channel_id.into(),
+            }
         }
     }
 }
