@@ -1,6 +1,13 @@
 use cosmwasm_std::Coin;
 use serde::Serialize;
 
+/// CosmosMessages is a list of Cosmos messages that can be sent to the ICA host.
+///
+/// In general, this ICA controller should be used with custom messages and **not with the
+/// messages defined here**. The messages defined here are to demonstrate how an ICA controller
+/// can be used with registered CosmosMessages (in case the contract is a DAO with **predefined actions**)
+///
+/// This enum does not derive Deserialize, see issue [#1443](https://github.com/CosmWasm/cosmwasm/issues/1443)
 #[derive(Serialize, Clone, Debug, PartialEq)]
 #[serde(tag = "@type")]
 pub enum CosmosMessages {
@@ -19,6 +26,7 @@ pub enum CosmosMessages {
         delegator_address: String,
         /// Validator's address.
         validator_address: String,
+        /// Amount to delegate.
         amount: Coin,
     },
     #[serde(rename = "/cosmos.gov.v1beta1.MsgVote")]
@@ -30,6 +38,8 @@ pub enum CosmosMessages {
         /// Vote option.
         option: u32,
     },
+    /// This legacy submit proposal message is used to demonstrate how CosmosMessages
+    /// can embed other CosmosMessages.
     #[serde(rename = "/cosmos.gov.v1beta1.MsgSubmitProposal")]
     MsgSubmitProposalLegacy {
         content: Box<CosmosMessages>,
