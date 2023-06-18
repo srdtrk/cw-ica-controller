@@ -7,8 +7,8 @@ pub struct InterchainAccountPacketData {
     /// chain to its associated interchain accounts host.
     ///
     /// There are two types of messages:
-    /// * `0 = Unspecified`: Default zero value enumeration. (Returns an error in host).
-    /// * `1 = ExecuteTx`: Execute a transaction on an interchain accounts host chain.
+    /// * `0 (Unspecified)`: Default zero value enumeration. (Returns an error in host).
+    /// * `1 (ExecuteTx)`: Execute a transaction on an interchain accounts host chain.
     ///
     /// `r#type` is used to avoid the reserved keyword `type`.
     #[serde(rename = "type")]
@@ -19,4 +19,15 @@ pub struct InterchainAccountPacketData {
     /// It is also caught by some ibc middleware to perform additional actions.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub memo: Option<String>,
+}
+
+impl InterchainAccountPacketData {
+    /// Creates a new InterchainAccountPacketData
+    pub fn new(data: Vec<u8>, memo: Option<String>) -> Self {
+        Self {
+            r#type: 1,
+            data,
+            memo,
+        }
+    }
 }
