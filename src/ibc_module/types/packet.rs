@@ -33,6 +33,8 @@ impl InterchainAccountPacketData {
 }
 
 pub mod ica_cosmos_tx {
+    use crate::types::ContractError;
+
     use super::*;
 
     /// IcaCosmosTx is a list of Cosmos messages that is sent to the ICA host.
@@ -59,6 +61,7 @@ pub mod ica_cosmos_tx {
     ///   ]
     /// }
     /// ```
+    ///
     /// In this example, the proposer must be the ICA controller's address.
     ///
     /// We leave it to the user to serialize the messages in the format expected by the ICA host.
@@ -71,8 +74,18 @@ pub mod ica_cosmos_tx {
     }
 
     impl IcaCosmosTx {
+        /// Creates a new IcaCosmosTx
         pub fn new(messages: Vec<serde_json::Value>) -> Self {
             Self { messages }
+        }
+
+        /// Creates a new IcaCosmosTx from a list of JSON strings
+        pub fn from_strings(messages: Vec<impl Into<String>>) -> Result<Self, ContractError> {
+            let maybe_json_messages: Result<Vec<serde_json::Value>, _> = messages
+                .into_iter()
+                .map(|msg| serde_json_wasm::from_str(&msg.into()))
+                .collect();
+            Ok(Self::new(maybe_json_messages?))
         }
     }
 }

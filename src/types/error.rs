@@ -6,6 +6,15 @@ pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
 
+    #[error("json_serde error: {0}")]
+    JsonSerde(#[from] serde_json::Error),
+
+    #[error("json_serde_wasm serialization error: {0}")]
+    JsonWasmSerialize(#[from] serde_json_wasm::ser::Error),
+
+    #[error("json_serde_wasm deserialization error: {0}")]
+    JsonWasmDeserialize(#[from] serde_json_wasm::de::Error),
+
     #[error("unauthorized")]
     Unauthorized {},
 
