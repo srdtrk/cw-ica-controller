@@ -62,6 +62,9 @@ pub mod ica_cosmos_tx {
     /// In this example, the proposer must be the ICA controller's address.
     ///
     /// We leave it to the user to serialize the messages in the format expected by the ICA host.
+    /// For example, this can be achieved via custom user sent messages such as
+    /// [ExecuteMsg::SendCustomIcaMessages](crate::types::msg::ExecuteMsg::SendCustomIcaMessages)
+    /// or by using predefined messages such as [CosmosMessages](crate::types::cosmos_msg::CosmosMessages).
     #[cw_serde]
     pub struct IcaCosmosTx {
         pub messages: Vec<serde_json::Value>,
