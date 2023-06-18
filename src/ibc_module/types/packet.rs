@@ -1,7 +1,10 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::to_vec;
+use cosmwasm_std::{to_binary, to_vec, Env, IbcMsg, IbcTimeout};
 
 use crate::types::ContractError;
+
+/// DEFAULT_TIMEOUT_SECONDS is the default timeout for [`InterchainAccountPacketData`]
+pub const DEFAULT_TIMEOUT_SECONDS: u64 = 600;
 
 /// InterchainAccountPacketData is comprised of a raw transaction, type of transaction and optional memo field.
 /// Currently, the host only supports serialized [`IcaCosmosTx`](ica_cosmos_tx::IcaCosmosTx) messages as raw transactions.
@@ -75,6 +78,24 @@ impl InterchainAccountPacketData {
     ) -> Result<Self, ContractError> {
         let cosmos_tx = ica_cosmos_tx::IcaCosmosTx::from_strings(messages)?;
         Self::from_cosmos_tx(cosmos_tx, memo)
+    }
+
+    /// Creates an IBC SendPacket message from the InterchainAccountPacketData
+    pub fn to_ibc_msg(
+        &self,
+        env: &Env,
+        channel_id: String,
+        timeout_seconds: Option<u64>,
+    ) -> Result<IbcMsg, ContractError> {
+        let timeout_timestamp = env
+            .block
+            .time
+            .plus_seconds(timeout_seconds.unwrap_or(DEFAULT_TIMEOUT_SECONDS));
+        Ok(IbcMsg::SendPacket {
+            channel_id,
+            data: to_binary(&self)?,
+            timeout: IbcTimeout::with_timestamp(timeout_timestamp),
+        })
     }
 }
 
