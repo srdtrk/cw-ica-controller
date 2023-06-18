@@ -121,7 +121,7 @@ pub mod ica_cosmos_tx {
     ///         "description": "tokens for all!"
     ///       },
     ///       "initial_deposit": [{ "denom": "stake", "amount": "5000" }],
-    ///       "proposer": "cosmos1k4epd6js8aa7fk4e5l7u6dwttxfarwu6yald9hlyckngv59syuyqnlqvk8"
+    ///       "proposer": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk"
     ///     }
     ///   ]
     /// }
@@ -156,48 +156,71 @@ pub mod ica_cosmos_tx {
 }
 
 pub mod acknowledgement {
+    use cosmwasm_std::Binary;
+
     use super::*;
 
     /// Acknowledgement is the response to an ibc packet. It either contains a result or an error.
     #[cw_serde]
     pub enum AcknowledgementData {
         /// Result is the result of a successful transaction.
-        /// It is a base64 encoded string of the transaction's result.
-        Result(String),
+        Result(Binary),
         /// Error is the error message of a failed transaction.
         /// It is a string of the error message (not base64 encoded).
         Error(String),
     }
+}
 
-    #[cfg(test)]
-    mod tests {
-        use cosmwasm_std::{from_binary, Binary};
+#[cfg(test)]
+mod tests {
+    use acknowledgement::AcknowledgementData;
+    use cosmwasm_std::{coins, from_binary, Binary};
 
-        use super::*;
+    use crate::types::cosmos_msg::CosmosMessages;
 
-        #[test]
-        fn test_acknowledgement() {
-            // Test success:
-            // The following bytes refer to `{"result":"c3VjY2Vzcw=="}`
-            // where `c3VjY2Vzcw==` is the base64 encoding of `success`.
-            let cw_success_binary = Binary(vec![
-                123, 34, 114, 101, 115, 117, 108, 116, 34, 58, 34, 99, 51, 86, 106, 89, 50, 86,
-                122, 99, 119, 61, 61, 34, 125,
-            ]);
-            let ack: AcknowledgementData = from_binary(&cw_success_binary).unwrap();
-            assert_eq!(ack, AcknowledgementData::Result("c3VjY2Vzcw==".to_string()));
+    use super::*;
 
-            // Test error:
-            let error_bytes =
-                br#"{"error":"ABCI code: 1: error handling packet: see events for details"}"#;
-            let cw_error_binary = Binary(error_bytes.to_vec());
-            let ack: AcknowledgementData = from_binary(&cw_error_binary).unwrap();
-            assert_eq!(
-                ack,
-                AcknowledgementData::Error(
-                    "ABCI code: 1: error handling packet: see events for details".to_string()
-                )
-            );
-        }
+    #[test]
+    fn cosmos_tx_with_msg_send() {
+        let cosmos_tx_from_string = ica_cosmos_tx::IcaCosmosTx::from_strings(
+            vec![r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#]).unwrap();
+
+        let cosmos_message = CosmosMessages::MsgSend {
+            from_address: "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk".to_string(),
+            to_address: "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk".to_string(),
+            amount: coins(5000, "stake".to_string()),
+        };
+        let cosmos_tx_from_cosmos_message =
+            ica_cosmos_tx::IcaCosmosTx::from_strings(vec![cosmos_message.to_string()]).unwrap();
+
+        assert_eq!(cosmos_tx_from_string, cosmos_tx_from_cosmos_message);
+    }
+
+    #[test]
+    fn test_acknowledgement() {
+        // Test result:
+        // The following bytes refer to `{"result":"c3VjY2Vzcw=="}`
+        // where `c3VjY2Vzcw==` is the base64 encoding of `success`.
+        let cw_success_binary = Binary(vec![
+            123, 34, 114, 101, 115, 117, 108, 116, 34, 58, 34, 99, 51, 86, 106, 89, 50, 86, 122,
+            99, 119, 61, 61, 34, 125,
+        ]);
+        let ack: AcknowledgementData = from_binary(&cw_success_binary).unwrap();
+        assert_eq!(
+            ack,
+            AcknowledgementData::Result(Binary::from_base64("c3VjY2Vzcw==").unwrap())
+        );
+
+        // Test error:
+        let error_bytes =
+            br#"{"error":"ABCI code: 1: error handling packet: see events for details"}"#;
+        let cw_error_binary = Binary(error_bytes.to_vec());
+        let ack: AcknowledgementData = from_binary(&cw_error_binary).unwrap();
+        assert_eq!(
+            ack,
+            AcknowledgementData::Error(
+                "ABCI code: 1: error handling packet: see events for details".to_string()
+            )
+        );
     }
 }

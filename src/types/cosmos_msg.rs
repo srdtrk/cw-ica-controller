@@ -66,6 +66,12 @@ pub enum CosmosMessages {
     },
 }
 
+impl ToString for CosmosMessages {
+    fn to_string(&self) -> String {
+        serde_json_wasm::to_string(self).unwrap()
+    }
+}
+
 pub mod msg_transfer {
     use super::*;
 

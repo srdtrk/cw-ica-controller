@@ -18,7 +18,7 @@ pub fn ibc_packet_ack(
 ) -> Result<IbcBasicResponse, ContractError> {
     // This lets the ICA controller know whether or not the sent transactions succeeded.
     match from_binary(&ack.acknowledgement.data)? {
-        AcknowledgementData::Result(_base64) => ibc_packet_ack::success(),
+        AcknowledgementData::Result(_resp) => ibc_packet_ack::success(),
         AcknowledgementData::Error(_err) => ibc_packet_ack::error(),
     }
 }
