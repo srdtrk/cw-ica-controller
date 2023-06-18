@@ -21,7 +21,7 @@ pub fn ibc_channel_open(
 ) -> Result<IbcChannelOpenResponse, ContractError> {
     match msg {
         IbcChannelOpenMsg::OpenInit { channel } => ibc_channel_open::init(deps, channel),
-        IbcChannelOpenMsg::OpenTry { .. } => unimplemented!(),
+        IbcChannelOpenMsg::OpenTry { .. } => unreachable!(),
     }
 }
 
@@ -38,7 +38,7 @@ pub fn ibc_channel_connect(
             channel,
             counterparty_version,
         } => ibc_channel_open::on_acknowledgement(deps, channel, counterparty_version),
-        IbcChannelConnectMsg::OpenConfirm { .. } => unimplemented!(),
+        IbcChannelConnectMsg::OpenConfirm { .. } => unreachable!(),
     }
 }
 

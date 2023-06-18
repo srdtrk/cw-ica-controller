@@ -161,7 +161,43 @@ pub mod acknowledgement {
     /// Acknowledgement is the response to an ibc packet. It either contains a result or an error.
     #[cw_serde]
     pub enum Acknowledgement {
-        Result(Vec<u8>),
+        /// Result is the result of a successful transaction.
+        /// It is a base64 encoded string of the transaction's result.
+        Result(String),
+        /// Error is the error message of a failed transaction.
+        /// It is a string of the error message (not base64 encoded).
         Error(String),
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use cosmwasm_std::{from_binary, Binary};
+
+        use super::*;
+
+        #[test]
+        fn test_acknowledgement() {
+            // Test success:
+            // The following bytes refer to `{"result":"c3VjY2Vzcw=="}`
+            // where `c3VjY2Vzcw==` is the base64 encoding of `success`.
+            let cw_success_binary = Binary(vec![
+                123, 34, 114, 101, 115, 117, 108, 116, 34, 58, 34, 99, 51, 86, 106, 89, 50, 86,
+                122, 99, 119, 61, 61, 34, 125,
+            ]);
+            let ack: Acknowledgement = from_binary(&cw_success_binary).unwrap();
+            assert_eq!(ack, Acknowledgement::Result("c3VjY2Vzcw==".to_string()));
+
+            // Test error:
+            let error_bytes =
+                br#"{"error":"ABCI code: 1: error handling packet: see events for details"}"#;
+            let cw_error_binary = Binary(error_bytes.to_vec());
+            let ack: Acknowledgement = from_binary(&cw_error_binary).unwrap();
+            assert_eq!(
+                ack,
+                Acknowledgement::Error(
+                    "ABCI code: 1: error handling packet: see events for details".to_string()
+                )
+            );
+        }
     }
 }

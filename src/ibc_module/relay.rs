@@ -18,8 +18,8 @@ pub fn ibc_packet_ack(
 ) -> Result<IbcBasicResponse, ContractError> {
     // This lets the ICA controller know whether or not the sent transactions succeeded.
     match from_binary(&ack.acknowledgement.data)? {
-        Acknowledgement::Result(tx_response) => ibc_packet_ack::success(tx_response),
-        Acknowledgement::Error(err) => ibc_packet_ack::error(err),
+        Acknowledgement::Result(_base64) => ibc_packet_ack::success(),
+        Acknowledgement::Error(_err) => ibc_packet_ack::error(),
     }
 }
 
@@ -59,14 +59,14 @@ mod ibc_packet_ack {
 
     /// Handles the successful acknowledgement of an ica packet. This means that the
     /// transaction was successfully executed on the host chain.
-    pub fn success(_response: Vec<u8>) -> Result<IbcBasicResponse, ContractError> {
+    pub fn success() -> Result<IbcBasicResponse, ContractError> {
         // Handle the success case. You need not deserialize the response.
         Ok(IbcBasicResponse::default())
     }
 
     /// Handles the unsuccessful acknowledgement of an ica packet. This means that the
     /// transaction failed to execute on the host chain.
-    pub fn error(_err: String) -> Result<IbcBasicResponse, ContractError> {
+    pub fn error() -> Result<IbcBasicResponse, ContractError> {
         // Handle the error.
         Ok(IbcBasicResponse::default())
     }
