@@ -14,11 +14,30 @@ pub enum ExecuteMsg {
     /// It works by replacing [`ICA_PLACEHOLDER`](crate::types::keys::ICA_PLACEHOLDER) in each message with the ICA address.
     SendCustomIcaMessages {
         /// Base64-encoded json messages to send to the ICA host.
+        ///
+        /// # Example Message:
+        ///
+        /// This is a legacy text governance proposal message.
+        ///
+        /// ```json
+        /// {
+        ///   "@type": "/cosmos.gov.v1beta1.MsgSubmitProposal",
+        ///   "content": {
+        ///     "@type": "/cosmos.gov.v1beta1.TextProposal",
+        ///     "title": "IBC Gov Proposal",
+        ///     "description": "tokens for all!"
+        ///   },
+        ///   "initial_deposit": [{ "denom": "stake", "amount": "5000" }],
+        ///   "proposer": "$ica_address"
+        /// }
+        /// ```
+        ///
+        /// `$ica_address` will be replaced with the ICA address before the message is sent to the ICA host.
         messages: Vec<Binary>,
-        /// Optional memo to include with the ibc packet.
+        /// Optional memo to include in the ibc packet.
         packet_memo: Option<String>,
         /// Optional timeout in seconds to include with the ibc packet.
-        /// If not specified, the default timeout is used.
+        /// If not specified, the [default timeout](crate::ibc_module::types::packet::DEFAULT_TIMEOUT_SECONDS) is used.
         timeout_seconds: Option<u64>,
     },
 }
