@@ -12,14 +12,14 @@ use super::types::packet::acknowledgement::AcknowledgementData;
 /// Implements the IBC module's `OnAcknowledgementPacket` handler.
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn ibc_packet_ack(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
     ack: IbcPacketAckMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
     // This lets the ICA controller know whether or not the sent transactions succeeded.
     match from_binary(&ack.acknowledgement.data)? {
-        AcknowledgementData::Result(_resp) => ibc_packet_ack::success(),
-        AcknowledgementData::Error(_err) => ibc_packet_ack::error(),
+        AcknowledgementData::Result(_resp) => ibc_packet_ack::success(deps),
+        AcknowledgementData::Error(_err) => ibc_packet_ack::error(deps),
     }
 }
 
@@ -55,19 +55,29 @@ pub fn ibc_packet_receive(
 }
 
 mod ibc_packet_ack {
+    use crate::types::state::CALLBACK_COUNTER;
+
     use super::*;
 
     /// Handles the successful acknowledgement of an ica packet. This means that the
     /// transaction was successfully executed on the host chain.
-    pub fn success() -> Result<IbcBasicResponse, ContractError> {
+    pub fn success(deps: DepsMut) -> Result<IbcBasicResponse, ContractError> {
         // Handle the success case. You need not deserialize the response.
+        CALLBACK_COUNTER.update(deps.storage, |mut counter| -> Result<_, ContractError> {
+            counter.success();
+            Ok(counter)
+        })?;
         Ok(IbcBasicResponse::default())
     }
 
     /// Handles the unsuccessful acknowledgement of an ica packet. This means that the
     /// transaction failed to execute on the host chain.
-    pub fn error() -> Result<IbcBasicResponse, ContractError> {
+    pub fn error(deps: DepsMut) -> Result<IbcBasicResponse, ContractError> {
         // Handle the error.
+        CALLBACK_COUNTER.update(deps.storage, |mut counter| -> Result<_, ContractError> {
+            counter.error();
+            Ok(counter)
+        })?;
         Ok(IbcBasicResponse::default())
     }
 }
