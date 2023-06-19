@@ -7,7 +7,6 @@
 package main
 
 import (
-	_ "github.com/CosmWasm/wasmd/x/wasm/types"
 	_ "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/cosmos/ibc-go/v7/modules/core"
 	_ "github.com/strangelove-ventures/interchaintest/v7/testutil"
