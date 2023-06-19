@@ -3,11 +3,18 @@ package types
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 
 	codec "github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+// NewSendPredefinedActionMsg creates a new SendPredefinedActionMsg.
+func NewSendPredefinedActionMsg(to_address string) []byte {
+	return []byte(fmt.Sprintf(`{"send_predefined_action":{"to_address":"%s"}}`, to_address))
+}
+
+// NewSendCustomIcaMessagesMsg creates a new SendCustomIcaMessagesMsg.
 func NewSendCustomIcaMessagesMsg(cdc codec.BinaryCodec, msgs []sdk.Msg, memo *string, timeout *uint64) ([]byte, error) {
 	type SendCustomIcaMessagesMsg struct {
 		Messages       []string `json:"messages"`
