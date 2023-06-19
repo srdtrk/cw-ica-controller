@@ -68,6 +68,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetContractState {} => to_binary(&query::state(deps)?),
         QueryMsg::GetChannel {} => to_binary(&query::channel(deps)?),
+        QueryMsg::GetCallbackCounter {} => to_binary(&query::callback_counter(deps)?),
     }
 }
 
@@ -139,6 +140,11 @@ mod query {
     /// Returns the saved channel state if it exists.
     pub fn channel(deps: Deps) -> StdResult<ChannelState> {
         CHANNEL_STATE.load(deps.storage)
+    }
+
+    /// Returns the saved callback counter.
+    pub fn callback_counter(deps: Deps) -> StdResult<CallbackCounter> {
+        CALLBACK_COUNTER.load(deps.storage)
     }
 }
 

@@ -1,7 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Binary;
 
-use crate::types::state::{ChannelState, ContractState};
+use crate::types::state::{CallbackCounter, ChannelState, ContractState};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -54,4 +54,6 @@ pub enum QueryMsg {
     GetChannel {},
     #[returns(ContractState)]
     GetContractState {},
+    #[returns(CallbackCounter)]
+    GetCallbackCounter {},
 }
