@@ -57,6 +57,14 @@ pub fn execute(
     }
 }
 
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::GetContractState {} => to_binary(&query::state(deps)?),
+        QueryMsg::GetChannel {} => to_binary(&query::channel(deps)?),
+    }
+}
+
 mod execute {
     use crate::ibc_module::types::packet::InterchainAccountPacketData;
 
@@ -84,14 +92,6 @@ mod execute {
         let send_packet_msg = ica_packet.to_ibc_msg(&env, &ica_info.channel_id, timeout_seconds)?;
 
         Ok(Response::default().add_message(send_packet_msg))
-    }
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
-    match msg {
-        QueryMsg::GetContractState {} => to_binary(&query::state(deps)?),
-        QueryMsg::GetChannel {} => to_binary(&query::channel(deps)?),
     }
 }
 
