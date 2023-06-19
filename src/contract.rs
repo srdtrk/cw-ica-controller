@@ -53,7 +53,9 @@ pub fn execute(
             packet_memo,
             timeout_seconds,
         ),
-        ExecuteMsg::SendPredefinedAction {} => todo!(),
+        ExecuteMsg::SendPredefinedAction { to_address } => {
+            execute::send_predefined_action(deps, env, info, to_address)
+        }
     }
 }
 
@@ -66,7 +68,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 mod execute {
-    use crate::ibc_module::types::packet::InterchainAccountPacketData;
+    use cosmwasm_std::coins;
+
+    use crate::{
+        ibc_module::types::packet::InterchainAccountPacketData, types::cosmos_msg::CosmosMessages,
+    };
 
     use super::*;
 
@@ -90,6 +96,29 @@ mod execute {
 
         let ica_packet = InterchainAccountPacketData::from_strings(ica_messages?, packet_memo)?;
         let send_packet_msg = ica_packet.to_ibc_msg(&env, &ica_info.channel_id, timeout_seconds)?;
+
+        Ok(Response::default().add_message(send_packet_msg))
+    }
+
+    /// Sends a predefined action to the ICA host.
+    pub fn send_predefined_action(
+        deps: DepsMut,
+        env: Env,
+        info: MessageInfo,
+        to_address: String,
+    ) -> Result<Response, ContractError> {
+        let contract_state = STATE.load(deps.storage)?;
+        contract_state.verify_admin(info.sender)?;
+
+        let ica_info = contract_state.get_ica_info()?;
+        let predefined_message = CosmosMessages::MsgSend {
+            from_address: ica_info.ica_address,
+            to_address,
+            amount: coins(100, "stake"),
+        }
+        .to_string();
+        let ica_packet = InterchainAccountPacketData::from_strings(vec![predefined_message], None)?;
+        let send_packet_msg = ica_packet.to_ibc_msg(&env, &ica_info.channel_id, None)?;
 
         Ok(Response::default().add_message(send_packet_msg))
     }

@@ -42,7 +42,9 @@ pub enum ExecuteMsg {
     },
     /// SendPredefinedAction sends a predefined action from the ICA controller to the ICA host.
     /// This demonstration is useful for contracts that have predefined actions such as DAOs.
-    SendPredefinedAction {},
+    ///
+    /// In this example, the predefined action is a `MsgSend` message which sends 100 "stake" tokens.
+    SendPredefinedAction { to_address: String },
 }
 
 #[cw_serde]
