@@ -3,13 +3,15 @@ use cosmwasm_std::{Addr, IbcChannel};
 use cw_storage_plus::Item;
 
 pub use channel::ChannelState;
-pub use contract::ContractState;
+pub use contract::{CallbackCounter, ContractState};
 
 /// STATE is the item used to store the state of the IBC application.
 pub const STATE: Item<ContractState> = Item::new("state");
 
 /// CHANNEL_STATE is the item used to store the state of the IBC application's channel.
 pub const CHANNEL_STATE: Item<ChannelState> = Item::new("ica_channel");
+
+pub const CALLBACK_COUNTER: Item<CallbackCounter> = Item::new("callback_counter");
 
 mod contract {
     use crate::types::ContractError;
@@ -72,6 +74,14 @@ mod contract {
         pub channel_id: String,
     }
 
+    /// CallbackCounter tracks the number of callbacks in store.
+    #[cw_serde]
+    #[derive(Default)]
+    pub struct CallbackCounter {
+        pub success: u32,
+        pub error: u32,
+    }
+
     impl IcaInfo {
         /// Creates a new IcaInfo
         pub fn new(ica_address: impl Into<String>, channel_id: impl Into<String>) -> Self {
@@ -79,6 +89,18 @@ mod contract {
                 ica_address: ica_address.into(),
                 channel_id: channel_id.into(),
             }
+        }
+    }
+
+    impl CallbackCounter {
+        /// Increments the success counter
+        pub fn success(&mut self) {
+            self.success += 1;
+        }
+
+        /// Increments the error counter
+        pub fn error(&mut self) {
+            self.error += 1;
         }
     }
 }
