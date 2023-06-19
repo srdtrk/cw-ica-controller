@@ -5,7 +5,9 @@ use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
 
 use crate::helpers;
 use crate::types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::types::state::{ChannelState, ContractState, CHANNEL_STATE, STATE};
+use crate::types::state::{
+    CallbackCounter, ChannelState, ContractState, CALLBACK_COUNTER, CHANNEL_STATE, STATE,
+};
 use crate::types::ContractError;
 
 /*
@@ -29,6 +31,8 @@ pub fn instantiate(
 
     // Save the admin. Ica address is determined during handshake.
     STATE.save(deps.storage, &ContractState::new(admin))?;
+    // Initialize the callback counter.
+    CALLBACK_COUNTER.save(deps.storage, &CallbackCounter::default())?;
 
     Ok(Response::default())
 }
