@@ -24,7 +24,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn insert_ica_address_works() {
+    fn test_insert_ica_address() {
         let msg = Binary::from(br#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "$ica_address", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#);
         let ica_address = "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk";
 
