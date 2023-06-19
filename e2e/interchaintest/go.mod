@@ -38,6 +38,7 @@ require (
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gogoproto v1.4.10 // indirect
 	github.com/cosmos/iavl v0.20.0 // indirect
+	github.com/cosmos/ibc-go/modules/capability v1.0.0-rc1 // indirect
 	github.com/cosmos/ics23/go v0.10.0 // indirect
 	github.com/cosmos/ledger-cosmos-go v0.13.0 // indirect
 	github.com/creachadair/taskgroup v0.5.0 // indirect
@@ -155,3 +156,6 @@ replace (
 replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 
 replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
+
+// use json encoding branch
+replace github.com/cosmos/ibc-go/v7 => github.com/cosmos/ibc-go/v7 v7.0.0-20230608165848-4e18badc5af4
