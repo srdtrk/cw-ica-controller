@@ -40,6 +40,9 @@ pub enum ExecuteMsg {
         /// If not specified, the [default timeout](crate::ibc_module::types::packet::DEFAULT_TIMEOUT_SECONDS) is used.
         timeout_seconds: Option<u64>,
     },
+    /// SendPredefinedAction sends a predefined action from the ICA controller to the ICA host.
+    /// This demonstration is useful for contracts that have predefined actions such as DAOs.
+    SendPredefinedAction {},
 }
 
 #[cw_serde]

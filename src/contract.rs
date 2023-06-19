@@ -53,6 +53,7 @@ pub fn execute(
             packet_memo,
             timeout_seconds,
         ),
+        ExecuteMsg::SendPredefinedAction {} => todo!(),
     }
 }
 

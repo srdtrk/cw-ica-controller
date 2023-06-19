@@ -10,7 +10,7 @@ pub const ICA_PLACEHOLDER: &str = "$ica_address";
 ///
 /// # Arguments
 ///
-/// * `msg` - Base64-encoded json message to deserialize and insert the ICA address into.
+/// * `msg`         - Base64-encoded json message to deserialize and insert the ICA address into.
 /// * `ica_address` - ICA address to insert into the message.
 pub fn insert_ica_address(msg: Binary, ica_address: impl Into<String>) -> StdResult<String> {
     let decoded: String = from_binary(&msg)?;
