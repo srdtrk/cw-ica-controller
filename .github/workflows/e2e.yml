@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - "e2e/wasms/**"
+      - "artifacts/**"
 
 jobs:
   build:
@@ -23,15 +23,13 @@ jobs:
         with:
           command: run-script
           args: optimize
-      - name: Move artifacts
+      - name: Change Artifact Permissions
         run: |
-          mkdir -p ./e2e/wasms
-          rm -rf ./e2e/wasms/*
-          mv ./artifacts/*.wasm ./e2e/wasms
+          sudo chown -R 1001:116 ./artifacts/*
       - name: Commit and push
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add ./e2e/wasms
+          git add ./artifacts
           git commit -m "ci: created optimized build" -a
           git push
