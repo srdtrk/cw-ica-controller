@@ -7,6 +7,7 @@ import (
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
 	interchaintest "github.com/strangelove-ventures/interchaintest/v7"
 	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
+	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos/wasm"
 	"github.com/strangelove-ventures/interchaintest/v7/ibc"
 	"github.com/strangelove-ventures/interchaintest/v7/relayer"
 	"github.com/strangelove-ventures/interchaintest/v7/testreporter"
@@ -43,9 +44,11 @@ func TestIcaControllerContract(t *testing.T) {
 				},
 				Bin:                    "wasmd",
 				Bech32Prefix:           "wasm",
-				Denom:                  "stake",
-				GasPrices:              "0.00stake",
+				Denom:                  "gos",
+				GasPrices:              "0.00gos",
+				// without gas adjustment, contract upload fails
 				GasAdjustment:          1.3,
+				EncodingConfig: 			 wasm.WasmEncoding(),
 				TrustingPeriod:         "508h",
 				NoHostMount:            false,
 				UsingNewGenesisCommand: true,
