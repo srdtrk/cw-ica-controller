@@ -28,7 +28,7 @@ func TestIcaControllerContract(t *testing.T) {
 
 	// Get both chains
 	cf := interchaintest.NewBuiltinChainFactory(zaptest.NewLogger(t), []*interchaintest.ChainSpec{
-		// -- REMOTE/LOCAL IMAGE EXAMPLE --
+		// -- WASMD --
 		{
 			ChainConfig: ibc.ChainConfig{
 				Type:    "cosmos",
@@ -50,27 +50,26 @@ func TestIcaControllerContract(t *testing.T) {
 				UsingNewGenesisCommand: true,
 			},
 		},
-		// -- REMOTE/LOCAL IMAGE EXAMPLE --
-		{
-			ChainConfig: ibc.ChainConfig{
-				Type:    "cosmos",
-				Name:    "wasmd",
-				ChainID: "wasmd-2",
-				Images: []ibc.DockerImage{
+		// -- IBC-GO --
+    {ChainConfig: ibc.ChainConfig{
+			Type: "cosmos",
+			Name: "ibc-go-simd",
+			ChainID: "simd-1",
+			Images: []ibc.DockerImage{
 					{
-						Repository: "cosmwasm/wasmd", // FOR LOCAL IMAGE USE: Docker Image Name
-						Version:    "v0.40.2",              // FOR LOCAL IMAGE USE: Docker Image Tag
+							Repository: "ghcr.io/cosmos/ibc-go-simd",   // FOR LOCAL IMAGE USE: Docker Image Name
+							Version: "pr-3796",                             // FOR LOCAL IMAGE USE: Docker Image Tag  
 					},
-				},
-				Bin:                    "wasmd",
-				Bech32Prefix:           "wasm",
-				Denom:                  "stake",
-				GasPrices:              "0.00stake",
-				GasAdjustment:          1.3,
-				TrustingPeriod:         "508h",
-				NoHostMount:            false,
-				UsingNewGenesisCommand: true,
 			},
+			Bin: "simd",
+			Bech32Prefix: "cosmos",
+			Denom: "gos",
+			GasPrices: "0.00gos",
+			GasAdjustment: 1.3,
+			TrustingPeriod: "508h",
+			NoHostMount: false,
+			UsingNewGenesisCommand: true,
+		},
 		},
 	})
 
