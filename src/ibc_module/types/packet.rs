@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{to_binary, to_vec, Env, IbcMsg, IbcTimeout};
+use cosmwasm_std::{to_binary, Env, IbcMsg, IbcTimeout};
 
 use crate::types::ContractError;
 
@@ -113,26 +113,33 @@ pub mod acknowledgement {
 mod tests {
     use acknowledgement::AcknowledgementData;
     use cosmwasm_std::{coins, from_binary, Binary};
+    use serde::{Deserialize, Serialize};
 
     use crate::types::cosmos_msg::CosmosMessages;
 
     use super::*;
 
-    // #[test]
-    // fn cosmos_tx_with_msg_send() {
-    //     let cosmos_tx_from_string = ica_cosmos_tx::IcaCosmosTx::from_strings(
-    //         vec![r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#]).unwrap();
+    #[test]
+    fn test_packet_data() {
+        #[derive(Serialize, Deserialize)]
+        struct TestCosmosTx {
+            pub messages: Vec<CosmosMessages>,
+        }
 
-    //     let cosmos_message = CosmosMessages::MsgSend {
-    //         from_address: "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk".to_string(),
-    //         to_address: "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk".to_string(),
-    //         amount: coins(5000, "stake".to_string()),
-    //     };
-    //     let cosmos_tx_from_cosmos_message =
-    //         ica_cosmos_tx::IcaCosmosTx::from_strings(vec![cosmos_message.to_string()]).unwrap();
+        let packet_from_string = InterchainAccountPacketData::from_strings(
+            vec![r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#.to_string()], None).unwrap();
 
-    //     assert_eq!(cosmos_tx_from_string, cosmos_tx_from_cosmos_message);
-    // }
+        let packet_data = packet_from_string.data;
+        let cosmos_tx: TestCosmosTx = from_binary(&Binary(packet_data)).unwrap();
+
+        let expected = CosmosMessages::MsgSend {
+            from_address: "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk".to_string(),
+            to_address: "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk".to_string(),
+            amount: coins(5000, "stake".to_string()),
+        };
+
+        assert_eq!(expected, cosmos_tx.messages[0]);
+    }
 
     #[test]
     fn test_acknowledgement() {
