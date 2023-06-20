@@ -9,6 +9,15 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+// NewInstantiateMsg creates a new InstantiateMsg.
+func NewInstantiateMsg(admin *string) []byte {
+	if admin == nil {
+		return []byte(`{}`)
+	} else {
+		return []byte(fmt.Sprintf(`{"admin":"%s"}`, *admin))
+	}
+}
+
 // NewSendPredefinedActionMsg creates a new SendPredefinedActionMsg.
 func NewSendPredefinedActionMsg(to_address string) []byte {
 	return []byte(fmt.Sprintf(`{"send_predefined_action":{"to_address":"%s"}}`, to_address))
