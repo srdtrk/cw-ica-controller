@@ -2,20 +2,13 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"strconv"
-	"strings"
 	"testing"
-	"time"
 
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	chantypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	interchaintest "github.com/strangelove-ventures/interchaintest/v7"
 	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
 	"github.com/strangelove-ventures/interchaintest/v7/ibc"
 	"github.com/strangelove-ventures/interchaintest/v7/relayer"
 	"github.com/strangelove-ventures/interchaintest/v7/testreporter"
-	"github.com/strangelove-ventures/interchaintest/v7/testutil"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 )
@@ -37,16 +30,28 @@ func TestIcaControllerContract(t *testing.T) {
 		{
 			Name: "icad",
 			ChainConfig: ibc.ChainConfig{
-				Images:                 []ibc.DockerImage{{Repository: "ghcr.io/cosmos/ibc-go-icad", Version: "v0.5.0"}},
+				Images:                 []ibc.DockerImage{{Repository: "ghcr.io/srdtrk/wasmd", Version: "jsonica"}},
 				UsingNewGenesisCommand: true,
 			},
 		},
 		{
 			Name: "icad",
 			ChainConfig: ibc.ChainConfig{
-				Images:                 []ibc.DockerImage{{Repository: "ghcr.io/cosmos/ibc-go-icad", Version: "v0.5.0"}},
+				Images:                 []ibc.DockerImage{{Repository: "ghcr.io/srdtrk/wasmd", Version: "jsonica"}},
 				UsingNewGenesisCommand: true,
 			},
 		},
 	})
+
+	chains, err := cf.Chains(t.Name())
+	require.NoError(t, err)
+
+	chain1, chain2 := chains[0].(*cosmos.CosmosChain), chains[1].(*cosmos.CosmosChain)
+
+	// Get a relayer instance
+	r := interchaintest.NewBuiltinRelayerFactory(
+		ibc.CosmosRly,
+		zaptest.NewLogger(t),
+		relayer.RelayerOptionExtraStartFlags{Flags: []string{"-p", "events", "-b", "100"}},
+	).Build(t, client, network)
 }
