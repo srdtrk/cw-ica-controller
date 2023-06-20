@@ -42,13 +42,13 @@ func TestIcaControllerContract(t *testing.T) {
 						Version:    "v0.40.2",        // FOR LOCAL IMAGE USE: Docker Image Tag
 					},
 				},
-				Bin:                    "wasmd",
-				Bech32Prefix:           "wasm",
-				Denom:                  "gos",
-				GasPrices:              "0.00gos",
-				// without gas adjustment, contract upload fails
-				GasAdjustment:          1.3,
-				EncodingConfig: 			 wasm.WasmEncoding(),
+				Bin:           "wasmd",
+				Bech32Prefix:  "wasm",
+				Denom:         "gos",
+				GasPrices:     "0.00gos",
+				GasAdjustment: 1.3,
+				// cannot run wasmd without wasm encoding
+				EncodingConfig:         wasm.WasmEncoding(),
 				TrustingPeriod:         "508h",
 				NoHostMount:            false,
 				UsingNewGenesisCommand: true,
