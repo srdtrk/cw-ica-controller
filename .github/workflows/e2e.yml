@@ -28,7 +28,7 @@ jobs:
           sudo chown -R 1001:116 ./artifacts/*.wasm
           mkdir -p ./e2e/wasms
           rm -rf ./e2e/wasms/*
-          mv ./artifacts/*.wasm ./e2e/wasms
+          cp ./artifacts/*.wasm ./e2e/wasms
       - name: Commit and push
         run: |
           git config --local user.email "action@github.com"
