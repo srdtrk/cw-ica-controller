@@ -36,8 +36,8 @@ func TestIcaControllerContract(t *testing.T) {
 				ChainID: "wasmd-1",
 				Images: []ibc.DockerImage{
 					{
-						Repository: "ghcr.io/srdtrk/wasmd", // FOR LOCAL IMAGE USE: Docker Image Name
-						Version:    "jsonica",              // FOR LOCAL IMAGE USE: Docker Image Tag
+						Repository: "cosmwasm/wasmd", // FOR LOCAL IMAGE USE: Docker Image Name
+						Version:    "v0.40.2",              // FOR LOCAL IMAGE USE: Docker Image Tag
 					},
 				},
 				Bin:                    "wasmd",
@@ -58,8 +58,8 @@ func TestIcaControllerContract(t *testing.T) {
 				ChainID: "wasmd-2",
 				Images: []ibc.DockerImage{
 					{
-						Repository: "ghcr.io/srdtrk/wasmd", // FOR LOCAL IMAGE USE: Docker Image Name
-						Version:    "jsonica",              // FOR LOCAL IMAGE USE: Docker Image Tag
+						Repository: "cosmwasm/wasmd", // FOR LOCAL IMAGE USE: Docker Image Name
+						Version:    "v0.40.2",              // FOR LOCAL IMAGE USE: Docker Image Tag
 					},
 				},
 				Bin:                    "wasmd",
