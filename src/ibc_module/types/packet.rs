@@ -39,14 +39,6 @@ impl InterchainAccountPacketData {
         }
     }
 
-    /// Creates a new InterchainAccountPacketData from an [`IcaCosmosTx`](ica_cosmos_tx::IcaCosmosTx)
-    pub fn from_cosmos_tx(
-        cosmos_tx: ica_cosmos_tx::IcaCosmosTx,
-        memo: Option<String>,
-    ) -> Result<Self, ContractError> {
-        Ok(Self::new(to_vec(&cosmos_tx)?, memo))
-    }
-
     /// Creates a new InterchainAccountPacketData from a list of JSON strings
     ///
     /// The messages must be serialized as JSON strings in the format expected by the ICA host.
@@ -73,11 +65,13 @@ impl InterchainAccountPacketData {
     ///
     /// In this example, the proposer must be the ICA controller's address.
     pub fn from_strings(
-        messages: Vec<impl Into<String>>,
+        messages: Vec<String>,
         memo: Option<String>,
     ) -> Result<Self, ContractError> {
-        let cosmos_tx = ica_cosmos_tx::IcaCosmosTx::from_strings(messages)?;
-        Self::from_cosmos_tx(cosmos_tx, memo)
+        let combined_messages = messages.join(", ");
+        let json_txs = format!(r#"{{"messages": [{}]}}"#, combined_messages);
+        let data = json_txs.into_bytes();
+        Ok(Self::new(data, memo))
     }
 
     /// Creates an IBC SendPacket message from the InterchainAccountPacketData
@@ -96,62 +90,6 @@ impl InterchainAccountPacketData {
             data: to_binary(&self)?,
             timeout: IbcTimeout::with_timestamp(timeout_timestamp),
         })
-    }
-}
-
-pub mod ica_cosmos_tx {
-    use super::*;
-
-    /// IcaCosmosTx is a list of Cosmos messages that is sent to the ICA host.
-    ///
-    /// ## Format
-    ///
-    /// The messages must be serialized as JSON strings in the format expected by the ICA host.
-    /// The following is an example of a serialized IcaCosmosTx with one legacy gov proposal message:
-    ///
-    ///
-    /// ```json
-    /// {
-    ///   "messages": [
-    ///     {
-    ///       "@type": "/cosmos.gov.v1beta1.MsgSubmitProposal",
-    ///       "content": {
-    ///         "@type": "/cosmos.gov.v1beta1.TextProposal",
-    ///         "title": "IBC Gov Proposal",
-    ///         "description": "tokens for all!"
-    ///       },
-    ///       "initial_deposit": [{ "denom": "stake", "amount": "5000" }],
-    ///       "proposer": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk"
-    ///     }
-    ///   ]
-    /// }
-    /// ```
-    ///
-    /// In this example, the proposer must be the ICA controller's address.
-    ///
-    /// We leave it to the user to serialize the messages in the format expected by the ICA host.
-    /// For example, this can be achieved via custom user sent messages such as
-    /// [ExecuteMsg::SendCustomIcaMessages](crate::types::msg::ExecuteMsg::SendCustomIcaMessages)
-    /// or by using predefined messages such as [CosmosMessages](crate::types::cosmos_msg::CosmosMessages).
-    #[cw_serde]
-    pub struct IcaCosmosTx {
-        pub messages: Vec<serde_json::Value>,
-    }
-
-    impl IcaCosmosTx {
-        /// Creates a new IcaCosmosTx
-        pub fn new(messages: Vec<serde_json::Value>) -> Self {
-            Self { messages }
-        }
-
-        /// Creates a new IcaCosmosTx from a list of JSON strings
-        pub fn from_strings(messages: Vec<impl Into<String>>) -> Result<Self, ContractError> {
-            let maybe_json_messages: Result<Vec<serde_json::Value>, _> = messages
-                .into_iter()
-                .map(|msg| serde_json_wasm::from_str(&msg.into()))
-                .collect();
-            Ok(Self::new(maybe_json_messages?))
-        }
     }
 }
 
@@ -180,21 +118,21 @@ mod tests {
 
     use super::*;
 
-    #[test]
-    fn cosmos_tx_with_msg_send() {
-        let cosmos_tx_from_string = ica_cosmos_tx::IcaCosmosTx::from_strings(
-            vec![r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#]).unwrap();
+    // #[test]
+    // fn cosmos_tx_with_msg_send() {
+    //     let cosmos_tx_from_string = ica_cosmos_tx::IcaCosmosTx::from_strings(
+    //         vec![r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#]).unwrap();
 
-        let cosmos_message = CosmosMessages::MsgSend {
-            from_address: "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk".to_string(),
-            to_address: "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk".to_string(),
-            amount: coins(5000, "stake".to_string()),
-        };
-        let cosmos_tx_from_cosmos_message =
-            ica_cosmos_tx::IcaCosmosTx::from_strings(vec![cosmos_message.to_string()]).unwrap();
+    //     let cosmos_message = CosmosMessages::MsgSend {
+    //         from_address: "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk".to_string(),
+    //         to_address: "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk".to_string(),
+    //         amount: coins(5000, "stake".to_string()),
+    //     };
+    //     let cosmos_tx_from_cosmos_message =
+    //         ica_cosmos_tx::IcaCosmosTx::from_strings(vec![cosmos_message.to_string()]).unwrap();
 
-        assert_eq!(cosmos_tx_from_string, cosmos_tx_from_cosmos_message);
-    }
+    //     assert_eq!(cosmos_tx_from_string, cosmos_tx_from_cosmos_message);
+    // }
 
     #[test]
     fn test_acknowledgement() {

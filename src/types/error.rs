@@ -1,3 +1,5 @@
+use std::string::FromUtf8Error;
+
 use cosmwasm_std::StdError;
 use thiserror::Error;
 
@@ -6,8 +8,8 @@ pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
 
-    #[error("json_serde error: {0}")]
-    JsonSerde(#[from] serde_json::Error),
+    #[error("FromUtf8Error: {0}")]
+    JsonSerde(#[from] FromUtf8Error),
 
     #[error("json_serde_wasm serialization error: {0}")]
     JsonWasmSerialize(#[from] serde_json_wasm::ser::Error),

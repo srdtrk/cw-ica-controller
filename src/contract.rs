@@ -3,7 +3,6 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 // use cw2::set_contract_version;
 
-use crate::helpers;
 use crate::types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::types::state::{
     CallbackCounter, ChannelState, ContractState, CALLBACK_COUNTER, CHANNEL_STATE, STATE,
@@ -96,11 +95,11 @@ mod execute {
         let ica_info = contract_state.get_ica_info()?;
         let ica_messages: Result<Vec<String>, _> = messages
             .into_iter()
-            .map(|msg| helpers::insert_ica_address(msg, &ica_info.ica_address))
+            .map(|msg| String::from_utf8(msg.0))
             .collect();
 
         let ica_packet = InterchainAccountPacketData::from_strings(ica_messages?, packet_memo)?;
-        let send_packet_msg = ica_packet.to_ibc_msg(&env, &ica_info.channel_id, timeout_seconds)?;
+        let send_packet_msg = ica_packet.to_ibc_msg(&env, ica_info.channel_id, timeout_seconds)?;
 
         Ok(Response::default().add_message(send_packet_msg))
     }

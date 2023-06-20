@@ -29,11 +29,11 @@ pub enum ExecuteMsg {
         ///     "description": "tokens for all!"
         ///   },
         ///   "initial_deposit": [{ "denom": "stake", "amount": "5000" }],
-        ///   "proposer": "$ica_address"
+        ///   "proposer": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk"
         /// }
         /// ```
         ///
-        /// `$ica_address` will be replaced with the ICA address before the message is sent to the ICA host.
+        /// where proposer is the ICA controller's address.
         messages: Vec<Binary>,
         /// Optional memo to include in the ibc packet.
         #[serde(skip_serializing_if = "Option::is_none")]
