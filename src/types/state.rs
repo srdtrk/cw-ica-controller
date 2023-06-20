@@ -11,6 +11,7 @@ pub const STATE: Item<ContractState> = Item::new("state");
 /// CHANNEL_STATE is the item used to store the state of the IBC application's channel.
 pub const CHANNEL_STATE: Item<ChannelState> = Item::new("ica_channel");
 
+/// CALLBACK_COUNTER is the item used to store the successful and erroneous callbacks in store.
 pub const CALLBACK_COUNTER: Item<CallbackCounter> = Item::new("callback_counter");
 
 mod contract {
