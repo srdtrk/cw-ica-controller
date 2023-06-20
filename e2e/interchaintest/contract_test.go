@@ -39,7 +39,8 @@ func TestIcaControllerContract(t *testing.T) {
 				Images: []ibc.DockerImage{
 					{
 						Repository: "cosmwasm/wasmd", // FOR LOCAL IMAGE USE: Docker Image Name
-						Version:    "v0.40.2",        // FOR LOCAL IMAGE USE: Docker Image Tag
+						// unfortunately, the latest wasmd doesn't work with interchaintest at the moment
+						Version:    "v0.32.1",        // FOR LOCAL IMAGE USE: Docker Image Tag
 					},
 				},
 				Bin:           "wasmd",
@@ -51,7 +52,7 @@ func TestIcaControllerContract(t *testing.T) {
 				EncodingConfig:         wasm.WasmEncoding(),
 				TrustingPeriod:         "508h",
 				NoHostMount:            false,
-				UsingNewGenesisCommand: true,
+				UsingNewGenesisCommand: false,
 			},
 		},
 		// -- IBC-GO --
