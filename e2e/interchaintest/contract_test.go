@@ -77,7 +77,7 @@ func TestIcaControllerContract(t *testing.T) {
 	chains, err := cf.Chains(t.Name())
 	require.NoError(t, err)
 
-	chain1, chain2 := chains[0].(*cosmos.CosmosChain), chains[1].(*cosmos.CosmosChain)
+	wasmd, simd := chains[0].(*cosmos.CosmosChain), chains[1].(*cosmos.CosmosChain)
 
 	// Get a relayer instance
 	customRelayer := relayer.CustomDockerImage("damiannolan/rly", "", "100:1000")
@@ -96,12 +96,12 @@ func TestIcaControllerContract(t *testing.T) {
 	)
 
 	ic := interchaintest.NewInterchain().
-		AddChain(chain1).
-		AddChain(chain2).
+		AddChain(wasmd).
+		AddChain(simd).
 		AddRelayer(r, relayerName).
 		AddLink(interchaintest.InterchainLink{
-			Chain1:  chain1,
-			Chain2:  chain2,
+			Chain1:  wasmd,
+			Chain2:  simd,
 			Relayer: r,
 			Path:    pathName,
 		})
@@ -113,32 +113,32 @@ func TestIcaControllerContract(t *testing.T) {
 		SkipPathCreation: true,
 	}))
 
-	// Fund a user account on chain1 and chain2
+	// Fund a user account on wasmd and simd
 	// const userFunds = int64(10_000_000_000)
-	// users := interchaintest.GetAndFundTestUsers(t, ctx, t.Name(), userFunds, chain1, chain2)
-	// chain1User := users[0]
-	// chain2User := users[1]
+	// users := interchaintest.GetAndFundTestUsers(t, ctx, t.Name(), userFunds, wasmd, simd)
+	// wasmdUser := users[0]
+	// simdUser := users[1]
 
 	// Generate a new IBC path
-	err = r.GeneratePath(ctx, eRep, chain1.Config().ChainID, chain2.Config().ChainID, pathName)
+	err = r.GeneratePath(ctx, eRep, wasmd.Config().ChainID, simd.Config().ChainID, pathName)
 	require.NoError(t, err)
 
 	// Create new clients
 	err = r.CreateClients(ctx, eRep, pathName, ibc.CreateClientOptions{TrustingPeriod: "330h"})
 	require.NoError(t, err)
 
-	err = testutil.WaitForBlocks(ctx, 2, chain1, chain2)
+	err = testutil.WaitForBlocks(ctx, 2, wasmd, simd)
 	require.NoError(t, err)
 
 	// Create a new connection
 	err = r.CreateConnections(ctx, eRep, pathName)
 	require.NoError(t, err)
 
-	err = testutil.WaitForBlocks(ctx, 2, chain1, chain2)
+	err = testutil.WaitForBlocks(ctx, 2, wasmd, simd)
 	require.NoError(t, err)
 
 	// Query for the newly created connection
-	connections, err := r.GetConnections(ctx, eRep, chain1.Config().ChainID)
+	connections, err := r.GetConnections(ctx, eRep, wasmd.Config().ChainID)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(connections))
 
@@ -154,4 +154,5 @@ func TestIcaControllerContract(t *testing.T) {
 			}
 		},
 	)
+
 }
