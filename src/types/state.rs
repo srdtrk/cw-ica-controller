@@ -23,6 +23,7 @@ mod contract {
     #[cw_serde]
     pub struct ContractState {
         pub admin: Addr,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub ica_info: Option<IcaInfo>,
     }
 

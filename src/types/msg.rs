@@ -5,6 +5,7 @@ use crate::types::state::{CallbackCounter, ChannelState, ContractState};
 
 #[cw_serde]
 pub struct InstantiateMsg {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub admin: Option<String>,
 }
 
@@ -35,9 +36,11 @@ pub enum ExecuteMsg {
         /// `$ica_address` will be replaced with the ICA address before the message is sent to the ICA host.
         messages: Vec<Binary>,
         /// Optional memo to include in the ibc packet.
+        #[serde(skip_serializing_if = "Option::is_none")]
         packet_memo: Option<String>,
         /// Optional timeout in seconds to include with the ibc packet.
         /// If not specified, the [default timeout](crate::ibc_module::types::packet::DEFAULT_TIMEOUT_SECONDS) is used.
+        #[serde(skip_serializing_if = "Option::is_none")]
         timeout_seconds: Option<u64>,
     },
     /// SendPredefinedAction sends a predefined action from the ICA controller to the ICA host.
