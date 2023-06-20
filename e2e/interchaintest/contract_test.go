@@ -80,10 +80,13 @@ func TestIcaControllerContract(t *testing.T) {
 	chain1, chain2 := chains[0].(*cosmos.CosmosChain), chains[1].(*cosmos.CosmosChain)
 
 	// Get a relayer instance
+	customRelayer := relayer.CustomDockerImage("damiannolan/rly", "", "100:1000")
+
 	r := interchaintest.NewBuiltinRelayerFactory(
 		ibc.CosmosRly,
 		zaptest.NewLogger(t),
 		relayer.RelayerOptionExtraStartFlags{Flags: []string{"-p", "events", "-b", "100"}},
+		customRelayer,
 	).Build(t, client, network)
 
 	// Build the network; spin up the chains and configure the relayer
