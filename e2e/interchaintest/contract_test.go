@@ -91,7 +91,7 @@ func TestIcaControllerContract(t *testing.T) {
 
 	// Build the network; spin up the chains and configure the relayer
 	const (
-		pathName    = "wasmd-wasmd"
+		pathName    = "wasmd-simd"
 		relayerName = "relayer"
 	)
 
