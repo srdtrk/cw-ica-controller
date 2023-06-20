@@ -15,7 +15,7 @@ type ContractIcaInfo struct {
 // ContractCallbackCounter is used to represent the callback counter in the contract's storage
 type ContractCallbackCounter struct {
 	Success uint64 `json:"success"`
-	Error  uint64 `json:"error"`
+	Error   uint64 `json:"error"`
 }
 
 // ContractChannelState is used to represent the channel state in the contract's storage
