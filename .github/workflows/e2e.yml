@@ -22,3 +22,19 @@ jobs:
           version: v1.53.2
           args: --timeout 5m
           working-directory: e2e/interchaintest
+  build:
+    name: Optimized Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+      - name: Install cargo-run-script
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: cargo-run-script
+      - name: Run cargo optimize
+        uses: actions-rs/cargo@v1
+        with:
+          command: run-script
+          args: optimize
