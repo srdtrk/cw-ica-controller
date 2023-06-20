@@ -2,7 +2,7 @@ name: e2e
 
 on:
   push:
-    branches: [master]
+    branches: [main]
     paths-ignore:
       - "e2e/wasms/**"
 
