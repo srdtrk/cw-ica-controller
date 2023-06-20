@@ -1,0 +1,37 @@
+name: e2e
+
+on:
+  push:
+    branches: [master]
+    paths-ignore:
+      - "e2e/wasms/**"
+
+jobs:
+  build:
+    name: Optimized Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+      - name: Install cargo-run-script
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: cargo-run-script
+      - name: Run cargo optimize
+        uses: actions-rs/cargo@v1
+        with:
+          command: run-script
+          args: optimize
+      - name: Move artifacts
+        run: |
+          mkdir -p ./e2e/wasms
+          rm -rf ./e2e/wasms/*
+          mv ./artifacts/*.wasm ./e2e/wasms
+      - name: Commit and push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add ./e2e/wasms
+          git commit -m "ci: created optimized build" -a
+          git push
