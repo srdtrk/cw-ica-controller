@@ -54,4 +54,28 @@ func TestIcaControllerContract(t *testing.T) {
 		zaptest.NewLogger(t),
 		relayer.RelayerOptionExtraStartFlags{Flags: []string{"-p", "events", "-b", "100"}},
 	).Build(t, client, network)
+
+	// Build the network; spin up the chains and configure the relayer
+	const (
+		pathName = "wasmd-wasmd"
+	  relayerName = "relayer"
+	)
+
+	ic := interchaintest.NewInterchain().
+		AddChain(chain1).
+		AddChain(chain2).
+		AddRelayer(r, relayerName).
+		AddLink(interchaintest.InterchainLink{
+			Chain1:  chain1,
+			Chain2:  chain2,
+			Relayer: r,
+			Path:    pathName,
+		})
+
+	require.NoError(t, ic.Build(ctx, eRep, interchaintest.InterchainBuildOptions{
+		TestName:         t.Name(),
+		Client:           client,
+		NetworkID:        network,
+		SkipPathCreation: true,
+	}))
 }
