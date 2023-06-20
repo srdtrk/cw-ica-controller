@@ -28,48 +28,49 @@ func TestIcaControllerContract(t *testing.T) {
 
 	// Get both chains
 	cf := interchaintest.NewBuiltinChainFactory(zaptest.NewLogger(t), []*interchaintest.ChainSpec{
-
 		// -- REMOTE/LOCAL IMAGE EXAMPLE --
-  	{ChainConfig: ibc.ChainConfig{
-			Type: "cosmos",
-			Name: "wasmd",
-			ChainID: "wasmd-1",
-			Images: []ibc.DockerImage{
+		{
+			ChainConfig: ibc.ChainConfig{
+				Type:    "cosmos",
+				Name:    "wasmd",
+				ChainID: "wasmd-1",
+				Images: []ibc.DockerImage{
 					{
-							Repository: "ghcr.io/srdtrk/wasmd",   // FOR LOCAL IMAGE USE: Docker Image Name
-							Version: "jsonica",                   // FOR LOCAL IMAGE USE: Docker Image Tag  
+						Repository: "ghcr.io/srdtrk/wasmd", // FOR LOCAL IMAGE USE: Docker Image Name
+						Version:    "jsonica",              // FOR LOCAL IMAGE USE: Docker Image Tag
 					},
+				},
+				Bin:                    "wasmd",
+				Bech32Prefix:           "wasm",
+				Denom:                  "stake",
+				GasPrices:              "0.00stake",
+				GasAdjustment:          1.3,
+				TrustingPeriod:         "508h",
+				NoHostMount:            false,
+				UsingNewGenesisCommand: true,
 			},
-			Bin: "wasmd",
-			Bech32Prefix: "wasm",
-			Denom: "stake",
-			GasPrices: "0.00stake",
-			GasAdjustment: 1.3,
-			TrustingPeriod: "508h",
-			NoHostMount: false,
-			UsingNewGenesisCommand: true,
-		},
 		},
 		// -- REMOTE/LOCAL IMAGE EXAMPLE --
-		{ChainConfig: ibc.ChainConfig{
-			Type: "cosmos",
-			Name: "wasmd",
-			ChainID: "wasmd-2",
-			Images: []ibc.DockerImage{
+		{
+			ChainConfig: ibc.ChainConfig{
+				Type:    "cosmos",
+				Name:    "wasmd",
+				ChainID: "wasmd-2",
+				Images: []ibc.DockerImage{
 					{
-							Repository: "ghcr.io/srdtrk/wasmd",   // FOR LOCAL IMAGE USE: Docker Image Name
-							Version: "jsonica",                   // FOR LOCAL IMAGE USE: Docker Image Tag  
+						Repository: "ghcr.io/srdtrk/wasmd", // FOR LOCAL IMAGE USE: Docker Image Name
+						Version:    "jsonica",              // FOR LOCAL IMAGE USE: Docker Image Tag
 					},
+				},
+				Bin:                    "wasmd",
+				Bech32Prefix:           "wasm",
+				Denom:                  "stake",
+				GasPrices:              "0.00stake",
+				GasAdjustment:          1.3,
+				TrustingPeriod:         "508h",
+				NoHostMount:            false,
+				UsingNewGenesisCommand: true,
 			},
-			Bin: "wasmd",
-			Bech32Prefix: "wasm",
-			Denom: "stake",
-			GasPrices: "0.00stake",
-			GasAdjustment: 1.3,
-			TrustingPeriod: "508h",
-			NoHostMount: false,
-			UsingNewGenesisCommand: true,
-		},
 		},
 	})
 
@@ -87,8 +88,8 @@ func TestIcaControllerContract(t *testing.T) {
 
 	// Build the network; spin up the chains and configure the relayer
 	const (
-		pathName = "wasmd-wasmd"
-	  relayerName = "relayer"
+		pathName    = "wasmd-wasmd"
+		relayerName = "relayer"
 	)
 
 	ic := interchaintest.NewInterchain().
