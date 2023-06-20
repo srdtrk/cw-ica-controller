@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
 	interchaintest "github.com/strangelove-ventures/interchaintest/v7"
 	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
 	"github.com/strangelove-ventures/interchaintest/v7/ibc"
@@ -114,9 +115,9 @@ func TestIcaControllerContract(t *testing.T) {
 	}))
 
 	// Fund a user account on wasmd and simd
-	// const userFunds = int64(10_000_000_000)
-	// users := interchaintest.GetAndFundTestUsers(t, ctx, t.Name(), userFunds, wasmd, simd)
-	// wasmdUser := users[0]
+	const userFunds = int64(10_000_000_000)
+	users := interchaintest.GetAndFundTestUsers(t, ctx, t.Name(), userFunds, wasmd, simd)
+	wasmdUser := users[0]
 	// simdUser := users[1]
 
 	// Generate a new IBC path
@@ -155,4 +156,14 @@ func TestIcaControllerContract(t *testing.T) {
 		},
 	)
 
+	// Upload and Instantiate the contract on wasmd:
+	codeId, err := wasmd.StoreContract(ctx, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
+	require.NoError(t, err)
+	contractAddr, err := wasmd.InstantiateContract(ctx, wasmdUser.KeyName(), codeId, types.NewInstantiateMsg(nil), true)
+	require.NoError(t, err)
+
+	contractPort := "wasm." + contractAddr
+
+	// (WIP) Tests to be continued:
+	println(contractPort)
 }
