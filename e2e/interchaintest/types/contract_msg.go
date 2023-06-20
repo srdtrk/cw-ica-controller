@@ -10,11 +10,11 @@ import (
 )
 
 // NewInstantiateMsg creates a new InstantiateMsg.
-func NewInstantiateMsg(admin *string) []byte {
+func NewInstantiateMsg(admin *string) string {
 	if admin == nil {
-		return []byte(`{}`)
+		return `{}`
 	} else {
-		return []byte(fmt.Sprintf(`{"admin":"%s"}`, *admin))
+		return fmt.Sprintf(`{"admin":"%s"}`, *admin)
 	}
 }
 
