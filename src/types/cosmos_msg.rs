@@ -1,4 +1,6 @@
 use cosmwasm_std::Coin;
+#[cfg(test)]
+use serde::Deserialize;
 use serde::Serialize;
 
 /// CosmosMessages is a list of Cosmos messages that can be sent to the ICA host.
@@ -9,6 +11,7 @@ use serde::Serialize;
 ///
 /// This enum does not derive Deserialize, see issue [#1443](https://github.com/CosmWasm/cosmwasm/issues/1443)
 #[derive(Serialize, Clone, Debug, PartialEq)]
+#[cfg_attr(test, derive(Deserialize))]
 #[serde(tag = "@type")]
 pub enum CosmosMessages {
     #[serde(rename = "/cosmos.bank.v1beta1.MsgSend")]
@@ -76,6 +79,7 @@ pub mod msg_transfer {
     use super::*;
 
     #[derive(Serialize, Clone, Debug, PartialEq)]
+    #[cfg_attr(test, derive(Deserialize))]
     pub struct Height {
         pub revision_number: u64,
         pub revision_height: u64,
