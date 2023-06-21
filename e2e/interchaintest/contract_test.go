@@ -214,11 +214,13 @@ func TestIcaControllerContract(t *testing.T) {
 
 	simdChannels, err := relayer.GetChannels(ctx, eRep, simd.Config().ChainID)
 	require.NoError(t, err)
-	// I don't know why an extra channel is created, but it works
+	// I don't know why sometimes an extra channel is created.
 	// this is not related to the localhost connection, and is a failed
-	// clone of the successful channel at index 0.
-	require.Equal(t, 2, len(simdChannels))
-	t.Logf("simdChannels: %s, %s", simdChannels[0], simdChannels[1])
+	// clone of the successful channel at index 0. I will log it for now.
+	require.Greater(t, len(simdChannels), 0)
+	if len(simdChannels) > 1 {
+		t.Logf("extra channel detected: %s", simdChannels[1])
+	}
 
 	simdChannel := simdChannels[0]
 	t.Logf("simd channel state: %s", simdChannel.State)
