@@ -197,7 +197,7 @@ func TestIcaControllerContract(t *testing.T) {
 	require.NoError(t, err)
 
 	// Wait for the channel to get set up
-	err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+	err = testutil.WaitForBlocks(ctx, 8, wasmd, simd)
 	require.NoError(t, err)
 
 	// Test if the handshake was successful
@@ -214,7 +214,7 @@ func TestIcaControllerContract(t *testing.T) {
 
 	simdChannels, err := relayer.GetChannels(ctx, eRep, simd.Config().ChainID)
 	require.NoError(t, err)
-	// I don't know why sometimes an extra channel is created.
+	// I don't know why sometimes an extra channel is created in simd.
 	// this is not related to the localhost connection, and is a failed
 	// clone of the successful channel at index 0. I will log it for now.
 	require.Greater(t, len(simdChannels), 0)
