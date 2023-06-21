@@ -116,7 +116,7 @@ mod ibc_channel_open {
         counterparty_version: String,
     ) -> Result<IbcBasicResponse, ContractError> {
         // portID cannot be host chain portID
-        if channel.endpoint.port_id != HOST_PORT_ID {
+        if channel.endpoint.port_id == HOST_PORT_ID {
             return Err(ContractError::InvalidControllerPort {});
         }
 
