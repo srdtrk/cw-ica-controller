@@ -61,9 +61,10 @@ impl IcaMetadata {
         if self.controller_connection_id != channel.connection_id {
             return Err(ContractError::InvalidConnection {});
         }
-        if self.host_connection_id != channel.counterparty_endpoint.channel_id {
-            return Err(ContractError::InvalidConnection {});
-        }
+        // We cannot check the counterparty connection_id because it is not exposed to the contract
+        // if self.host_connection_id != channel.counterparty_endpoint.connection_id {
+        //     return Err(ContractError::InvalidConnection {});
+        // }
         if !self.address.is_empty() {
             validate_ica_address(&self.address)?;
         }
