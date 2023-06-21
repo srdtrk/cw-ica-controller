@@ -75,7 +75,7 @@ mod execute {
     use cosmwasm_std::coins;
 
     use crate::{
-        ibc_module::types::packet::InterchainAccountPacketData, types::cosmos_msg::CosmosMessages,
+        ibc::types::packet::InterchainAccountPacketData, types::cosmos_msg::CosmosMessages,
     };
 
     use super::*;

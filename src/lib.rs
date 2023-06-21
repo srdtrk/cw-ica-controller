@@ -1,3 +1,3 @@
 pub mod contract;
-pub mod ibc_module;
+pub mod ibc;
 pub mod types;
