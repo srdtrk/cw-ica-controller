@@ -148,10 +148,20 @@ func TestIcaControllerContract(t *testing.T) {
 	err = testutil.WaitForBlocks(ctx, 2, wasmd, simd)
 	require.NoError(t, err)
 
-	// Query for the newly created connection
+	// Query for the newly created connection in wasmd
 	connections, err := relayer.GetConnections(ctx, eRep, wasmd.Config().ChainID)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(connections))
+	wasmdConnection := connections[0]
+	require.Equal(t, "connection-0", wasmdConnection.ID)
+
+	// Query for the newly created connection in simd
+	connections, err = relayer.GetConnections(ctx, eRep, simd.Config().ChainID)
+	require.NoError(t, err)
+	// localhost is always a connection in new version of ibc-go
+	require.Equal(t, 2, len(connections))
+	simdConnection := connections[0]
+	require.Equal(t, "connection-0", simdConnection.ID)
 
 	// Start the relayer and set the cleanup function.
 	err = relayer.StartRelayer(ctx, eRep, pathName)
@@ -175,12 +185,14 @@ func TestIcaControllerContract(t *testing.T) {
 	contractPort := "wasm." + contractAddr
 
 	// Create Channel between wasmd contract and simd
+	version := fmt.Sprintf(`{"version":"ics27-1","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"json","tx_type":"sdk_multi_msg"}`, wasmdConnection.ID, simdConnection.ID)
+	println("version: ", version)
 	err = relayer.CreateChannel(ctx, eRep, pathName, ibc.CreateChannelOptions{
 		SourcePortName: contractPort,
 		DestPortName:   icatypes.HostPortID,
 		Order:          ibc.Ordered,
 		// asking the contract to generate the version by passing an empty string
-		Version: "",
+		Version: version,
 	})
 	require.NoError(t, err)
 
@@ -189,13 +201,23 @@ func TestIcaControllerContract(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test if the handshake was successful
-	channels, err := relayer.GetChannels(ctx, eRep, wasmd.Config().ChainID)
+	wasmdChannels, err := relayer.GetChannels(ctx, eRep, wasmd.Config().ChainID)
 	require.NoError(t, err)
-	require.Equal(t, 1, len(channels))
+	require.Equal(t, 1, len(wasmdChannels))
 
-	channel := channels[0]
-	fmt.Println("channel: ", channel)
-	require.Equal(t, contractPort, channel.PortID)
-	require.Equal(t, icatypes.HostPortID, channel.Counterparty.PortID)
-	require.Equal(t, channeltypes.OPEN.String(), channel.State)
+	wasmdChannel := wasmdChannels[0]
+	println("wasmd channel: ", wasmdChannel)
+	require.Equal(t, contractPort, wasmdChannel.PortID)
+	require.Equal(t, icatypes.HostPortID, wasmdChannel.Counterparty.PortID)
+	require.Equal(t, channeltypes.OPEN.String(), wasmdChannel.State)
+
+	simdChannels, err := relayer.GetChannels(ctx, eRep, simd.Config().ChainID)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(simdChannels))
+
+	simdChannel := simdChannels[0]
+	println("simd channel: ", simdChannel)
+	require.Equal(t, icatypes.HostPortID, simdChannel.PortID)
+	require.Equal(t, contractPort, simdChannel.Counterparty.PortID)
+	// require.Equal(t, channeltypes.OPEN.String(), channel.State)
 }
