@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
+
 	interchaintest "github.com/strangelove-ventures/interchaintest/v7"
 	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
 	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos/wasm"
@@ -12,6 +14,10 @@ import (
 	"github.com/strangelove-ventures/interchaintest/v7/relayer"
 	"github.com/strangelove-ventures/interchaintest/v7/testreporter"
 	"github.com/strangelove-ventures/interchaintest/v7/testutil"
+
+	icatypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/types"
+	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
+
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 )
@@ -48,7 +54,7 @@ func TestIcaControllerContract(t *testing.T) {
 				Denom:         "gos",
 				GasPrices:     "0.00gos",
 				GasAdjustment: 1.3,
-				// cannot run wasmd without wasm encoding
+				// cannot run wasmd commands without wasm encoding
 				EncodingConfig:         wasm.WasmEncoding(),
 				TrustingPeriod:         "508h",
 				NoHostMount:            false,
@@ -87,7 +93,7 @@ func TestIcaControllerContract(t *testing.T) {
 	// Get a relayer instance
 	customRelayer := relayer.CustomDockerImage("damiannolan/rly", "", "100:1000")
 
-	r := interchaintest.NewBuiltinRelayerFactory(
+	relayer := interchaintest.NewBuiltinRelayerFactory(
 		ibc.CosmosRly,
 		zaptest.NewLogger(t),
 		relayer.RelayerOptionExtraStartFlags{Flags: []string{"-p", "events", "-b", "100"}},
@@ -103,11 +109,11 @@ func TestIcaControllerContract(t *testing.T) {
 	ic := interchaintest.NewInterchain().
 		AddChain(wasmd).
 		AddChain(simd).
-		AddRelayer(r, relayerName).
+		AddRelayer(relayer, relayerName).
 		AddLink(interchaintest.InterchainLink{
 			Chain1:  wasmd,
 			Chain2:  simd,
-			Relayer: r,
+			Relayer: relayer,
 			Path:    pathName,
 		})
 
@@ -125,35 +131,35 @@ func TestIcaControllerContract(t *testing.T) {
 	// simdUser := users[1]
 
 	// Generate a new IBC path
-	err = r.GeneratePath(ctx, eRep, wasmd.Config().ChainID, simd.Config().ChainID, pathName)
+	err = relayer.GeneratePath(ctx, eRep, wasmd.Config().ChainID, simd.Config().ChainID, pathName)
 	require.NoError(t, err)
 
 	// Create new clients
-	err = r.CreateClients(ctx, eRep, pathName, ibc.CreateClientOptions{TrustingPeriod: "330h"})
+	err = relayer.CreateClients(ctx, eRep, pathName, ibc.CreateClientOptions{TrustingPeriod: "330h"})
 	require.NoError(t, err)
 
 	err = testutil.WaitForBlocks(ctx, 2, wasmd, simd)
 	require.NoError(t, err)
 
 	// Create a new connection
-	err = r.CreateConnections(ctx, eRep, pathName)
+	err = relayer.CreateConnections(ctx, eRep, pathName)
 	require.NoError(t, err)
 
 	err = testutil.WaitForBlocks(ctx, 2, wasmd, simd)
 	require.NoError(t, err)
 
 	// Query for the newly created connection
-	connections, err := r.GetConnections(ctx, eRep, wasmd.Config().ChainID)
+	connections, err := relayer.GetConnections(ctx, eRep, wasmd.Config().ChainID)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(connections))
 
 	// Start the relayer and set the cleanup function.
-	err = r.StartRelayer(ctx, eRep, pathName)
+	err = relayer.StartRelayer(ctx, eRep, pathName)
 	require.NoError(t, err)
 
 	t.Cleanup(
 		func() {
-			err := r.StopRelayer(ctx, eRep)
+			err := relayer.StopRelayer(ctx, eRep)
 			if err != nil {
 				t.Logf("an error occurred while stopping the relayer: %s", err)
 			}
@@ -168,6 +174,29 @@ func TestIcaControllerContract(t *testing.T) {
 
 	contractPort := "wasm." + contractAddr
 
-	// (WIP) Tests to be continued:
-	println(contractPort)
+	// Create Channel between wasmd contract and simd
+	err = relayer.CreateChannel(ctx, eRep, pathName, ibc.CreateChannelOptions{
+		SourcePortName: contractPort,
+		DestPortName:   icatypes.HostPortID,
+		Order:          ibc.Ordered,
+		// asking the contract to generate the version by passing an empty string
+		Version:        "",
+	})
+	require.NoError(t, err)
+
+	// Wait for the channel to get set up
+	err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+	require.NoError(t, err)
+
+	// Test if the handshake was successful
+	channels, err := relayer.GetChannels(ctx, eRep, wasmd.Config().ChainID)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(channels))
+
+	channel := channels[0]
+	fmt.Println("channel: ", channel)
+	require.Equal(t, contractPort, channel.PortID)
+	require.Equal(t, icatypes.HostPortID ,channel.Counterparty.PortID)
+	require.Equal(t, channeltypes.OPEN.String() ,channel.State)
+
 }
