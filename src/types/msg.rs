@@ -1,8 +1,6 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Binary;
 
-use crate::types::state::{CallbackCounter, ChannelState, ContractState};
-
 #[cw_serde]
 pub struct InstantiateMsg {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -53,10 +51,10 @@ pub enum ExecuteMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    #[returns(ChannelState)]
+    #[returns(crate::types::state::ChannelState)]
     GetChannel {},
-    #[returns(ContractState)]
+    #[returns(crate::types::state::ContractState)]
     GetContractState {},
-    #[returns(CallbackCounter)]
+    #[returns(crate::types::state::CallbackCounter)]
     GetCallbackCounter {},
 }
