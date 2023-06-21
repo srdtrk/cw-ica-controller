@@ -206,18 +206,20 @@ func TestIcaControllerContract(t *testing.T) {
 	require.Equal(t, 1, len(wasmdChannels))
 
 	wasmdChannel := wasmdChannels[0]
-	println("wasmd channel: ", wasmdChannel)
+	t.Logf("wasmd channel state: %s", wasmdChannel.State)
+	fmt.Println("wasmd channel version: ", wasmdChannel.Version)
 	require.Equal(t, contractPort, wasmdChannel.PortID)
 	require.Equal(t, icatypes.HostPortID, wasmdChannel.Counterparty.PortID)
 	require.Equal(t, channeltypes.OPEN.String(), wasmdChannel.State)
 
 	simdChannels, err := relayer.GetChannels(ctx, eRep, simd.Config().ChainID)
 	require.NoError(t, err)
-	require.Equal(t, 1, len(simdChannels))
+	require.Equal(t, 2, len(simdChannels))
+	t.Logf("simdChannels: %s, %s", simdChannels[0], simdChannels[1])
 
 	simdChannel := simdChannels[0]
-	println("simd channel: ", simdChannel)
+	t.Logf("simd channel state: %s", simdChannel.State)
 	require.Equal(t, icatypes.HostPortID, simdChannel.PortID)
 	require.Equal(t, contractPort, simdChannel.Counterparty.PortID)
-	// require.Equal(t, channeltypes.OPEN.String(), channel.State)
+	require.Equal(t, channeltypes.OPEN.String(), simdChannel.State)
 }
