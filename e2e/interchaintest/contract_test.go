@@ -46,7 +46,7 @@ func TestIcaControllerContract(t *testing.T) {
 					{
 						Repository: "cosmwasm/wasmd", // FOR LOCAL IMAGE USE: Docker Image Name
 						// unfortunately, the latest wasmd doesn't work with interchaintest at the moment
-						Version:    "v0.32.1",        // FOR LOCAL IMAGE USE: Docker Image Tag
+						Version: "v0.32.1", // FOR LOCAL IMAGE USE: Docker Image Tag
 					},
 				},
 				Bin:           "wasmd",
@@ -180,7 +180,7 @@ func TestIcaControllerContract(t *testing.T) {
 		DestPortName:   icatypes.HostPortID,
 		Order:          ibc.Ordered,
 		// asking the contract to generate the version by passing an empty string
-		Version:        "",
+		Version: "",
 	})
 	require.NoError(t, err)
 
@@ -196,7 +196,6 @@ func TestIcaControllerContract(t *testing.T) {
 	channel := channels[0]
 	fmt.Println("channel: ", channel)
 	require.Equal(t, contractPort, channel.PortID)
-	require.Equal(t, icatypes.HostPortID ,channel.Counterparty.PortID)
-	require.Equal(t, channeltypes.OPEN.String() ,channel.State)
-
+	require.Equal(t, icatypes.HostPortID, channel.Counterparty.PortID)
+	require.Equal(t, channeltypes.OPEN.String(), channel.State)
 }
