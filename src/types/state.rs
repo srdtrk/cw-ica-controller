@@ -113,10 +113,15 @@ mod channel {
     /// ChannelState is the state of the IBC channel.
     #[cw_serde]
     pub enum ChannelStatus {
+        #[serde(rename = "STATE_UNINITIALIZED_UNSPECIFIED")]
         Uninitialized,
+        #[serde(rename = "STATE_INIT")]
         Init,
+        #[serde(rename = "STATE_TRYOPEN")]
         TryOpen,
+        #[serde(rename = "STATE_OPEN")]
         Open,
+        #[serde(rename = "STATE_CLOSED")]
         Closed,
     }
 
