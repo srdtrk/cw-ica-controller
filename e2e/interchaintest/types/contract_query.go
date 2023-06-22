@@ -8,3 +8,23 @@ type QueryMsg struct {
 
 type EmptyObject struct {}
 
+// NewGetChannelQueryMsg creates a new GetChannel QueryMsg.
+func NewGetChannelQueryMsg() QueryMsg {
+	return QueryMsg{
+		GetChannel: EmptyObject{},
+	}
+}
+
+// NewGetContractStateQueryMsg creates a new GetContractState QueryMsg.
+func NewGetContractStateQueryMsg() QueryMsg {
+	return QueryMsg{
+		GetContractState: EmptyObject{},
+	}
+}
+
+// NewGetCallbackCounterQueryMsg creates a new GetCallbackCounter QueryMsg.
+func NewGetCallbackCounterQueryMsg() QueryMsg {
+	return QueryMsg{
+		GetCallbackCounter: EmptyObject{},
+	}
+}
