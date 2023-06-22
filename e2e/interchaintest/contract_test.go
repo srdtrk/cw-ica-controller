@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -186,7 +187,6 @@ func TestIcaControllerContract(t *testing.T) {
 
 	// Create Channel between wasmd contract and simd
 	version := fmt.Sprintf(`{"version":"ics27-1","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"json","tx_type":"sdk_multi_msg"}`, wasmdConnection.ID, simdConnection.ID)
-	println("version: ", version)
 	err = relayer.CreateChannel(ctx, eRep, pathName, ibc.CreateChannelOptions{
 		SourcePortName: contractPort,
 		DestPortName:   icatypes.HostPortID,
@@ -206,8 +206,7 @@ func TestIcaControllerContract(t *testing.T) {
 	require.Equal(t, 1, len(wasmdChannels))
 
 	wasmdChannel := wasmdChannels[0]
-	t.Logf("wasmd channel state: %s", wasmdChannel.State)
-	fmt.Println("wasmd channel version: ", wasmdChannel.Version)
+	t.Logf("wasmd channel: %s", toJSONString(wasmdChannel))
 	require.Equal(t, contractPort, wasmdChannel.PortID)
 	require.Equal(t, icatypes.HostPortID, wasmdChannel.Counterparty.PortID)
 	require.Equal(t, channeltypes.OPEN.String(), wasmdChannel.State)
@@ -219,20 +218,25 @@ func TestIcaControllerContract(t *testing.T) {
 	// clone of the successful channel at index 0. I will log it for now.
 	require.Greater(t, len(simdChannels), 0)
 	if len(simdChannels) > 1 {
-		t.Logf("extra channel detected: %s", simdChannels[1])
+		t.Logf("extra simd channel detected: %s", toJSONString(simdChannels[1]))
 	}
 
 	simdChannel := simdChannels[0]
-	t.Logf("simd channel state: %s", simdChannel.State)
+	t.Logf("simd channel state: %s", toJSONString(simdChannel.State))
 	require.Equal(t, icatypes.HostPortID, simdChannel.PortID)
 	require.Equal(t, contractPort, simdChannel.Counterparty.PortID)
 	require.Equal(t, channeltypes.OPEN.String(), simdChannel.State)
 
 	// Check contract's channel state
-	var contractChannelState types.ContractChannelState
-	err = wasmd.QueryContract(ctx, contractAddr, types.NewGetChannelQueryMsg(), contractChannelState)
+	var queryResp = types.QueryResponse{}
+	// var test *map[string]interface{}
+	err = wasmd.QueryContract(ctx, contractAddr, types.NewGetChannelQueryMsg(), &queryResp)
 	require.NoError(t, err)
-	t.Logf("contract's channel store after handshake: %s", contractChannelState)
+
+	contractChannelState, err := queryResp.GetChannelState()
+	require.NoError(t, err)
+
+	t.Logf("contract's channel store after handshake: %s", toJSONString(contractChannelState))
 
 	require.Equal(t, wasmdChannel.State, contractChannelState.ChannelStatus)
 	require.Equal(t, wasmdChannel.Version, contractChannelState.Channel.Version)
@@ -243,4 +247,14 @@ func TestIcaControllerContract(t *testing.T) {
 	require.Equal(t, wasmdChannel.Counterparty.PortID, contractChannelState.Channel.CounterpartyEndpoint.PortID)
 	require.Equal(t, wasmdChannel.Ordering, contractChannelState.Channel.Order)
 
+}
+
+// toJSONString returns a string representation of the given value
+// by marshaling it to JSON. It panics if marshaling fails.
+func toJSONString(v any) string {
+	bz, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	return string(bz)
 }
