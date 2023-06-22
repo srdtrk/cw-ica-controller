@@ -227,4 +227,20 @@ func TestIcaControllerContract(t *testing.T) {
 	require.Equal(t, icatypes.HostPortID, simdChannel.PortID)
 	require.Equal(t, contractPort, simdChannel.Counterparty.PortID)
 	require.Equal(t, channeltypes.OPEN.String(), simdChannel.State)
+
+	// Check contract's channel state
+	var contractChannelState types.ContractChannelState
+	err = wasmd.QueryContract(ctx, contractAddr, types.NewGetChannelQueryMsg(), contractChannelState)
+	require.NoError(t, err)
+	t.Logf("contract's channel store after handshake: %s", contractChannelState)
+
+	require.Equal(t, wasmdChannel.State, contractChannelState.ChannelStatus)
+	require.Equal(t, wasmdChannel.Version, contractChannelState.Channel.Version)
+	require.Equal(t, wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionID)
+	require.Equal(t, wasmdChannel.ChannelID, contractChannelState.Channel.Endpoint.ChannelID)
+	require.Equal(t, wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortID)
+	require.Equal(t, wasmdChannel.Counterparty.ChannelID, contractChannelState.Channel.CounterpartyEndpoint.ChannelID)
+	require.Equal(t, wasmdChannel.Counterparty.PortID, contractChannelState.Channel.CounterpartyEndpoint.PortID)
+	require.Equal(t, wasmdChannel.Ordering, contractChannelState.Channel.Order)
+
 }

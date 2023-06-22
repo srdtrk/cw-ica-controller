@@ -1,30 +1,28 @@
 package types
 
-type QueryMsg struct {
-	GetChannel EmptyObject `json:"get_channel"`
-	GetContractState EmptyObject `json:"get_contract_state"`
-	GetCallbackCounter EmptyObject `json:"get_callback_counter"`
-}
-
-type EmptyObject struct {}
-
-// NewGetChannelQueryMsg creates a new GetChannel QueryMsg.
-func NewGetChannelQueryMsg() QueryMsg {
-	return QueryMsg{
-		GetChannel: EmptyObject{},
+// NewGetChannelQueryMsg creates a new GetChannelQueryMsg.
+// This function returns a map[string]interface{} instead of []byte
+// because interchaintest uses json.Marshal to convert the map to a string
+func NewGetChannelQueryMsg() map[string]interface{} {
+	return map[string]interface{}{
+		"get_channel": struct{}{},
 	}
 }
 
-// NewGetContractStateQueryMsg creates a new GetContractState QueryMsg.
-func NewGetContractStateQueryMsg() QueryMsg {
-	return QueryMsg{
-		GetContractState: EmptyObject{},
+// NewGetContractStateQueryMsg creates a new GetContractStateQueryMsg.
+// This function returns a map[string]interface{} instead of []byte
+// because interchaintest uses json.Marshal to convert the map to a string
+func NewGetContractStateQueryMsg() map[string]interface{} {
+	return map[string]interface{}{
+		"get_contract_state": struct{}{},
 	}
 }
 
-// NewGetCallbackCounterQueryMsg creates a new GetCallbackCounter QueryMsg.
-func NewGetCallbackCounterQueryMsg() QueryMsg {
-	return QueryMsg{
-		GetCallbackCounter: EmptyObject{},
+// NewGetCallbackCounterQueryMsg creates a new GetCallbackCounterQueryMsg.
+// This function returns a map[string]interface{} instead of []byte
+// because interchaintest uses json.Marshal to convert the map to a string
+func NewGetCallbackCounterQueryMsg() map[string]interface{} {
+	return map[string]interface{}{
+		"get_callback_counter": struct{}{},
 	}
 }
