@@ -26,5 +26,6 @@ type ContractChannelState struct {
 
 // IsOpen returns true if the channel is open
 func (c *ContractChannelState) IsOpen() bool {
-	return c.ChannelStatus == "open"
+	return c.ChannelStatus == "STATE_OPEN"
 }
+
