@@ -52,8 +52,8 @@ func TestIcaControllerContract(t *testing.T) {
 				},
 				Bin:           "wasmd",
 				Bech32Prefix:  "wasm",
-				Denom:         "gos",
-				GasPrices:     "0.00gos",
+				Denom:         "stake",
+				GasPrices:     "0.00stake",
 				GasAdjustment: 1.3,
 				// cannot run wasmd commands without wasm encoding
 				EncodingConfig:         wasm.WasmEncoding(),
@@ -76,8 +76,8 @@ func TestIcaControllerContract(t *testing.T) {
 				},
 				Bin:                    "simd",
 				Bech32Prefix:           "cosmos",
-				Denom:                  "gos",
-				GasPrices:              "0.00gos",
+				Denom:                  "stake",
+				GasPrices:              "0.00stake",
 				GasAdjustment:          1.3,
 				TrustingPeriod:         "508h",
 				NoHostMount:            false,
@@ -129,7 +129,7 @@ func TestIcaControllerContract(t *testing.T) {
 	const userFunds = int64(10_000_000_000)
 	users := interchaintest.GetAndFundTestUsers(t, ctx, t.Name(), userFunds, wasmd, simd)
 	wasmdUser := users[0]
-	// simdUser := users[1]
+	simdUser := users[1]
 
 	// Generate a new IBC path
 	err = relayer.GeneratePath(ctx, eRep, wasmd.Config().ChainID, simd.Config().ChainID, pathName)
@@ -197,7 +197,7 @@ func TestIcaControllerContract(t *testing.T) {
 	require.NoError(t, err)
 
 	// Wait for the channel to get set up
-	err = testutil.WaitForBlocks(ctx, 8, wasmd, simd)
+	err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 	require.NoError(t, err)
 
 	// Test if the handshake was successful
@@ -228,8 +228,7 @@ func TestIcaControllerContract(t *testing.T) {
 	require.Equal(t, channeltypes.OPEN.String(), simdChannel.State)
 
 	// Check contract's channel state
-	var queryResp = types.QueryResponse{}
-	// var test *map[string]interface{}
+	queryResp := types.QueryResponse{}
 	err = wasmd.QueryContract(ctx, contractAddr, types.NewGetChannelQueryMsg(), &queryResp)
 	require.NoError(t, err)
 
@@ -246,6 +245,40 @@ func TestIcaControllerContract(t *testing.T) {
 	require.Equal(t, wasmdChannel.Counterparty.ChannelID, contractChannelState.Channel.CounterpartyEndpoint.ChannelID)
 	require.Equal(t, wasmdChannel.Counterparty.PortID, contractChannelState.Channel.CounterpartyEndpoint.PortID)
 	require.Equal(t, wasmdChannel.Ordering, contractChannelState.Channel.Order)
+
+	// Check contract state
+	err = wasmd.QueryContract(ctx, contractAddr, types.NewGetContractStateQueryMsg(), &queryResp)
+	require.NoError(t, err)
+	contractState, err := queryResp.GetContractState()
+	require.NoError(t, err)
+	
+	require.Equal(t, wasmdUser.FormattedAddress(), contractState.Admin)
+	require.Equal(t, wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
+
+	icaAddress := contractState.IcaInfo.IcaAddress
+	t.Logf("ICA address after handshake: %s", icaAddress)
+
+	// Fund the ICA address:
+	err = simd.SendFunds(ctx, simdUser.KeyName(), ibc.WalletAmount{
+		Address: icaAddress,
+		Denom:  simd.Config().Denom,
+		Amount: 1000000000,
+	})
+	require.NoError(t, err)
+
+	err = testutil.WaitForBlocks(ctx, 3, wasmd, simd)
+	require.NoError(t, err)
+	
+	// Take predefined action on the ICA through the contract:
+	_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, types.NewSendPredefinedActionMsg(simdUser.FormattedAddress()))
+	require.NoError(t, err)
+
+	err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+	require.NoError(t, err)
+
+	icaBalance, err := simd.GetBalance(ctx, icaAddress, simd.Config().Denom)
+	require.NoError(t, err)
+	require.Equal(t, int64(1000000000 - 100), icaBalance)
 
 }
 
