@@ -280,6 +280,15 @@ func TestIcaControllerContract(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(1000000000 - 100), icaBalance)
 
+	// Check if contract callbacks were executed:
+	err = wasmd.QueryContract(ctx, contractAddr, types.NewGetCallbackCounterQueryMsg(), &queryResp)
+	require.NoError(t, err)
+
+	callbackCounter, err := queryResp.GetCallbackCounter()
+	require.NoError(t, err)
+
+	require.Equal(t, uint64(1), callbackCounter.Success)
+	require.Equal(t, uint64(0), callbackCounter.Error)
 }
 
 // toJSONString returns a string representation of the given value
