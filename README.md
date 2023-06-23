@@ -20,7 +20,7 @@ In this contract, the `execute` message is used to commit a packet to be sent to
 
 1. `SendCustomIcaMessages`: This message requires the sender to give json/base64 encoded messages that will be sent to the host chain. The host chain will decode the messages and execute them. The result of the execution will be sent back to this contract, and the callback will be executed.
 
-The format that json messages have to take are defined by the cosmos-sdk's json codec. The following is an example of a json message that is submitting a text legacy governance:
+The format that json messages have to take are defined by the cosmos-sdk's json codec. The following is an example of a json message that is submitting a text legacy governance: (In this example, the `proposer` is the address of the interchain account on the host chain)
 
 ```json
 {
