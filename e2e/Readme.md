@@ -1,17 +1,17 @@
 # End to End Tests
 
-The e2e tests are run using the [interchaintest](https://github.com/strangelove-ventures/interchaintest) by Strangelove. It runs multiple docker container validators, and lets you test IBC enabled smart contracts.
+The e2e tests are built using the [interchaintest](https://github.com/strangelove-ventures/interchaintest) library by Strangelove. It runs multiple docker container validators, and lets you test IBC enabled smart contracts.
 
 ## Running the tests
 
-```bash
+```text
 cd interchaintest/
-go test contract_test.go
+go test -v contract_test.go
 ```
 
 ## In the CI
 
-The tests are run in the github CI after every push to the `main` branch.
+The tests are run in the github CI after every push to the `main` branch. See the [github actions workflow](https://github.com/srdtrk/cw-ica-controller/blob/main/.github/workflows/e2e.yml) for more details.
 
 ## About the tests
 
