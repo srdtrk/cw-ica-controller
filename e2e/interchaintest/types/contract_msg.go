@@ -37,13 +37,12 @@ func NewSendCustomIcaMessagesMsg(cdc codec.BinaryCodec, msgs []sdk.Msg, memo *st
 
 	messages := make([]string, len(msgs))
 
-	for _, msg := range msgs {
+	for i, msg := range msgs {
 		bz, err := cdc.(*codec.ProtoCodec).MarshalJSON(msg)
 		if err != nil {
 			panic(err)
 		}
-		b64 := base64.StdEncoding.EncodeToString(bz)
-		messages = append(messages, b64)
+		messages[i] = base64.StdEncoding.EncodeToString(bz)
 	}
 
 	msg := SendCustomIcaMessagesMsgWrapper{
