@@ -12,7 +12,7 @@ You can see the various ways this contract can be used in the end to end tests i
 
 ### Create an interchain account
 
-To create an interchain account, the relayer must start the channel handshake on the contract's chain. See end to end tests for an example of how to do this.
+To create an interchain account, the relayer must start the channel handshake on the contract's chain. See end to end tests for an example of how to do this. Unfortunately, this is not possible to do in the contract itself. Also, you cannot initialize with an empty string as the version, this is due to a limitation of the IBCModule interface provided by ibc-go, see issue [#3942](https://github.com/cosmos/ibc-go/issues/3942). The version string we are using for tests is: `{"version":"ics27-1","controller_connection_id":"connection-0","host_connection_id":"connection-0","address":"","encoding":"json","tx_type":"sdk_multi_msg"}`. You can see this in the end to end tests.
 
 ### Execute an interchain account transaction
 
