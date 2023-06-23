@@ -116,7 +116,7 @@ mod ibc_channel_open {
         counterparty_version: String,
     ) -> Result<IbcBasicResponse, ContractError> {
         // portID cannot be host chain portID
-        // of course in this case it is not since it is wasm.CONTRACT_ADDRESS
+        // this is not possible since it is wasm.CONTRACT_ADDRESS
         // but we check it anyway since this is a recreation of the go code
         if channel.endpoint.port_id == HOST_PORT_ID {
             return Err(ContractError::InvalidControllerPort {});
