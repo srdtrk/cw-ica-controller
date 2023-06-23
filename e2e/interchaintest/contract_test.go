@@ -47,7 +47,7 @@ func TestIcaControllerContract(t *testing.T) {
 					{
 						Repository: "cosmwasm/wasmd", // FOR LOCAL IMAGE USE: Docker Image Name
 						// unfortunately, the latest wasmd doesn't work with interchaintest at the moment
-						Version: "v0.32.1", // FOR LOCAL IMAGE USE: Docker Image Tag
+						Version: "v0.40.2", // FOR LOCAL IMAGE USE: Docker Image Tag
 					},
 				},
 				Bin:           "wasmd",
@@ -59,7 +59,7 @@ func TestIcaControllerContract(t *testing.T) {
 				EncodingConfig:         wasm.WasmEncoding(),
 				TrustingPeriod:         "508h",
 				NoHostMount:            false,
-				UsingNewGenesisCommand: false,
+				UsingNewGenesisCommand: true,
 			},
 		},
 		// -- IBC-GO --
@@ -289,6 +289,9 @@ func TestIcaControllerContract(t *testing.T) {
 
 	require.Equal(t, uint64(1), callbackCounter.Success)
 	require.Equal(t, uint64(0), callbackCounter.Error)
+
+	// Send custom ICA messages through the contract:
+	// Let's create a governance proposal on simd and deposit some funds to it.
 }
 
 // toJSONString returns a string representation of the given value

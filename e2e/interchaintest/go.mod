@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/cosmos/cosmos-sdk v0.47.3
 	github.com/cosmos/ibc-go/v7 v7.1.0
-	github.com/strangelove-ventures/interchaintest/v7 v7.0.0-20230620190311-2545da6b43ab
+	github.com/strangelove-ventures/interchaintest/v7 v7.0.0-20230622193330-220ce33823c0
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.24.0
 )
