@@ -8,6 +8,12 @@ import (
 
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
 
+	sdkmath "cosmossdk.io/math"
+
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
+
 	interchaintest "github.com/strangelove-ventures/interchaintest/v7"
 	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
 	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos/wasm"
@@ -26,7 +32,7 @@ import (
 func TestIcaControllerContract(t *testing.T) {
 	// Parallel indicates that this test is safe for parallel execution.
 	// This is true since this is the only test in this file.
-	t.Parallel()
+	// t.Parallel()
 
 	client, network := interchaintest.DockerSetup(t)
 
@@ -266,14 +272,14 @@ func TestIcaControllerContract(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	err = testutil.WaitForBlocks(ctx, 3, wasmd, simd)
+	err = testutil.WaitForBlocks(ctx, 2, wasmd, simd)
 	require.NoError(t, err)
 	
 	// Take predefined action on the ICA through the contract:
 	_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, types.NewSendPredefinedActionMsg(simdUser.FormattedAddress()))
 	require.NoError(t, err)
 
-	err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+	err = testutil.WaitForBlocks(ctx, 3, wasmd, simd)
 	require.NoError(t, err)
 
 	icaBalance, err := simd.GetBalance(ctx, icaAddress, simd.Config().Denom)
@@ -292,6 +298,49 @@ func TestIcaControllerContract(t *testing.T) {
 
 	// Send custom ICA messages through the contract:
 	// Let's create a governance proposal on simd and deposit some funds to it.
+
+	testProposal := &govtypes.TextProposal{
+		Title:       "IBC Gov Proposal",
+		Description: "tokens for all!",
+	}
+	protoAny, err := codectypes.NewAnyWithValue(testProposal)
+	require.NoError(t, err)
+	proposalMsg := &govtypes.MsgSubmitProposal{
+		Content:        protoAny,
+		InitialDeposit: sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(5000))),
+		Proposer:       icaAddress,
+	}
+
+	// Create deposit message:
+	depositMsg := &govtypes.MsgDeposit{
+		ProposalId: 1,
+		Depositor:  icaAddress,
+		Amount:     sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10000000))),
+	}
+
+	// Execute them:
+	_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, types.NewSendCustomIcaMessagesMsg(wasmd.Config().EncodingConfig.Codec, []sdk.Msg{proposalMsg, depositMsg}, nil, nil))
+	require.NoError(t, err)
+
+	// waiting for 3 blocks not enough
+	err = testutil.WaitForBlocks(ctx, 4, wasmd, simd)
+	require.NoError(t, err)
+
+	// Check if contract callbacks were executed:
+	err = wasmd.QueryContract(ctx, contractAddr, types.NewGetCallbackCounterQueryMsg(), &queryResp)
+	require.NoError(t, err)
+
+	callbackCounter, err = queryResp.GetCallbackCounter()
+	require.NoError(t, err)
+
+	require.Equal(t, uint64(1), callbackCounter.Success)
+	require.Equal(t, uint64(1), callbackCounter.Error)
+
+	// Check if the proposal was created:
+	proposal, err := simd.QueryProposal(ctx, "1")
+	require.NoError(t, err)
+	require.Equal(t, testProposal.Title, proposal.Content.Title)
+	require.Equal(t, testProposal.Description, proposal.Content.Description)
 }
 
 // toJSONString returns a string representation of the given value
