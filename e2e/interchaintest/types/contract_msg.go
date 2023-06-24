@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	codec "github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -38,7 +39,13 @@ func NewSendCustomIcaMessagesMsg(cdc codec.BinaryCodec, msgs []sdk.Msg, memo *st
 	messages := make([]string, len(msgs))
 
 	for i, msg := range msgs {
-		bz, err := cdc.(*codec.ProtoCodec).MarshalJSON(msg)
+		// message must first be converted to Any because the host expects to
+		// unmarshal the message from Any not from the concrete type.
+		protoAny, err := codectypes.NewAnyWithValue(msg)
+		if err != nil {
+			panic(err)
+		}
+		bz, err := cdc.(*codec.ProtoCodec).MarshalJSON(protoAny)
 		if err != nil {
 			panic(err)
 		}
