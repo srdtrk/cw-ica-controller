@@ -40,3 +40,15 @@ The format that json messages have to take are defined by the cosmos-sdk's json 
 ### Execute a callback
 
 This contract supports callbacks. See `src/ibc/relay.rs` for how to decode whether a transaction was successful or not. Currently, a counter is incremented to record how many transactions were successful and how many failed. This is just a placeholder for more complex logic that can be executed in the callback.
+
+## Testing
+
+There are two kinds of tests in this repository: unit tests and end to end tests. The unit tests are located inside the rust files in the `src` directory. The end to end tests are located in the `e2e` directory.
+
+### Unit tests
+
+In general, the unit tests are for testing the verification functions for the handshake, and for testing that the serializers and deserializers are working correctly. To run the unit tests, run `cargo test`.
+
+### End to end tests
+
+The end to end tests are for testing the contract's functionality in an environment mimicking production. To see whether or not it can perform the channel handshake, send packets, and execute callbacks. We achieve this by running two local chains, one for the contract, and one for the host chain. The relayer is then used to perform the channel handshake, and send packets. The contract then executes callbacks based on the result of the packet. To learn more about how to run the end to end tests, see the [Readme](./e2e/Readme.md) in the `e2e` directory.
