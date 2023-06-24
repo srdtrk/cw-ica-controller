@@ -16,8 +16,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 
-	interchaintest "github.com/strangelove-ventures/interchaintest/v7"
-	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos/wasm"
 	"github.com/strangelove-ventures/interchaintest/v7/ibc"
 	"github.com/strangelove-ventures/interchaintest/v7/testutil"
 
@@ -38,59 +36,9 @@ func TestWithContractTestSuite(t *testing.T) {
 func (s *ContractTestSuite) TestIcaControllerContract() {
 	// Parallel indicates that this test is safe for parallel execution.
 	// This is true since this is the only test in this file.
-	t := s.T()
 	// t.Parallel()
 
 	ctx := context.Background()
-
-	chainSpecs := []*interchaintest.ChainSpec{
-		// -- WASMD --
-		{
-			ChainConfig: ibc.ChainConfig{
-				Type:    "cosmos",
-				Name:    "wasmd",
-				ChainID: "wasmd-1",
-				Images: []ibc.DockerImage{
-					{
-						Repository: "cosmwasm/wasmd", // FOR LOCAL IMAGE USE: Docker Image Name
-						Version:    "v0.40.2",        // FOR LOCAL IMAGE USE: Docker Image Tag
-					},
-				},
-				Bin:           "wasmd",
-				Bech32Prefix:  "wasm",
-				Denom:         "stake",
-				GasPrices:     "0.00stake",
-				GasAdjustment: 1.3,
-				// cannot run wasmd commands without wasm encoding
-				EncodingConfig:         wasm.WasmEncoding(),
-				TrustingPeriod:         "508h",
-				NoHostMount:            false,
-				UsingNewGenesisCommand: true,
-			},
-		},
-		// -- IBC-GO --
-		{
-			ChainConfig: ibc.ChainConfig{
-				Type:    "cosmos",
-				Name:    "ibc-go-simd",
-				ChainID: "simd-1",
-				Images: []ibc.DockerImage{
-					{
-						Repository: "ghcr.io/cosmos/ibc-go-simd", // FOR LOCAL IMAGE USE: Docker Image Name
-						Version:    "pr-3796",                    // FOR LOCAL IMAGE USE: Docker Image Tag
-					},
-				},
-				Bin:                    "simd",
-				Bech32Prefix:           "cosmos",
-				Denom:                  "stake",
-				GasPrices:              "0.00stake",
-				GasAdjustment:          1.3,
-				TrustingPeriod:         "508h",
-				NoHostMount:            false,
-				UsingNewGenesisCommand: true,
-			},
-		},
-	}
 
 	// This starts the chains, relayer, creates the user accounts, and creates the ibc clients and connections.
 	s.SetupSuite(ctx, chainSpecs)
@@ -101,6 +49,15 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 	wasmdUser := s.UserA
 	simdUser := s.UserB
 
+	// Query for the newly created connection in wasmd and simd
+	wasmdConnections, err := s.Relayer.GetConnections(ctx, s.ExecRep, s.ChainA.Config().ChainID)
+	s.Require().NoError(err)
+	wasmdConnection := wasmdConnections[0]
+
+	simdConnections, err := s.Relayer.GetConnections(ctx, s.ExecRep, s.ChainB.Config().ChainID)
+	s.Require().NoError(err)
+	simdConnection := simdConnections[0]
+
 	// Upload and Instantiate the contract on wasmd:
 	codeId, err := wasmd.StoreContract(ctx, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
@@ -109,89 +66,80 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 
 	contractPort := "wasm." + contractAddr
 
-	// Test channel handshake between wasmd contract and simd:
-
-	// Query for the newly created connection in wasmd
-	wamsdConnections, err := s.Relayer.GetConnections(ctx, s.ExecRep, s.ChainA.Config().ChainID)
-	s.Require().NoError(err)
-	wasmdConnection := wamsdConnections[0]
-
-	// Query for the newly created connection in simd
-	simdConnections, err := s.Relayer.GetConnections(ctx, s.ExecRep, s.ChainB.Config().ChainID)
-	s.Require().NoError(err)
-	simdConnection := simdConnections[0]
-
-	version := fmt.Sprintf(`{"version":"ics27-1","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"json","tx_type":"sdk_multi_msg"}`, wasmdConnection.ID, simdConnection.ID)
-	err = relayer.CreateChannel(ctx, s.ExecRep, s.PathName, ibc.CreateChannelOptions{
-		SourcePortName: contractPort,
-		DestPortName:   icatypes.HostPortID,
-		Order:          ibc.Ordered,
-		// asking the contract to generate the version by passing an empty string
-		Version: version,
-	})
-	s.Require().NoError(err)
-
-	// Wait for the channel to get set up
-	err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
-	s.Require().NoError(err)
-
-	// Test if the handshake was successful
-	wasmdChannels, err := relayer.GetChannels(ctx, s.ExecRep, wasmd.Config().ChainID)
-	s.Require().NoError(err)
-	s.Require().Equal(1, len(wasmdChannels))
-
-	wasmdChannel := wasmdChannels[0]
-	t.Logf("wasmd channel: %s", toJSONString(wasmdChannel))
-	s.Require().Equal(contractPort, wasmdChannel.PortID)
-	s.Require().Equal(icatypes.HostPortID, wasmdChannel.Counterparty.PortID)
-	s.Require().Equal(channeltypes.OPEN.String(), wasmdChannel.State)
-
-	simdChannels, err := relayer.GetChannels(ctx, s.ExecRep, simd.Config().ChainID)
-	s.Require().NoError(err)
-	// I don't know why sometimes an extra channel is created in simd.
-	// this is not related to the localhost connection, and is a failed
-	// clone of the successful channel at index 0. I will log it for now.
-	s.Require().Greater(len(simdChannels), 0)
-	if len(simdChannels) > 1 {
-		t.Logf("extra simd channel detected: %s", toJSONString(simdChannels[1]))
-	}
-
-	simdChannel := simdChannels[0]
-	t.Logf("simd channel state: %s", toJSONString(simdChannel.State))
-	s.Require().Equal(icatypes.HostPortID, simdChannel.PortID)
-	s.Require().Equal(contractPort, simdChannel.Counterparty.PortID)
-	s.Require().Equal(channeltypes.OPEN.String(), simdChannel.State)
-
-	// Check contract's channel state
+	var icaAddress string
 	queryResp := types.QueryResponse{}
-	err = wasmd.QueryContract(ctx, contractAddr, types.NewGetChannelQueryMsg(), &queryResp)
-	s.Require().NoError(err)
+	s.Run("TestChannelHandshakeSuccess", func() {
+		version := fmt.Sprintf(`{"version":"ics27-1","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"json","tx_type":"sdk_multi_msg"}`, wasmdConnection.ID, simdConnection.ID)
+		err = relayer.CreateChannel(ctx, s.ExecRep, s.PathName, ibc.CreateChannelOptions{
+			SourcePortName: contractPort,
+			DestPortName:   icatypes.HostPortID,
+			Order:          ibc.Ordered,
+			// asking the contract to generate the version by passing an empty string
+			Version: version,
+		})
+		s.Require().NoError(err)
 
-	contractChannelState, err := queryResp.GetChannelState()
-	s.Require().NoError(err)
+		// Wait for the channel to get set up
+		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+		s.Require().NoError(err)
 
-	t.Logf("contract's channel store after handshake: %s", toJSONString(contractChannelState))
+		// Test if the handshake was successful
+		wasmdChannels, err := relayer.GetChannels(ctx, s.ExecRep, wasmd.Config().ChainID)
+		s.Require().NoError(err)
+		s.Require().Equal(1, len(wasmdChannels))
 
-	s.Require().Equal(wasmdChannel.State, contractChannelState.ChannelStatus)
-	s.Require().Equal(wasmdChannel.Version, contractChannelState.Channel.Version)
-	s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionID)
-	s.Require().Equal(wasmdChannel.ChannelID, contractChannelState.Channel.Endpoint.ChannelID)
-	s.Require().Equal(wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortID)
-	s.Require().Equal(wasmdChannel.Counterparty.ChannelID, contractChannelState.Channel.CounterpartyEndpoint.ChannelID)
-	s.Require().Equal(wasmdChannel.Counterparty.PortID, contractChannelState.Channel.CounterpartyEndpoint.PortID)
-	s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
+		wasmdChannel := wasmdChannels[0]
+		s.T().Logf("wasmd channel: %s", toJSONString(wasmdChannel))
+		s.Require().Equal(contractPort, wasmdChannel.PortID)
+		s.Require().Equal(icatypes.HostPortID, wasmdChannel.Counterparty.PortID)
+		s.Require().Equal(channeltypes.OPEN.String(), wasmdChannel.State)
 
-	// Check contract state
-	err = wasmd.QueryContract(ctx, contractAddr, types.NewGetContractStateQueryMsg(), &queryResp)
-	s.Require().NoError(err)
-	contractState, err := queryResp.GetContractState()
-	s.Require().NoError(err)
+		simdChannels, err := relayer.GetChannels(ctx, s.ExecRep, simd.Config().ChainID)
+		s.Require().NoError(err)
+		// I don't know why sometimes an extra channel is created in simd.
+		// this is not related to the localhost connection, and is a failed
+		// clone of the successful channel at index 0. I will log it for now.
+		s.Require().Greater(len(simdChannels), 0)
+		if len(simdChannels) > 1 {
+			s.T().Logf("extra simd channel detected: %s", toJSONString(simdChannels[1]))
+		}
 
-	s.Require().Equal(wasmdUser.FormattedAddress(), contractState.Admin)
-	s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
+		simdChannel := simdChannels[0]
+		s.T().Logf("simd channel state: %s", toJSONString(simdChannel.State))
+		s.Require().Equal(icatypes.HostPortID, simdChannel.PortID)
+		s.Require().Equal(contractPort, simdChannel.Counterparty.PortID)
+		s.Require().Equal(channeltypes.OPEN.String(), simdChannel.State)
 
-	icaAddress := contractState.IcaInfo.IcaAddress
-	t.Logf("ICA address after handshake: %s", icaAddress)
+		// Check contract's channel state
+		err = wasmd.QueryContract(ctx, contractAddr, types.NewGetChannelQueryMsg(), &queryResp)
+		s.Require().NoError(err)
+
+		contractChannelState, err := queryResp.GetChannelState()
+		s.Require().NoError(err)
+
+		s.T().Logf("contract's channel store after handshake: %s", toJSONString(contractChannelState))
+
+		s.Require().Equal(wasmdChannel.State, contractChannelState.ChannelStatus)
+		s.Require().Equal(wasmdChannel.Version, contractChannelState.Channel.Version)
+		s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionID)
+		s.Require().Equal(wasmdChannel.ChannelID, contractChannelState.Channel.Endpoint.ChannelID)
+		s.Require().Equal(wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortID)
+		s.Require().Equal(wasmdChannel.Counterparty.ChannelID, contractChannelState.Channel.CounterpartyEndpoint.ChannelID)
+		s.Require().Equal(wasmdChannel.Counterparty.PortID, contractChannelState.Channel.CounterpartyEndpoint.PortID)
+		s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
+
+		// Check contract state
+		err = wasmd.QueryContract(ctx, contractAddr, types.NewGetContractStateQueryMsg(), &queryResp)
+		s.Require().NoError(err)
+		contractState, err := queryResp.GetContractState()
+		s.Require().NoError(err)
+
+		s.Require().Equal(wasmdUser.FormattedAddress(), contractState.Admin)
+		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
+
+		icaAddress = contractState.IcaInfo.IcaAddress
+		s.T().Logf("ICA address after handshake: %s", icaAddress)
+	})
 
 	// Fund the ICA address:
 	err = simd.SendFunds(ctx, simdUser.KeyName(), ibc.WalletAmount{
@@ -205,97 +153,99 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 	err = testutil.WaitForBlocks(ctx, 2, wasmd, simd)
 	s.Require().NoError(err)
 
-	// Take predefined action on the ICA through the contract:
-	_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, types.NewSendPredefinedActionMsg(simdUser.FormattedAddress()))
-	s.Require().NoError(err)
+	s.Run("TestSendPredefinedActionSuccess", func() {
+		_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, types.NewSendPredefinedActionMsg(simdUser.FormattedAddress()))
+		s.Require().NoError(err)
 
-	err = testutil.WaitForBlocks(ctx, 6, wasmd, simd)
-	s.Require().NoError(err)
+		err = testutil.WaitForBlocks(ctx, 6, wasmd, simd)
+		s.Require().NoError(err)
 
-	icaBalance, err := simd.GetBalance(ctx, icaAddress, simd.Config().Denom)
-	s.Require().NoError(err)
-	s.Require().Equal(int64(1000000000-100), icaBalance)
+		icaBalance, err := simd.GetBalance(ctx, icaAddress, simd.Config().Denom)
+		s.Require().NoError(err)
+		s.Require().Equal(int64(1000000000-100), icaBalance)
 
-	// Check if contract callbacks were executed:
-	err = wasmd.QueryContract(ctx, contractAddr, types.NewGetCallbackCounterQueryMsg(), &queryResp)
-	s.Require().NoError(err)
+		// Check if contract callbacks were executed:
+		err = wasmd.QueryContract(ctx, contractAddr, types.NewGetCallbackCounterQueryMsg(), &queryResp)
+		s.Require().NoError(err)
 
-	callbackCounter, err := queryResp.GetCallbackCounter()
-	s.Require().NoError(err)
+		callbackCounter, err := queryResp.GetCallbackCounter()
+		s.Require().NoError(err)
 
-	s.Require().Equal(uint64(1), callbackCounter.Success)
-	s.Require().Equal(uint64(0), callbackCounter.Error)
+		s.Require().Equal(uint64(1), callbackCounter.Success)
+		s.Require().Equal(uint64(0), callbackCounter.Error)
+	})
 
-	// Send custom ICA messages through the contract:
-	// Let's create a governance proposal on simd and deposit some funds to it.
+	s.Run("TestSendCustomIcaMessagesSuccess", func() {
+		// Send custom ICA messages through the contract:
+		// Let's create a governance proposal on simd and deposit some funds to it.
+		testProposal := govtypes.TextProposal{
+			Title:       "IBC Gov Proposal",
+			Description: "tokens for all!",
+		}
+		protoAny, err := codectypes.NewAnyWithValue(&testProposal)
+		s.Require().NoError(err)
+		proposalMsg := &govtypes.MsgSubmitProposal{
+			Content:        protoAny,
+			InitialDeposit: sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(5000))),
+			Proposer:       icaAddress,
+		}
 
-	testProposal := govtypes.TextProposal{
-		Title:       "IBC Gov Proposal",
-		Description: "tokens for all!",
-	}
-	protoAny, err := codectypes.NewAnyWithValue(&testProposal)
-	s.Require().NoError(err)
-	proposalMsg := &govtypes.MsgSubmitProposal{
-		Content:        protoAny,
-		InitialDeposit: sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(5000))),
-		Proposer:       icaAddress,
-	}
+		// Create deposit message:
+		depositMsg := &govtypes.MsgDeposit{
+			ProposalId: 1,
+			Depositor:  icaAddress,
+			Amount:     sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10000000))),
+		}
 
-	// Create deposit message:
-	depositMsg := &govtypes.MsgDeposit{
-		ProposalId: 1,
-		Depositor:  icaAddress,
-		Amount:     sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10000000))),
-	}
+		// Create string message:
+		customMsg := types.NewSendCustomIcaMessagesMsg(wasmd.Config().EncodingConfig.Codec, []sdk.Msg{proposalMsg, depositMsg}, nil, nil)
+		// Execute the contract:
+		_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, customMsg)
+		s.Require().NoError(err)
 
-	// Create string message:
-	customMsg := types.NewSendCustomIcaMessagesMsg(wasmd.Config().EncodingConfig.Codec, []sdk.Msg{proposalMsg, depositMsg}, nil, nil)
+		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+		s.Require().NoError(err)
 
-	// Execute the contract:
-	_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, customMsg)
-	s.Require().NoError(err)
+		// Check if contract callbacks were executed:
+		err = wasmd.QueryContract(ctx, contractAddr, types.NewGetCallbackCounterQueryMsg(), &queryResp)
+		s.Require().NoError(err)
 
-	err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
-	s.Require().NoError(err)
+		callbackCounter, err := queryResp.GetCallbackCounter()
+		s.Require().NoError(err)
 
-	// Check if contract callbacks were executed:
-	err = wasmd.QueryContract(ctx, contractAddr, types.NewGetCallbackCounterQueryMsg(), &queryResp)
-	s.Require().NoError(err)
+		s.Require().Equal(uint64(2), callbackCounter.Success)
+		s.Require().Equal(uint64(0), callbackCounter.Error)
 
-	callbackCounter, err = queryResp.GetCallbackCounter()
-	s.Require().NoError(err)
+		// Check if the proposal was created:
+		proposal, err := simd.QueryProposal(ctx, "1")
+		s.Require().NoError(err)
+		s.Require().Equal(simd.Config().Denom, proposal.TotalDeposit[0].Denom)
+		s.Require().Equal(fmt.Sprint(10000000+5000), proposal.TotalDeposit[0].Amount)
+		// We do not check title and description of the proposal because this is a legacy proposal.
+	})
 
-	s.Require().Equal(uint64(2), callbackCounter.Success)
-	s.Require().Equal(uint64(0), callbackCounter.Error)
+	s.Run("TestSendCustomIcaMessagesError", func() {
+		// Test erroneous callback:
+		// Send incorrect custom ICA messages through the contract:
+		badMessage := base64.StdEncoding.EncodeToString([]byte("bad message"))
+		badCustomMsg := `{"send_custom_ica_messages":{"messages":["` + badMessage + `"]}}`
 
-	// Check if the proposal was created:
-	proposal, err := simd.QueryProposal(ctx, "1")
-	s.Require().NoError(err)
-	s.Require().Equal(simd.Config().Denom, proposal.TotalDeposit[0].Denom)
-	s.Require().Equal(fmt.Sprint(10000000+5000), proposal.TotalDeposit[0].Amount)
-	// We do not check title and description of the proposal because this is a legacy proposal.
+		// Execute the contract:
+		_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, badCustomMsg)
+		s.Require().NoError(err)
 
-	// Test erroneous callback:
-	// Send incorrect custom ICA messages through the contract:
-	badMessage := base64.StdEncoding.EncodeToString([]byte("bad message"))
-	badCustomMsg := `{"send_custom_ica_messages":{"messages":["` + badMessage + `"]}}`
+		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+		s.Require().NoError(err)
 
-	// Execute the contract:
-	_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, badCustomMsg)
-	s.Require().NoError(err)
+		// Check if contract callbacks were executed:
+		err = wasmd.QueryContract(ctx, contractAddr, types.NewGetCallbackCounterQueryMsg(), &queryResp)
+		s.Require().NoError(err)
 
-	err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
-	s.Require().NoError(err)
-
-	// Check if contract callbacks were executed:
-	err = wasmd.QueryContract(ctx, contractAddr, types.NewGetCallbackCounterQueryMsg(), &queryResp)
-	s.Require().NoError(err)
-
-	callbackCounter, err = queryResp.GetCallbackCounter()
-	s.Require().NoError(err)
-
-	s.Require().Equal(uint64(2), callbackCounter.Success)
-	s.Require().Equal(uint64(1), callbackCounter.Error)
+		callbackCounter, err := queryResp.GetCallbackCounter()
+		s.Require().NoError(err)
+		s.Require().Equal(uint64(2), callbackCounter.Success)
+		s.Require().Equal(uint64(1), callbackCounter.Error)
+	})
 }
 
 // toJSONString returns a string representation of the given value
