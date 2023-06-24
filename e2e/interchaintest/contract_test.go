@@ -52,7 +52,7 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 				Images: []ibc.DockerImage{
 					{
 						Repository: "cosmwasm/wasmd", // FOR LOCAL IMAGE USE: Docker Image Name
-						Version: "v0.40.2", // FOR LOCAL IMAGE USE: Docker Image Tag
+						Version:    "v0.40.2",        // FOR LOCAL IMAGE USE: Docker Image Tag
 					},
 				},
 				Bin:           "wasmd",

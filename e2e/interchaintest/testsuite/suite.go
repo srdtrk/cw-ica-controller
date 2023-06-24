@@ -20,16 +20,16 @@ import (
 type TestSuite struct {
 	suite.Suite
 
-	ChainA *cosmos.CosmosChain
-	ChainB *cosmos.CosmosChain
-	UserA ibc.Wallet
-	UserB ibc.Wallet
-	dockerClient   *dockerclient.Client
-	Relayer ibc.Relayer
-	network string
-	logger *zap.Logger
-	ExecRep *testreporter.RelayerExecReporter
-	PathName string
+	ChainA       *cosmos.CosmosChain
+	ChainB       *cosmos.CosmosChain
+	UserA        ibc.Wallet
+	UserB        ibc.Wallet
+	dockerClient *dockerclient.Client
+	Relayer      ibc.Relayer
+	network      string
+	logger       *zap.Logger
+	ExecRep      *testreporter.RelayerExecReporter
+	PathName     string
 }
 
 // SetupSuite sets up the chains, relayer, user accounts, clients, and connections
@@ -50,7 +50,7 @@ func (s *TestSuite) SetupSuite(ctx context.Context, chainSpecs []*interchaintest
 	s.ChainA = chains[0].(*cosmos.CosmosChain)
 	s.ChainB = chains[1].(*cosmos.CosmosChain)
 
-	// This is currently the only relayer image that works with the main (next) version of ibc-go 
+	// This is currently the only relayer image that works with the main (next) version of ibc-go
 	customRelayerImage := relayer.CustomDockerImage("damiannolan/rly", "", "100:1000")
 
 	s.Relayer = interchaintest.NewBuiltinRelayerFactory(
@@ -76,9 +76,9 @@ func (s *TestSuite) SetupSuite(ctx context.Context, chainSpecs []*interchaintest
 		})
 
 	s.Require().NoError(ic.Build(ctx, s.ExecRep, interchaintest.InterchainBuildOptions{
-		TestName:         t.Name(),
-		Client:           s.dockerClient,
-		NetworkID:        s.network,
+		TestName:  t.Name(),
+		Client:    s.dockerClient,
+		NetworkID: s.network,
 		// I don't exactly know the consequences of SkipPathCreation
 		SkipPathCreation: true,
 	}))
