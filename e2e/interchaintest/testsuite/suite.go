@@ -76,10 +76,9 @@ func (s *TestSuite) SetupSuite(ctx context.Context, chainSpecs []*interchaintest
 		})
 
 	s.Require().NoError(ic.Build(ctx, s.ExecRep, interchaintest.InterchainBuildOptions{
-		TestName:  t.Name(),
-		Client:    s.dockerClient,
-		NetworkID: s.network,
-		// I don't exactly know the consequences of SkipPathCreation
+		TestName:         t.Name(),
+		Client:           s.dockerClient,
+		NetworkID:        s.network,
 		SkipPathCreation: true,
 	}))
 
@@ -121,4 +120,17 @@ func (s *TestSuite) SetupSuite(ctx context.Context, chainSpecs []*interchaintest
 	s.Require().Equal(2, len(connections))
 	simdConnection := connections[0]
 	s.Require().Equal("connection-0", simdConnection.ID)
+
+	// Start the relayer and set the cleanup function.
+	err = s.Relayer.StartRelayer(ctx, s.ExecRep, s.PathName)
+	s.Require().NoError(err)
+
+	t.Cleanup(
+		func() {
+			err := s.Relayer.StopRelayer(ctx, s.ExecRep)
+			if err != nil {
+				t.Logf("an error occurred while stopping the relayer: %s", err)
+			}
+		},
+	)
 }

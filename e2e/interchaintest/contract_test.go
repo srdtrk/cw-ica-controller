@@ -101,19 +101,6 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 	wasmdUser := s.UserA
 	simdUser := s.UserB
 
-	// Start the relayer and set the cleanup function.
-	err := relayer.StartRelayer(ctx, s.ExecRep, s.PathName)
-	s.Require().NoError(err)
-
-	t.Cleanup(
-		func() {
-			err := relayer.StopRelayer(ctx, s.ExecRep)
-			if err != nil {
-				t.Logf("an error occurred while stopping the relayer: %s", err)
-			}
-		},
-	)
-
 	// Upload and Instantiate the contract on wasmd:
 	codeId, err := wasmd.StoreContract(ctx, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
