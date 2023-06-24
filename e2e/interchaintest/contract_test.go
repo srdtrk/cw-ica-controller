@@ -221,7 +221,7 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 	_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, types.NewSendPredefinedActionMsg(simdUser.FormattedAddress()))
 	s.Require().NoError(err)
 
-	err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+	err = testutil.WaitForBlocks(ctx, 6, wasmd, simd)
 	s.Require().NoError(err)
 
 	icaBalance, err := simd.GetBalance(ctx, icaAddress, simd.Config().Denom)
