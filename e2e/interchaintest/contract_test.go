@@ -299,11 +299,11 @@ func TestIcaControllerContract(t *testing.T) {
 	// Send custom ICA messages through the contract:
 	// Let's create a governance proposal on simd and deposit some funds to it.
 
-	testProposal := &govtypes.TextProposal{
+	testProposal := govtypes.TextProposal{
 		Title:       "IBC Gov Proposal",
 		Description: "tokens for all!",
 	}
-	protoAny, err := codectypes.NewAnyWithValue(testProposal)
+	protoAny, err := codectypes.NewAnyWithValue(&testProposal)
 	require.NoError(t, err)
 	proposalMsg := &govtypes.MsgSubmitProposal{
 		Content:        protoAny,
@@ -320,7 +320,6 @@ func TestIcaControllerContract(t *testing.T) {
 
 	// Create string message:
 	customMsg := types.NewSendCustomIcaMessagesMsg(wasmd.Config().EncodingConfig.Codec, []sdk.Msg{proposalMsg, depositMsg}, nil, nil)
-	t.Logf("batchedMsgs: %s", customMsg)
 
 	// Execute them:
 	_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, customMsg)
@@ -336,14 +335,15 @@ func TestIcaControllerContract(t *testing.T) {
 	callbackCounter, err = queryResp.GetCallbackCounter()
 	require.NoError(t, err)
 
-	require.Equal(t, uint64(1), callbackCounter.Success)
-	require.Equal(t, uint64(1), callbackCounter.Error)
+	require.Equal(t, uint64(2), callbackCounter.Success)
+	require.Equal(t, uint64(0), callbackCounter.Error)
 
 	// Check if the proposal was created:
 	proposal, err := simd.QueryProposal(ctx, "1")
 	require.NoError(t, err)
-	require.Equal(t, testProposal.Title, proposal.Content.Title)
-	require.Equal(t, testProposal.Description, proposal.Content.Description)
+	require.Equal(t, simd.Config().Denom, proposal.TotalDeposit[0].Denom)
+	require.Equal(t, fmt.Sprint(10000000 + 5000), proposal.TotalDeposit[0].Amount)
+	// We do not check title and description of the proposal because this is a legacy proposal.
 }
 
 // toJSONString returns a string representation of the given value
