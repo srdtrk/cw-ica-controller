@@ -11,7 +11,7 @@ use serde::Serialize;
 /// This enum corresponds to the [Any](https://github.com/cosmos/cosmos-sdk/blob/v0.47.3/codec/types/any.go#L11-L52)
 /// type defined in the Cosmos SDK. The Any type is used to encode and decode Cosmos messages. It also has a built-in
 /// json codec. This enum is used to encode Cosmos messages using json so that they can be deserialized as an Any by
-/// the host chain using the json codec.
+/// the host chain using the Cosmos SDK's json codec.
 ///
 /// In general, this ICA controller should be used with custom messages and **not with the
 /// messages defined here**. The messages defined here are to demonstrate how an ICA controller

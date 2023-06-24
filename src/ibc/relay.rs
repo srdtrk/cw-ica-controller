@@ -1,5 +1,3 @@
-//! # Relay
-//!
 //! This module contains the entry points for:
 //! - The IBC packet acknowledgement.
 //! - The IBC packet timeout.

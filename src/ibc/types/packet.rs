@@ -1,6 +1,6 @@
 //! # Packet
 //!
-//! This file contains the packet data to be send to the ica host and acknowledgement data types.
+//! This module contains the packet data to be send to the ica host and acknowledgement data types.
 
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{to_binary, Env, IbcMsg, IbcTimeout};

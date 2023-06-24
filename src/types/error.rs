@@ -1,3 +1,5 @@
+//! This module defines [ContractError].
+
 use std::string::FromUtf8Error;
 
 use cosmwasm_std::StdError;

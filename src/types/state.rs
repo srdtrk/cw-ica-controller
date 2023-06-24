@@ -1,5 +1,3 @@
-//! # State
-//!
 //! This module defines the state storage of the Contract.
 
 use cosmwasm_schema::cw_serde;

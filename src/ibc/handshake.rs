@@ -1,5 +1,3 @@
-//! # Handshake
-//!
 //! This module contains the entry points for the IBC handshake.
 
 #[cfg(not(feature = "library"))]
