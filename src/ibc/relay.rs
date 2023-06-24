@@ -1,3 +1,10 @@
+//! # Relay
+//!
+//! This module contains the entry points for:
+//! - The IBC packet acknowledgement.
+//! - The IBC packet timeout.
+//! - The IBC packet receive.
+
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{

@@ -1,3 +1,7 @@
+//! # Handshake
+//!
+//! This module contains the entry points for the IBC handshake.
+
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{

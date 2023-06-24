@@ -1,3 +1,7 @@
+//! # State
+//!
+//! This module defines the state storage of the Contract.
+
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, IbcChannel};
 use cw_storage_plus::Item;
@@ -5,13 +9,13 @@ use cw_storage_plus::Item;
 pub use channel::ChannelState;
 pub use contract::{CallbackCounter, ContractState};
 
-/// STATE is the item used to store the state of the IBC application.
+/// The item used to store the state of the IBC application.
 pub const STATE: Item<ContractState> = Item::new("state");
 
-/// CHANNEL_STATE is the item used to store the state of the IBC application's channel.
+/// The item used to store the state of the IBC application's channel.
 pub const CHANNEL_STATE: Item<ChannelState> = Item::new("ica_channel");
 
-/// CALLBACK_COUNTER is the item used to store the successful and erroneous callbacks in store.
+/// The item used to store the successful and erroneous callbacks in store.
 pub const CALLBACK_COUNTER: Item<CallbackCounter> = Item::new("callback_counter");
 
 mod contract {
@@ -22,7 +26,10 @@ mod contract {
     /// ContractState is the state of the IBC application.
     #[cw_serde]
     pub struct ContractState {
+        /// The address of the admin of the IBC application.
         pub admin: Addr,
+        /// The Interchain Account (ICA) info needed to send packets.
+        /// This is set during the handshake.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub ica_info: Option<IcaInfo>,
     }
@@ -80,7 +87,9 @@ mod contract {
     #[cw_serde]
     #[derive(Default)]
     pub struct CallbackCounter {
+        /// The number of successful callbacks.
         pub success: u32,
+        /// The number of erroneous callbacks.
         pub error: u32,
     }
 
@@ -129,7 +138,9 @@ mod channel {
     /// This application only supports one channel.
     #[cw_serde]
     pub struct ChannelState {
+        /// The IBC channel, as defined by cosmwasm.
         pub channel: IbcChannel,
+        /// The status of the channel.
         pub channel_status: ChannelStatus,
     }
 

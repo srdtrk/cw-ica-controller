@@ -1,3 +1,7 @@
+//! # Packet
+//!
+//! This file contains the packet data to be send to the ica host and acknowledgement data types.
+
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{to_binary, Env, IbcMsg, IbcTimeout};
 
@@ -93,12 +97,13 @@ impl InterchainAccountPacketData {
     }
 }
 
+/// contains the [`AcknowledgementData`] that is the acknowledgement to an ibc packet
 pub mod acknowledgement {
     use cosmwasm_std::Binary;
 
     use super::*;
 
-    /// Acknowledgement is the response to an ibc packet. It either contains a result or an error.
+    /// AcknowledgementData is the response to an ibc packet. It either contains a result or an error.
     #[cw_serde]
     pub enum AcknowledgementData {
         /// Result is the result of a successful transaction.

@@ -1,3 +1,11 @@
+//! # Metadata
+//!
+//! This file contains the [`IcaMetadata`] struct and its methods.
+//!
+//! The metadata is the information that is communicated during the handshake between the
+//! ICA controller and the ICA host. It encodes key information about the messages exchanged
+//! between the ICA controller and the ICA host.
+
 use cosmwasm_std::IbcChannel;
 use serde::{Deserialize, Serialize};
 
@@ -5,14 +13,24 @@ use crate::types::ContractError;
 
 use super::keys::ICA_VERSION;
 
-/// IcaMetadata is the metadata of the IBC application communicated during the handshake
+/// IcaMetadata is the metadata of the IBC application communicated during the handshake.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IcaMetadata {
+    /// The version of the IBC application.
     pub version: String,
+    /// Controller's connection id.
     pub controller_connection_id: String,
+    /// Counterparty's connection id.
     pub host_connection_id: String,
+    /// The address of the interchain account.
+    /// This address can be left empty at the `OpenInit` stage,
+    /// and the ICA host will fill it in later during the handshake.
     pub address: String,
+    /// The encoding of the messages sent to the ICA host.
+    /// This contract only supports json encoding.
     pub encoding: String,
+    /// The type of transaction that is sent to the ICA host.
+    /// There is currently only one supported type: `sdk_multi_msg`.
     pub tx_type: String,
 }
 
