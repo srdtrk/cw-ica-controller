@@ -7,7 +7,6 @@ use serde::Serialize;
 
 /// CosmosMessages is a list of Cosmos messages that can be sent to the ICA host.
 ///
-///
 /// This enum corresponds to the [Any](https://github.com/cosmos/cosmos-sdk/blob/v0.47.3/codec/types/any.go#L11-L52)
 /// type defined in the Cosmos SDK. The Any type is used to encode and decode Cosmos messages. It also has a built-in
 /// json codec. This enum is used to encode Cosmos messages using json so that they can be deserialized as an Any by
