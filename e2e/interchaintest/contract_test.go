@@ -342,7 +342,7 @@ func TestIcaControllerContract(t *testing.T) {
 	proposal, err := simd.QueryProposal(ctx, "1")
 	require.NoError(t, err)
 	require.Equal(t, simd.Config().Denom, proposal.TotalDeposit[0].Denom)
-	require.Equal(t, fmt.Sprint(10000000 + 5000), proposal.TotalDeposit[0].Amount)
+	require.Equal(t, fmt.Sprint(10000000+5000), proposal.TotalDeposit[0].Amount)
 	// We do not check title and description of the proposal because this is a legacy proposal.
 }
 
