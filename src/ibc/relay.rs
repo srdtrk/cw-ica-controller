@@ -7,7 +7,7 @@ use cosmwasm_std::{
 
 use crate::types::{state::CHANNEL_STATE, ContractError};
 
-use super::types::packet::acknowledgement::AcknowledgementData;
+use super::types::{events, packet::acknowledgement::AcknowledgementData};
 
 /// Implements the IBC module's `OnAcknowledgementPacket` handler.
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -18,8 +18,8 @@ pub fn ibc_packet_ack(
 ) -> Result<IbcBasicResponse, ContractError> {
     // This lets the ICA controller know whether or not the sent transactions succeeded.
     match from_binary(&ack.acknowledgement.data)? {
-        AcknowledgementData::Result(_resp) => ibc_packet_ack::success(deps),
-        AcknowledgementData::Error(_err) => ibc_packet_ack::error(deps),
+        AcknowledgementData::Result(res) => ibc_packet_ack::success(deps, ack.original_packet, res),
+        AcknowledgementData::Error(err) => ibc_packet_ack::error(deps, ack.original_packet, err),
     }
 }
 
@@ -55,29 +55,40 @@ pub fn ibc_packet_receive(
 }
 
 mod ibc_packet_ack {
+    use cosmwasm_std::{Binary, IbcPacket};
+
     use crate::types::state::CALLBACK_COUNTER;
 
     use super::*;
 
     /// Handles the successful acknowledgement of an ica packet. This means that the
     /// transaction was successfully executed on the host chain.
-    pub fn success(deps: DepsMut) -> Result<IbcBasicResponse, ContractError> {
+    pub fn success(
+        deps: DepsMut,
+        packet: IbcPacket,
+        res: Binary,
+    ) -> Result<IbcBasicResponse, ContractError> {
         // Handle the success case. You need not deserialize the response.
         CALLBACK_COUNTER.update(deps.storage, |mut counter| -> Result<_, ContractError> {
             counter.success();
             Ok(counter)
         })?;
-        Ok(IbcBasicResponse::default())
+        Ok(IbcBasicResponse::default()
+            .add_event(events::acknowledge_packet::success(&packet, &res)))
     }
 
     /// Handles the unsuccessful acknowledgement of an ica packet. This means that the
     /// transaction failed to execute on the host chain.
-    pub fn error(deps: DepsMut) -> Result<IbcBasicResponse, ContractError> {
+    pub fn error(
+        deps: DepsMut,
+        packet: IbcPacket,
+        err: String,
+    ) -> Result<IbcBasicResponse, ContractError> {
         // Handle the error.
         CALLBACK_COUNTER.update(deps.storage, |mut counter| -> Result<_, ContractError> {
             counter.error();
             Ok(counter)
         })?;
-        Ok(IbcBasicResponse::default())
+        Ok(IbcBasicResponse::default().add_event(events::acknowledge_packet::error(&packet, &err)))
     }
 }
