@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -263,11 +264,11 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 	// Create string message:
 	customMsg := types.NewSendCustomIcaMessagesMsg(wasmd.Config().EncodingConfig.Codec, []sdk.Msg{proposalMsg, depositMsg}, nil, nil)
 
-	// Execute them:
+	// Execute the contract:
 	_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, customMsg)
 	s.Require().NoError(err)
 
-	err = testutil.WaitForBlocks(ctx, 4, wasmd, simd)
+	err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 	s.Require().NoError(err)
 
 	// Check if contract callbacks were executed:
@@ -286,6 +287,28 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 	s.Require().Equal(simd.Config().Denom, proposal.TotalDeposit[0].Denom)
 	s.Require().Equal(fmt.Sprint(10000000+5000), proposal.TotalDeposit[0].Amount)
 	// We do not check title and description of the proposal because this is a legacy proposal.
+
+	// Test erroneous callback:
+	// Send incorrect custom ICA messages through the contract:
+	badMessage := base64.StdEncoding.EncodeToString([]byte("bad message"))
+	badCustomMsg := `{"send_custom_ica_messages":{"messages":["` + badMessage + `"]}}`
+
+	// Execute the contract:
+	_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, badCustomMsg)
+	s.Require().NoError(err)
+
+	err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+	s.Require().NoError(err)
+
+	// Check if contract callbacks were executed:
+	err = wasmd.QueryContract(ctx, contractAddr, types.NewGetCallbackCounterQueryMsg(), &queryResp)
+	s.Require().NoError(err)
+
+	callbackCounter, err = queryResp.GetCallbackCounter()
+	s.Require().NoError(err)
+
+	s.Require().Equal(uint64(2), callbackCounter.Success)
+	s.Require().Equal(uint64(1), callbackCounter.Error)
 }
 
 // toJSONString returns a string representation of the given value
