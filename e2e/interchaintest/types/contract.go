@@ -28,4 +28,3 @@ type ContractChannelState struct {
 func (c *ContractChannelState) IsOpen() bool {
 	return c.ChannelStatus == "STATE_OPEN"
 }
-

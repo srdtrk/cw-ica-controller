@@ -257,7 +257,7 @@ func TestIcaControllerContract(t *testing.T) {
 	require.NoError(t, err)
 	contractState, err := queryResp.GetContractState()
 	require.NoError(t, err)
-	
+
 	require.Equal(t, wasmdUser.FormattedAddress(), contractState.Admin)
 	require.Equal(t, wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
 
@@ -267,14 +267,14 @@ func TestIcaControllerContract(t *testing.T) {
 	// Fund the ICA address:
 	err = simd.SendFunds(ctx, simdUser.KeyName(), ibc.WalletAmount{
 		Address: icaAddress,
-		Denom:  simd.Config().Denom,
-		Amount: 1000000000,
+		Denom:   simd.Config().Denom,
+		Amount:  1000000000,
 	})
 	require.NoError(t, err)
 
 	err = testutil.WaitForBlocks(ctx, 2, wasmd, simd)
 	require.NoError(t, err)
-	
+
 	// Take predefined action on the ICA through the contract:
 	_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, types.NewSendPredefinedActionMsg(simdUser.FormattedAddress()))
 	require.NoError(t, err)
@@ -284,7 +284,7 @@ func TestIcaControllerContract(t *testing.T) {
 
 	icaBalance, err := simd.GetBalance(ctx, icaAddress, simd.Config().Denom)
 	require.NoError(t, err)
-	require.Equal(t, int64(1000000000 - 100), icaBalance)
+	require.Equal(t, int64(1000000000-100), icaBalance)
 
 	// Check if contract callbacks were executed:
 	err = wasmd.QueryContract(ctx, contractAddr, types.NewGetCallbackCounterQueryMsg(), &queryResp)
