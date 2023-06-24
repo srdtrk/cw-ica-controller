@@ -32,7 +32,7 @@ import (
 func TestIcaControllerContract(t *testing.T) {
 	// Parallel indicates that this test is safe for parallel execution.
 	// This is true since this is the only test in this file.
-	// t.Parallel()
+	t.Parallel()
 
 	client, network := interchaintest.DockerSetup(t)
 
@@ -279,7 +279,7 @@ func TestIcaControllerContract(t *testing.T) {
 	_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, types.NewSendPredefinedActionMsg(simdUser.FormattedAddress()))
 	require.NoError(t, err)
 
-	err = testutil.WaitForBlocks(ctx, 3, wasmd, simd)
+	err = testutil.WaitForBlocks(ctx, 4, wasmd, simd)
 	require.NoError(t, err)
 
 	icaBalance, err := simd.GetBalance(ctx, icaAddress, simd.Config().Denom)
@@ -318,11 +318,14 @@ func TestIcaControllerContract(t *testing.T) {
 		Amount:     sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10000000))),
 	}
 
+	// Create string message:
+	customMsg := types.NewSendCustomIcaMessagesMsg(wasmd.Config().EncodingConfig.Codec, []sdk.Msg{proposalMsg, depositMsg}, nil, nil)
+	t.Logf("batchedMsgs: %s", customMsg)
+
 	// Execute them:
-	_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, types.NewSendCustomIcaMessagesMsg(wasmd.Config().EncodingConfig.Codec, []sdk.Msg{proposalMsg, depositMsg}, nil, nil))
+	_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, customMsg)
 	require.NoError(t, err)
 
-	// waiting for 3 blocks not enough
 	err = testutil.WaitForBlocks(ctx, 4, wasmd, simd)
 	require.NoError(t, err)
 
