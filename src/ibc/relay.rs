@@ -73,13 +73,12 @@ mod ibc_packet_ack {
         packet: IbcPacket,
         res: Binary,
     ) -> Result<IbcBasicResponse, ContractError> {
-        // Handle the success case. You need not deserialize the response.
+        // Handle the success case.
         CALLBACK_COUNTER.update(deps.storage, |mut counter| -> Result<_, ContractError> {
             counter.success();
             Ok(counter)
         })?;
-        Ok(IbcBasicResponse::default()
-            .add_event(events::acknowledge_packet::success(&packet, &res)))
+        Ok(IbcBasicResponse::default().add_event(events::packet_ack::success(&packet, &res)))
     }
 
     /// Handles the unsuccessful acknowledgement of an ica packet. This means that the
@@ -94,6 +93,6 @@ mod ibc_packet_ack {
             counter.error();
             Ok(counter)
         })?;
-        Ok(IbcBasicResponse::default().add_event(events::acknowledge_packet::error(&packet, &err)))
+        Ok(IbcBasicResponse::default().add_event(events::packet_ack::error(&packet, &err)))
     }
 }

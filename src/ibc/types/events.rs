@@ -3,19 +3,21 @@
 //! This module defines the events emitted by the ICA controller contract.
 //!
 //! The core modules will emit events when certain actions occur whether or not
-//! the ICA controller contract emits them. This module defines the events that
-//! the ICA controller emits. This is why:
+//! the ICA controller contract emits them. This module only defines the events
+//! that add more information to the events emitted by the core modules.
+//!
+//! Therefore;
 //!
 //! - We need not emit events during the handshake.
-//! - We need not emit events during the packet sending.
+//! - We need not emit events during packet sending.
 //! - When we emit events associated with packets, it suffices to add attributes
 //!   that uniquely identify the packet, and only add attributes that are relevant
-//!   to the ICA controller on top of that.
+//!   to the ICA controller on top of those attributes.
 
 use cosmwasm_std::{Event, IbcPacket};
 
 /// contains the events emitted during packet acknowledgement.
-pub mod acknowledge_packet {
+pub mod packet_ack {
     use cosmwasm_std::Binary;
 
     use super::*;
