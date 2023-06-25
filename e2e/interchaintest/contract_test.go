@@ -59,22 +59,19 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 	simdConnection := simdConnections[0]
 
 	// Upload and Instantiate the contract on wasmd:
-	codeId, err := wasmd.StoreContract(ctx, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
-	s.Require().NoError(err)
-	contractAddr, err := wasmd.InstantiateContract(ctx, wasmdUser.KeyName(), codeId, types.NewInstantiateMsg(nil), true)
+	contract, err := types.StoreAndInstantiateNewContract(ctx, wasmd, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
 
-	contractPort := "wasm." + contractAddr
+	contractPort := contract.Port()
 
 	var icaAddress string
-	queryResp := types.QueryResponse{}
 	s.Run("TestChannelHandshakeSuccess", func() {
 		version := fmt.Sprintf(`{"version":"ics27-1","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"json","tx_type":"sdk_multi_msg"}`, wasmdConnection.ID, simdConnection.ID)
 		err = relayer.CreateChannel(ctx, s.ExecRep, s.PathName, ibc.CreateChannelOptions{
 			SourcePortName: contractPort,
 			DestPortName:   icatypes.HostPortID,
 			Order:          ibc.Ordered,
-			// asking the contract to generate the version by passing an empty string
+			// cannot use an empty version here, see README
 			Version: version,
 		})
 		s.Require().NoError(err)
@@ -111,10 +108,7 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 		s.Require().Equal(channeltypes.OPEN.String(), simdChannel.State)
 
 		// Check contract's channel state
-		err = wasmd.QueryContract(ctx, contractAddr, types.NewGetChannelQueryMsg(), &queryResp)
-		s.Require().NoError(err)
-
-		contractChannelState, err := queryResp.GetChannelState()
+		contractChannelState, err := contract.QueryChannelState(ctx)
 		s.Require().NoError(err)
 
 		s.T().Logf("contract's channel store after handshake: %s", toJSONString(contractChannelState))
@@ -129,9 +123,7 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 		s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
 
 		// Check contract state
-		err = wasmd.QueryContract(ctx, contractAddr, types.NewGetContractStateQueryMsg(), &queryResp)
-		s.Require().NoError(err)
-		contractState, err := queryResp.GetContractState()
+		contractState, err := contract.QueryContractState(ctx)
 		s.Require().NoError(err)
 
 		s.Require().Equal(wasmdUser.FormattedAddress(), contractState.Admin)
@@ -154,7 +146,7 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 	s.Require().NoError(err)
 
 	s.Run("TestSendPredefinedActionSuccess", func() {
-		_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, types.NewSendPredefinedActionMsg(simdUser.FormattedAddress()))
+		err = contract.ExecPredefinedAction(ctx, wasmdUser.KeyName(), simdUser.FormattedAddress())
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 6, wasmd, simd)
@@ -165,10 +157,7 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 		s.Require().Equal(int64(1000000000-100), icaBalance)
 
 		// Check if contract callbacks were executed:
-		err = wasmd.QueryContract(ctx, contractAddr, types.NewGetCallbackCounterQueryMsg(), &queryResp)
-		s.Require().NoError(err)
-
-		callbackCounter, err := queryResp.GetCallbackCounter()
+		callbackCounter, err := contract.QueryCallbackCounter(ctx)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)
@@ -197,20 +186,15 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 			Amount:     sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10000000))),
 		}
 
-		// Create string message:
-		customMsg := types.NewSendCustomIcaMessagesMsg(wasmd.Config().EncodingConfig.Codec, []sdk.Msg{proposalMsg, depositMsg}, nil, nil)
 		// Execute the contract:
-		_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, customMsg)
+		err = contract.ExecCustomIcaMessages(ctx, wasmdUser.KeyName(), []sdk.Msg{proposalMsg, depositMsg}, nil, nil)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-		err = wasmd.QueryContract(ctx, contractAddr, types.NewGetCallbackCounterQueryMsg(), &queryResp)
-		s.Require().NoError(err)
-
-		callbackCounter, err := queryResp.GetCallbackCounter()
+		callbackCounter, err := contract.QueryCallbackCounter(ctx)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(2), callbackCounter.Success)
@@ -231,17 +215,14 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 		badCustomMsg := `{"send_custom_ica_messages":{"messages":["` + badMessage + `"]}}`
 
 		// Execute the contract:
-		_, err = wasmd.ExecuteContract(ctx, wasmdUser.KeyName(), contractAddr, badCustomMsg)
+		err = contract.Execute(ctx, wasmdUser.KeyName(), badCustomMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-		err = wasmd.QueryContract(ctx, contractAddr, types.NewGetCallbackCounterQueryMsg(), &queryResp)
-		s.Require().NoError(err)
-
-		callbackCounter, err := queryResp.GetCallbackCounter()
+		callbackCounter, err := contract.QueryCallbackCounter(ctx)
 		s.Require().NoError(err)
 		s.Require().Equal(uint64(2), callbackCounter.Success)
 		s.Require().Equal(uint64(1), callbackCounter.Error)
