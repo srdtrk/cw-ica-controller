@@ -6,7 +6,7 @@ The e2e tests are built using the [interchaintest](https://github.com/strangelov
 
 ```text
 cd interchaintest/
-go test -v contract_test.go
+go test -v .
 ```
 
 ## In the CI
