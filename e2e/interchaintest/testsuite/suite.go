@@ -24,6 +24,8 @@ type TestSuite struct {
 	ChainB       *cosmos.CosmosChain
 	UserA        ibc.Wallet
 	UserB        ibc.Wallet
+	ChainAConnID string
+	ChainBConnID string
 	dockerClient *dockerclient.Client
 	Relayer      ibc.Relayer
 	network      string
@@ -111,7 +113,8 @@ func (s *TestSuite) SetupSuite(ctx context.Context, chainSpecs []*interchaintest
 	s.Require().NoError(err)
 	s.Require().Equal(1, len(connections))
 	wasmdConnection := connections[0]
-	s.Require().Equal("connection-0", wasmdConnection.ID)
+	s.Require().NotEqual("connection-localhost", wasmdConnection.ID)
+	s.ChainAConnID = wasmdConnection.ID
 
 	// Query for the newly created connection in simd
 	connections, err = s.Relayer.GetConnections(ctx, s.ExecRep, s.ChainB.Config().ChainID)
@@ -119,7 +122,8 @@ func (s *TestSuite) SetupSuite(ctx context.Context, chainSpecs []*interchaintest
 	// localhost is always a connection in main (next) version of ibc-go
 	s.Require().Equal(2, len(connections))
 	simdConnection := connections[0]
-	s.Require().Equal("connection-0", simdConnection.ID)
+	s.Require().NotEqual("connection-localhost", simdConnection.ID)
+	s.ChainBConnID = simdConnection.ID
 
 	// Start the relayer and set the cleanup function.
 	err = s.Relayer.StartRelayer(ctx, s.ExecRep, s.PathName)

@@ -48,15 +48,8 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 	simd := s.ChainB
 	wasmdUser := s.UserA
 	simdUser := s.UserB
-
-	// Query for the newly created connection in wasmd and simd
-	wasmdConnections, err := s.Relayer.GetConnections(ctx, s.ExecRep, s.ChainA.Config().ChainID)
-	s.Require().NoError(err)
-	wasmdConnection := wasmdConnections[0]
-
-	simdConnections, err := s.Relayer.GetConnections(ctx, s.ExecRep, s.ChainB.Config().ChainID)
-	s.Require().NoError(err)
-	simdConnection := simdConnections[0]
+	wasmdConnectionID := s.ChainAConnID
+	simdConnectionID := s.ChainBConnID
 
 	// Upload and Instantiate the contract on wasmd:
 	contract, err := types.StoreAndInstantiateNewContract(ctx, wasmd, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
@@ -64,9 +57,10 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 
 	contractPort := contract.Port()
 
+	// icaAddress variable is assigned in the handshake test
 	var icaAddress string
 	s.Run("TestChannelHandshakeSuccess", func() {
-		version := fmt.Sprintf(`{"version":"ics27-1","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"json","tx_type":"sdk_multi_msg"}`, wasmdConnection.ID, simdConnection.ID)
+		version := fmt.Sprintf(`{"version":"ics27-1","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"json","tx_type":"sdk_multi_msg"}`, wasmdConnectionID, simdConnectionID)
 		err = relayer.CreateChannel(ctx, s.ExecRep, s.PathName, ibc.CreateChannelOptions{
 			SourcePortName: contractPort,
 			DestPortName:   icatypes.HostPortID,
@@ -98,7 +92,7 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 		// clone of the successful channel at index 0. I will log it for now.
 		s.Require().Greater(len(simdChannels), 0)
 		if len(simdChannels) > 1 {
-			s.T().Logf("extra simd channel detected: %s", toJSONString(simdChannels[1]))
+			s.T().Logf("extra simd channels detected: %s", toJSONString(simdChannels))
 		}
 
 		simdChannel := simdChannels[0]
