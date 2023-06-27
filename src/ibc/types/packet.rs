@@ -11,7 +11,7 @@ use crate::types::ContractError;
 pub const DEFAULT_TIMEOUT_SECONDS: u64 = 600;
 
 /// InterchainAccountPacketData is comprised of a raw transaction, type of transaction and optional memo field.
-/// Currently, the host only supports serialized [`IcaCosmosTx`](ica_cosmos_tx::IcaCosmosTx) messages as raw transactions.
+/// Currently, the host only supports json (or proto) serialized Any messages as raw transactions.
 #[cw_serde]
 pub struct InterchainAccountPacketData {
     /// Type defines a classification of message issued from a controller
@@ -25,7 +25,7 @@ pub struct InterchainAccountPacketData {
     #[serde(rename = "type")]
     pub r#type: u32,
     /// Data is the raw transaction data that will be sent to the interchain accounts host.
-    /// Currently, the host only supports serialized [`IcaCosmosTx`](ica_cosmos_tx::IcaCosmosTx) messages.
+    /// Currently, the host only supports json (or proto) serialized Any messages.
     pub data: Vec<u8>,
     /// Memo is an optional field that can be used to attach a memo to a transaction.
     /// It is also caught by some ibc middleware to perform additional actions.
