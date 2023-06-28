@@ -63,7 +63,7 @@ impl IcaMetadata {
             // so handshake will fail in non-test environments if this function is used
             host_connection_id: channel.connection_id.clone(),
             address: "".to_string(),
-            encoding: "json".to_string(),
+            encoding: "proto3json".to_string(),
             tx_type: "sdk_multi_msg".to_string(),
         }
     }
@@ -86,7 +86,7 @@ impl IcaMetadata {
         if !self.address.is_empty() {
             validate_ica_address(&self.address)?;
         }
-        if self.encoding != "json" {
+        if self.encoding != "proto3json" {
             return Err(ContractError::UnsupportedCodec(self.encoding.clone()));
         }
         if self.tx_type != "sdk_multi_msg" {
@@ -165,7 +165,7 @@ mod tests {
             "connection-0".to_string(),
             "connection-1".to_string(),
             "".to_string(),
-            "json".to_string(),
+            "proto3json".to_string(),
             "sdk_multi_msg".to_string(),
         )
     }
@@ -212,13 +212,13 @@ mod tests {
         let serialized_metadata = metadata.to_string();
         assert_eq!(
             serialized_metadata,
-            r#"{"version":"ics27-1","controller_connection_id":"connection-0","host_connection_id":"connection-1","address":"","encoding":"json","tx_type":"sdk_multi_msg"}"#
+            r#"{"version":"ics27-1","controller_connection_id":"connection-0","host_connection_id":"connection-1","address":"","encoding":"proto3json","tx_type":"sdk_multi_msg"}"#
         );
     }
 
     #[test]
     fn test_deserialize_str() {
-        let serialized_metadata = r#"{"version":"ics27-1","controller_connection_id":"connection-0","host_connection_id":"connection-1","address":"","encoding":"json","tx_type":"sdk_multi_msg"}"#;
+        let serialized_metadata = r#"{"version":"ics27-1","controller_connection_id":"connection-0","host_connection_id":"connection-1","address":"","encoding":"proto3json","tx_type":"sdk_multi_msg"}"#;
         let metadata: IcaMetadata = serde_json_wasm::from_str(serialized_metadata).unwrap();
         assert_eq!(metadata, mock_metadata());
     }
@@ -226,14 +226,14 @@ mod tests {
     #[test]
     fn test_is_previous_version_equal_success() {
         let metadata = mock_metadata();
-        let previous_version = r#"{"version":"ics27-1","controller_connection_id":"connection-0","host_connection_id":"connection-1","address":"different","encoding":"json","tx_type":"sdk_multi_msg"}"#;
+        let previous_version = r#"{"version":"ics27-1","controller_connection_id":"connection-0","host_connection_id":"connection-1","address":"different","encoding":"proto3json","tx_type":"sdk_multi_msg"}"#;
         assert!(metadata.is_previous_version_equal(previous_version));
     }
 
     #[test]
     fn test_is_previous_version_equal_failure() {
         let metadata = mock_metadata();
-        let previous_version = r#"{"version":"ics27-2","controller_connection_id":"connection-123","host_connection_id":"connection-11","address":"different","encoding":"json","tx_type":"sdk_multi_msg"}"#;
+        let previous_version = r#"{"version":"ics27-2","controller_connection_id":"connection-123","host_connection_id":"connection-11","address":"different","encoding":"proto3json","tx_type":"sdk_multi_msg"}"#;
         assert!(!metadata.is_previous_version_equal(previous_version));
     }
 }

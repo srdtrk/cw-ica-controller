@@ -60,7 +60,7 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 	// icaAddress variable is assigned in the handshake test
 	var icaAddress string
 	s.Run("TestChannelHandshakeSuccess", func() {
-		version := fmt.Sprintf(`{"version":"ics27-1","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"json","tx_type":"sdk_multi_msg"}`, wasmdConnectionID, simdConnectionID)
+		version := fmt.Sprintf(`{"version":"ics27-1","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"proto3json","tx_type":"sdk_multi_msg"}`, wasmdConnectionID, simdConnectionID)
 		err = relayer.CreateChannel(ctx, s.ExecRep, s.PathName, ibc.CreateChannelOptions{
 			SourcePortName: contractPort,
 			DestPortName:   icatypes.HostPortID,
