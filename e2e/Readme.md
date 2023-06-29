@@ -12,7 +12,7 @@ All contract tests are located in `interchaintest/contract_test.go` file. Curren
 
 (These three tests used to be one monolithic test, but they were split into three in order to run them in parallel in the CI.)
 
-## Running the tests
+To run the tests locally, run the following commands from this directory:
 
 ```text
 cd interchaintest/
