@@ -16,6 +16,7 @@ type ContractIcaInfo struct {
 type ContractCallbackCounter struct {
 	Success uint64 `json:"success"`
 	Error   uint64 `json:"error"`
+	Timeout uint64 `json:"timeout"`
 }
 
 // ContractChannelState is used to represent the channel state in the contract's storage

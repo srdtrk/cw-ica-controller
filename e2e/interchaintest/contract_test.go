@@ -156,6 +156,7 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
+		s.Require().Equal(uint64(0), callbackCounter.Timeout)
 	})
 
 	s.Run("TestSendCustomIcaMessagesSuccess", func() {
@@ -220,6 +221,47 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 		s.Require().NoError(err)
 		s.Require().Equal(uint64(2), callbackCounter.Success)
 		s.Require().Equal(uint64(1), callbackCounter.Error)
+		s.Require().Equal(uint64(0), callbackCounter.Timeout)
+	})
+
+	s.Run("TestTimeout", func() {
+		// We will send a message to the host that will timeout after 1 seconds.
+		// You cannot use 0 seconds because block timestamp will be greater than the timeout timestamp which is not allowed.
+		// Host will not be able to respond to this message in time.
+
+		timeout := uint64(1)
+		customMsg := fmt.Sprintf(`{"send_custom_ica_messages":{"messages":[], "timeout_seconds":%d}}`, timeout)
+
+		// Execute the contract:
+		err = contract.Execute(ctx, wasmdUser.KeyName(), customMsg)
+		s.Require().NoError(err)
+
+		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+		s.Require().NoError(err)
+
+		// Check if channel was closed:
+		wasmdChannels, err := relayer.GetChannels(ctx, s.ExecRep, wasmd.Config().ChainID)
+		s.Require().NoError(err)
+		s.Require().Equal(1, len(wasmdChannels))
+		s.Require().Equal(channeltypes.CLOSED.String(), wasmdChannels[0].State)
+
+		simdChannels, err := relayer.GetChannels(ctx, s.ExecRep, simd.Config().ChainID)
+		s.Require().NoError(err)
+		// sometimes there is a redundant channel for unknown reasons
+		s.Require().Greater(len(simdChannels), 0)
+		s.Require().Equal(channeltypes.CLOSED.String(), simdChannels[0].State)
+
+		// Check if contract callbacks were executed:
+		callbackCounter, err := contract.QueryCallbackCounter(ctx)
+		s.Require().NoError(err)
+		s.Require().Equal(uint64(2), callbackCounter.Success)
+		s.Require().Equal(uint64(1), callbackCounter.Error)
+		s.Require().Equal(uint64(1), callbackCounter.Timeout)
+
+		// Check if contract channel state was updated:
+		contractChannelState, err := contract.QueryChannelState(ctx)
+		s.Require().NoError(err)
+		s.Require().Equal(channeltypes.CLOSED.String(), contractChannelState.ChannelStatus)
 	})
 }
 
