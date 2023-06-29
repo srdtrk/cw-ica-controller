@@ -27,7 +27,7 @@ jobs:
           - TestIcaContractChannelHandshake
           - TestIcaContractExecution
           - TestIcaContractTimeoutPacket
-    name: Contract Test - ${{ matrix.test }}
+    name: ${{ matrix.test }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
