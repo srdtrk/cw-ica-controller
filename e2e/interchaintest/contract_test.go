@@ -28,6 +28,39 @@ import (
 
 type ContractTestSuite struct {
 	mysuite.TestSuite
+
+	Contract   *types.Contract
+	IcaAddress string
+}
+
+// SetupContractAndChannel starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
+// sets up the contract and does the channel handshake for the contract test suite.
+func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context) {
+	// This starts the chains, relayer, creates the user accounts, and creates the ibc clients and connections.
+	s.SetupSuite(ctx, chainSpecs)
+
+	var err error
+	// Upload and Instantiate the contract on wasmd:
+	s.Contract, err = types.StoreAndInstantiateNewContract(ctx, s.ChainA, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
+	s.Require().NoError(err)
+
+	version := fmt.Sprintf(`{"version":"ics27-1","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"proto3json","tx_type":"sdk_multi_msg"}`, s.ChainAConnID, s.ChainBConnID)
+	err = s.Relayer.CreateChannel(ctx, s.ExecRep, s.PathName, ibc.CreateChannelOptions{
+		SourcePortName: s.Contract.Port(),
+		DestPortName:   icatypes.HostPortID,
+		Order:          ibc.Ordered,
+		// cannot use an empty version here, see README
+		Version: version,
+	})
+	s.Require().NoError(err)
+
+	// Wait for the channel to get set up
+	err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
+	s.Require().NoError(err)
+
+	contractState, err := s.Contract.QueryContractState(ctx)
+	s.Require().NoError(err)
+	s.IcaAddress = contractState.IcaInfo.IcaAddress
 }
 
 func TestWithContractTestSuite(t *testing.T) {
@@ -37,47 +70,25 @@ func TestWithContractTestSuite(t *testing.T) {
 func (s *ContractTestSuite) TestIcaContractChannelHandshake() {
 	ctx := context.Background()
 
-	// This starts the chains, relayer, creates the user accounts, and creates the ibc clients and connections.
-	s.SetupSuite(ctx, chainSpecs)
-
-	relayer := s.Relayer
-	wasmd := s.ChainA
-	simd := s.ChainB
+	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
+	// sets up the contract and does the channel handshake for the contract test suite.
+	s.SetupContractTestSuite(ctx)
+	wasmd, simd := s.ChainA, s.ChainB
 	wasmdUser := s.UserA
-	wasmdConnectionID := s.ChainAConnID
-	simdConnectionID := s.ChainBConnID
-
-	// Upload and Instantiate the contract on wasmd:
-	contract, err := types.StoreAndInstantiateNewContract(ctx, wasmd, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
-	s.Require().NoError(err)
 
 	s.Run("TestChannelHandshakeSuccess", func() {
-		version := fmt.Sprintf(`{"version":"ics27-1","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"proto3json","tx_type":"sdk_multi_msg"}`, wasmdConnectionID, simdConnectionID)
-		err = relayer.CreateChannel(ctx, s.ExecRep, s.PathName, ibc.CreateChannelOptions{
-			SourcePortName: contract.Port(),
-			DestPortName:   icatypes.HostPortID,
-			Order:          ibc.Ordered,
-			// cannot use an empty version here, see README
-			Version: version,
-		})
-		s.Require().NoError(err)
-
-		// Wait for the channel to get set up
-		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
-		s.Require().NoError(err)
-
 		// Test if the handshake was successful
-		wasmdChannels, err := relayer.GetChannels(ctx, s.ExecRep, wasmd.Config().ChainID)
+		wasmdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, wasmd.Config().ChainID)
 		s.Require().NoError(err)
 		s.Require().Equal(1, len(wasmdChannels))
 
 		wasmdChannel := wasmdChannels[0]
 		s.T().Logf("wasmd channel: %s", toJSONString(wasmdChannel))
-		s.Require().Equal(contract.Port(), wasmdChannel.PortID)
+		s.Require().Equal(s.Contract.Port(), wasmdChannel.PortID)
 		s.Require().Equal(icatypes.HostPortID, wasmdChannel.Counterparty.PortID)
 		s.Require().Equal(channeltypes.OPEN.String(), wasmdChannel.State)
 
-		simdChannels, err := relayer.GetChannels(ctx, s.ExecRep, simd.Config().ChainID)
+		simdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, simd.Config().ChainID)
 		s.Require().NoError(err)
 		// I don't know why sometimes an extra channel is created in simd.
 		// this is not related to the localhost connection, and is a failed
@@ -90,11 +101,11 @@ func (s *ContractTestSuite) TestIcaContractChannelHandshake() {
 		simdChannel := simdChannels[0]
 		s.T().Logf("simd channel state: %s", toJSONString(simdChannel.State))
 		s.Require().Equal(icatypes.HostPortID, simdChannel.PortID)
-		s.Require().Equal(contract.Port(), simdChannel.Counterparty.PortID)
+		s.Require().Equal(s.Contract.Port(), simdChannel.Counterparty.PortID)
 		s.Require().Equal(channeltypes.OPEN.String(), simdChannel.State)
 
 		// Check contract's channel state
-		contractChannelState, err := contract.QueryChannelState(ctx)
+		contractChannelState, err := s.Contract.QueryChannelState(ctx)
 		s.Require().NoError(err)
 
 		s.T().Logf("contract's channel store after handshake: %s", toJSONString(contractChannelState))
@@ -109,7 +120,7 @@ func (s *ContractTestSuite) TestIcaContractChannelHandshake() {
 		s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
 
 		// Check contract state
-		contractState, err := contract.QueryContractState(ctx)
+		contractState, err := s.Contract.QueryContractState(ctx)
 		s.Require().NoError(err)
 
 		s.Require().Equal(wasmdUser.FormattedAddress(), contractState.Admin)
@@ -120,51 +131,28 @@ func (s *ContractTestSuite) TestIcaContractChannelHandshake() {
 func (s *ContractTestSuite) TestIcaContractExecution() {
 	ctx := context.Background()
 
-	// This starts the chains, relayer, creates the user accounts, and creates the ibc clients and connections.
-	s.SetupSuite(ctx, chainSpecs)
+	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
+	// sets up the contract and does the channel handshake for the contract test suite.
+	s.SetupContractTestSuite(ctx)
+	wasmd, simd := s.ChainA, s.ChainB
+	wasmdUser, simdUser := s.UserA, s.UserB
 
-	relayer := s.Relayer
-	wasmd := s.ChainA
-	simd := s.ChainB
-	wasmdUser := s.UserA
-	simdUser := s.UserB
-	wasmdConnectionID := s.ChainAConnID
-	simdConnectionID := s.ChainBConnID
-
-	// Upload and Instantiate the contract on wasmd:
-	contract, err := types.StoreAndInstantiateNewContract(ctx, wasmd, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
-	s.Require().NoError(err)
-
-	version := fmt.Sprintf(`{"version":"ics27-1","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"proto3json","tx_type":"sdk_multi_msg"}`, wasmdConnectionID, simdConnectionID)
-	err = relayer.CreateChannel(ctx, s.ExecRep, s.PathName, ibc.CreateChannelOptions{
-		SourcePortName: contract.Port(),
-		DestPortName:   icatypes.HostPortID,
-		Order:          ibc.Ordered,
-		// cannot use an empty version here, see README
-		Version: version,
-	})
-	s.Require().NoError(err)
-
-	// Get ICA address:
-	contractState, err := contract.QueryContractState(ctx)
-	s.Require().NoError(err)
-	icaAddress := contractState.IcaInfo.IcaAddress
 	// Fund the ICA address:
-	s.FundAddressChainB(ctx, icaAddress)
+	s.FundAddressChainB(ctx, s.IcaAddress)
 
 	s.Run("TestSendPredefinedActionSuccess", func() {
-		err = contract.ExecPredefinedAction(ctx, wasmdUser.KeyName(), simdUser.FormattedAddress())
+		err := s.Contract.ExecPredefinedAction(ctx, wasmdUser.KeyName(), simdUser.FormattedAddress())
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 6, wasmd, simd)
 		s.Require().NoError(err)
 
-		icaBalance, err := simd.GetBalance(ctx, icaAddress, simd.Config().Denom)
+		icaBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(int64(1000000000-100), icaBalance)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := contract.QueryCallbackCounter(ctx)
+		callbackCounter, err := s.Contract.QueryCallbackCounter(ctx)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)
@@ -184,25 +172,25 @@ func (s *ContractTestSuite) TestIcaContractExecution() {
 		proposalMsg := &govtypes.MsgSubmitProposal{
 			Content:        protoAny,
 			InitialDeposit: sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(5000))),
-			Proposer:       icaAddress,
+			Proposer:       s.IcaAddress,
 		}
 
 		// Create deposit message:
 		depositMsg := &govtypes.MsgDeposit{
 			ProposalId: 1,
-			Depositor:  icaAddress,
+			Depositor:  s.IcaAddress,
 			Amount:     sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10000000))),
 		}
 
 		// Execute the contract:
-		err = contract.ExecCustomIcaMessages(ctx, wasmdUser.KeyName(), []sdk.Msg{proposalMsg, depositMsg}, nil, nil)
+		err = s.Contract.ExecCustomIcaMessages(ctx, wasmdUser.KeyName(), []sdk.Msg{proposalMsg, depositMsg}, nil, nil)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := contract.QueryCallbackCounter(ctx)
+		callbackCounter, err := s.Contract.QueryCallbackCounter(ctx)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(2), callbackCounter.Success)
@@ -223,14 +211,14 @@ func (s *ContractTestSuite) TestIcaContractExecution() {
 		badCustomMsg := `{"send_custom_ica_messages":{"messages":["` + badMessage + `"]}}`
 
 		// Execute the contract:
-		err = contract.Execute(ctx, wasmdUser.KeyName(), badCustomMsg)
+		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), badCustomMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := contract.QueryCallbackCounter(ctx)
+		callbackCounter, err := s.Contract.QueryCallbackCounter(ctx)
 		s.Require().NoError(err)
 		s.Require().Equal(uint64(2), callbackCounter.Success)
 		s.Require().Equal(uint64(1), callbackCounter.Error)
@@ -241,36 +229,14 @@ func (s *ContractTestSuite) TestIcaContractExecution() {
 func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 	ctx := context.Background()
 
-	// This starts the chains, relayer, creates the user accounts, and creates the ibc clients and connections.
-	s.SetupSuite(ctx, chainSpecs)
-
-	relayer := s.Relayer
-	wasmd := s.ChainA
-	simd := s.ChainB
+	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
+	// sets up the contract and does the channel handshake for the contract test suite.
+	s.SetupContractTestSuite(ctx)
+	wasmd, simd := s.ChainA, s.ChainB
 	wasmdUser := s.UserA
-	wasmdConnectionID := s.ChainAConnID
-	simdConnectionID := s.ChainBConnID
 
-	// Upload and Instantiate the contract on wasmd:
-	contract, err := types.StoreAndInstantiateNewContract(ctx, wasmd, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
-	s.Require().NoError(err)
-
-	version := fmt.Sprintf(`{"version":"ics27-1","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"proto3json","tx_type":"sdk_multi_msg"}`, wasmdConnectionID, simdConnectionID)
-	err = relayer.CreateChannel(ctx, s.ExecRep, s.PathName, ibc.CreateChannelOptions{
-		SourcePortName: contract.Port(),
-		DestPortName:   icatypes.HostPortID,
-		Order:          ibc.Ordered,
-		// cannot use an empty version here, see README
-		Version: version,
-	})
-	s.Require().NoError(err)
-
-	// Get ICA address:
-	contractState, err := contract.QueryContractState(ctx)
-	s.Require().NoError(err)
-	icaAddress := contractState.IcaInfo.IcaAddress
 	// Fund the ICA address:
-	s.FundAddressChainB(ctx, icaAddress)
+	s.FundAddressChainB(ctx, s.IcaAddress)
 
 	s.Run("TestTimeout", func() {
 		// We will send a message to the host that will timeout after 3 seconds.
@@ -278,19 +244,19 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		// Host will not be able to respond to this message in time.
 
 		// Stop the relayer so that the host cannot respond to the message:
-		err = relayer.StopRelayer(ctx, s.ExecRep)
+		err := s.Relayer.StopRelayer(ctx, s.ExecRep)
 		s.Require().NoError(err)
 
 		timeout := uint64(3)
 		customMsg := fmt.Sprintf(`{"send_custom_ica_messages":{"messages":[], "timeout_seconds":%d}}`, timeout)
 
 		// Execute the contract:
-		err = contract.Execute(ctx, wasmdUser.KeyName(), customMsg)
+		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), customMsg)
 		s.Require().NoError(err)
 
 		// Start the relayer again after 3 seconds:
 		time.Sleep(10 * time.Second)
-		err = relayer.StartRelayer(ctx, s.ExecRep)
+		err = s.Relayer.StartRelayer(ctx, s.ExecRep)
 		s.Require().NoError(err)
 
 		// Wait until timeout acknoledgement is received:
@@ -298,26 +264,26 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		s.Require().NoError(err)
 
 		// Check if channel was closed:
-		wasmdChannels, err := relayer.GetChannels(ctx, s.ExecRep, wasmd.Config().ChainID)
+		wasmdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, wasmd.Config().ChainID)
 		s.Require().NoError(err)
 		s.Require().Equal(1, len(wasmdChannels))
 		s.Require().Equal(channeltypes.CLOSED.String(), wasmdChannels[0].State)
 
-		simdChannels, err := relayer.GetChannels(ctx, s.ExecRep, simd.Config().ChainID)
+		simdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, simd.Config().ChainID)
 		s.Require().NoError(err)
 		// sometimes there is a redundant channel for unknown reasons
 		s.Require().Greater(len(simdChannels), 0)
 		s.Require().Equal(channeltypes.CLOSED.String(), simdChannels[0].State)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := contract.QueryCallbackCounter(ctx)
+		callbackCounter, err := s.Contract.QueryCallbackCounter(ctx)
 		s.Require().NoError(err)
 		s.Require().Equal(uint64(0), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 		s.Require().Equal(uint64(1), callbackCounter.Timeout)
 
 		// Check if contract channel state was updated:
-		contractChannelState, err := contract.QueryChannelState(ctx)
+		contractChannelState, err := s.Contract.QueryChannelState(ctx)
 		s.Require().NoError(err)
 		s.Require().Equal(channeltypes.CLOSED.String(), contractChannelState.ChannelStatus)
 	})
