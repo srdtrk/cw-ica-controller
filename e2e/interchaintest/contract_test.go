@@ -226,19 +226,19 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 		// You cannot use 0 seconds because block timestamp will be greater than the timeout timestamp which is not allowed.
 		// Host will not be able to respond to this message in time.
 
-		timeout := uint64(3)
-		customMsg := fmt.Sprintf(`{"send_custom_ica_messages":{"messages":[], "timeout_seconds":%d}}`, timeout)
-
 		// Stop the relayer so that the host cannot respond to the message:
 		err = relayer.StopRelayer(ctx, s.ExecRep)
 		s.Require().NoError(err)
+
+		timeout := uint64(3)
+		customMsg := fmt.Sprintf(`{"send_custom_ica_messages":{"messages":[], "timeout_seconds":%d}}`, timeout)
 
 		// Execute the contract:
 		err = contract.Execute(ctx, wasmdUser.KeyName(), customMsg)
 		s.Require().NoError(err)
 
 		// Start the relayer again after 3 seconds:
-		time.Sleep(3 * time.Second)
+		time.Sleep(10 * time.Second)
 		err = relayer.StartRelayer(ctx, s.ExecRep)
 		s.Require().NoError(err)
 
