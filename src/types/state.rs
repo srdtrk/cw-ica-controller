@@ -89,6 +89,9 @@ mod contract {
         pub success: u32,
         /// The number of erroneous callbacks.
         pub error: u32,
+        /// The number of timeout callbacks.
+        /// The channel is closed after a timeout due to the semantics of ordered channels.
+        pub timeout: u32,
     }
 
     impl IcaInfo {
@@ -110,6 +113,11 @@ mod contract {
         /// Increments the error counter
         pub fn error(&mut self) {
             self.error += 1;
+        }
+
+        /// Increments the timeout counter
+        pub fn timeout(&mut self) {
+            self.timeout += 1;
         }
     }
 }

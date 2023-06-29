@@ -10,7 +10,10 @@ use cosmwasm_std::{
     IbcPacketTimeoutMsg, IbcReceiveResponse, Never,
 };
 
-use crate::types::{state::CHANNEL_STATE, ContractError};
+use crate::types::{
+    state::{CALLBACK_COUNTER, CHANNEL_STATE},
+    ContractError,
+};
 
 use super::types::{events, packet::acknowledgement::AcknowledgementData};
 
@@ -35,6 +38,11 @@ pub fn ibc_packet_timeout(
     _env: Env,
     _msg: IbcPacketTimeoutMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
+    // Increment the callback counter.
+    CALLBACK_COUNTER.update(deps.storage, |mut cc| -> Result<_, ContractError> {
+        cc.timeout();
+        Ok(cc)
+    })?;
     // Due to the semantics of ordered channels, the underlying channel end is closed.
     CHANNEL_STATE.update(
         deps.storage,
