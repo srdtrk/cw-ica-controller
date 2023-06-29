@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
@@ -34,10 +35,6 @@ func TestWithContractTestSuite(t *testing.T) {
 }
 
 func (s *ContractTestSuite) TestIcaControllerContract() {
-	// Parallel indicates that this test is safe for parallel execution.
-	// This is true since this is the only test in this file.
-	// t.Parallel()
-
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, and creates the ibc clients and connections.
@@ -225,17 +222,27 @@ func (s *ContractTestSuite) TestIcaControllerContract() {
 	})
 
 	s.Run("TestTimeout", func() {
-		// We will send a message to the host that will timeout after 1 seconds.
+		// We will send a message to the host that will timeout after 3 seconds.
 		// You cannot use 0 seconds because block timestamp will be greater than the timeout timestamp which is not allowed.
 		// Host will not be able to respond to this message in time.
 
-		timeout := uint64(1)
+		timeout := uint64(3)
 		customMsg := fmt.Sprintf(`{"send_custom_ica_messages":{"messages":[], "timeout_seconds":%d}}`, timeout)
+
+		// Stop the relayer so that the host cannot respond to the message:
+		err = relayer.StopRelayer(ctx, s.ExecRep)
+		s.Require().NoError(err)
 
 		// Execute the contract:
 		err = contract.Execute(ctx, wasmdUser.KeyName(), customMsg)
 		s.Require().NoError(err)
 
+		// Start the relayer again after 3 seconds:
+		time.Sleep(3 * time.Second)
+		err = relayer.StartRelayer(ctx, s.ExecRep)
+		s.Require().NoError(err)
+
+		// Wait until timeout acknoledgement is received:
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
