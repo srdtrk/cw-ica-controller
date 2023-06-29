@@ -5,8 +5,6 @@ on:
   pull_request:
 permissions:
   contents: read
-  # Optional: allow read access to pull request. Use with `only-new-issues` option.
-  # pull-requests: read
 jobs:
   golangci:
     name: lint
@@ -23,7 +21,13 @@ jobs:
           args: --timeout 5m
           working-directory: e2e/interchaintest
   build:
-    name: Contract Test
+    strategy:
+      matrix:
+        test:
+          - TestIcaContractChannelHandshake
+          - TestIcaContractExecution
+          - TestIcaContractTimeoutPacket
+    name: Contract Test - ${{ matrix.test }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -45,4 +49,4 @@ jobs:
       - name: TestContract
         run: |
           cd e2e/interchaintest
-          go test -v ./...
+          go test -v . -run TestWithContractTestSuite -testify.m ${{ matrix.test }}
