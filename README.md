@@ -1,6 +1,6 @@
 # CosmWasm ICA Controller Contract
 
-This is a CosmWasm smart contract that communicates with the ica/host module on the host chain to create and manage one interchain account. This contract can also execute callbacks based on the result of the interchain account transaction.
+This is a CosmWasm smart contract that communicates with the golang ica/host module on the host chain to create and manage one interchain account. This contract can also execute callbacks based on the result of the interchain account transaction. Because this is a CosmWasm implementation of the entire ICA controller, the chain that this contract is deployed on need **not** have the ICA module enabled. This contract can be deployed on any chain that supports IBC CosmWasm smart contracts.
 
 This contract was originally written to test the json encoding and decoding [feature being added to interchain accounts](https://github.com/cosmos/ibc-go/pull/3796). Therefore, this contract cannot function in mainnet until this PR is merged, and backported to the version of ibc-go used by the host chain.
 
@@ -52,3 +52,13 @@ In general, the unit tests are for testing the verification functions for the ha
 ### End to end tests
 
 The end to end tests are for testing the contract's functionality in an environment mimicking production. To see whether or not it can perform the channel handshake, send packets, and execute callbacks. We achieve this by running two local chains, one for the contract, and one for the host chain. The relayer is then used to perform the channel handshake, and send packets. The contract then executes callbacks based on the result of the packet. To learn more about how to run the end to end tests, see the [Readme](./e2e/Readme.md) in the `e2e` directory.
+
+## Limitations
+
+This contract is not meant to be used in production. It is meant to be used as a reference implementation for how to build a CosmWasm contract that can communicate with the golang ica/host module. The following are some of the limitations of this contract:
+
+- The contract cannot create multiple interchain accounts. It can only create one.
+- ICA channels must be ordered (enforced by golang ica/host module). Due to the semantics of ordered channels in IBC, any timeout will cause the channel to be closed.
+- Channel re-opening is not supported (yet).
+- The relayer must start the channel handshake on the contract's chain. This is not possible to do in the contract itself. See e2e tests for an example of how to do this.
+- The contract cannot initialize with an empty string as the version. This is due to a limitation of the IBCModule interface provided by ibc-go, see issue [#3942](https://github.com/cosmos/ibc-go/issues/3942).
