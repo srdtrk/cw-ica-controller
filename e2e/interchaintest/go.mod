@@ -5,7 +5,7 @@ go 1.20
 require (
 	cosmossdk.io/math v1.0.1
 	github.com/cosmos/cosmos-sdk v0.47.3
-	github.com/cosmos/ibc-go/v7 v7.1.0
+	github.com/cosmos/ibc-go/v7 v7.2.0
 	github.com/docker/docker v24.0.1+incompatible
 	github.com/strangelove-ventures/interchaintest/v7 v7.0.0-20230622193330-220ce33823c0
 	github.com/stretchr/testify v1.8.4
@@ -59,7 +59,6 @@ require (
 	github.com/cosmos/gogogateway v1.2.0 // indirect
 	github.com/cosmos/gogoproto v1.4.10 // indirect
 	github.com/cosmos/iavl v0.20.0 // indirect
-	github.com/cosmos/ibc-go/modules/capability v1.0.0-rc1 // indirect
 	github.com/cosmos/ics23/go v0.10.0 // indirect
 	github.com/cosmos/ledger-cosmos-go v0.13.0 // indirect
 	github.com/cosmos/rosetta-sdk-go v0.10.0 // indirect
@@ -83,10 +82,13 @@ require (
 	github.com/ethereum/go-ethereum v1.11.2 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
+	github.com/gin-gonic/gin v1.8.1 // indirect
 	github.com/go-kit/kit v0.12.0 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
+	github.com/go-playground/validator/v10 v10.11.1 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
+	github.com/goccy/go-json v0.9.11 // indirect
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
 	github.com/gogo/protobuf v1.3.3 // indirect
@@ -237,6 +239,3 @@ replace (
 replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 
 replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-
-// use json encoding branch
-replace github.com/cosmos/ibc-go/v7 => github.com/cosmos/ibc-go/v7 v7.0.0-20230608165848-4e18badc5af4
