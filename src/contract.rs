@@ -153,4 +153,90 @@ mod query {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use crate::ibc::types::packet::InterchainAccountPacketData;
+
+    use super::*;
+    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use cosmwasm_std::SubMsg;
+
+    #[test]
+    fn test_instantiate() {
+        let mut deps = mock_dependencies();
+
+        let env = mock_env();
+        let info = mock_info("creator", &[]);
+
+        let msg = InstantiateMsg { admin: None };
+
+        // Ensure the contract is instantiated successfully
+        let res = instantiate(deps.as_mut(), env, info.clone(), msg).unwrap();
+        assert_eq!(0, res.messages.len());
+
+        // Ensure the admin is saved correctly
+        let state = STATE.load(&deps.storage).unwrap();
+        assert_eq!(state.admin, info.sender);
+
+        // Ensure the callback counter is initialized correctly
+        let counter = CALLBACK_COUNTER.load(&deps.storage).unwrap();
+        assert_eq!(counter.success, 0);
+        assert_eq!(counter.error, 0);
+        assert_eq!(counter.timeout, 0);
+    }
+
+    #[test]
+    fn test_execute_send_custom_ica_messages() {
+        let mut deps = mock_dependencies();
+
+        let env = mock_env();
+        let info = mock_info("creator", &[]);
+
+        // Instantiate the contract
+        let _res = instantiate(
+            deps.as_mut(),
+            env.clone(),
+            info.clone(),
+            InstantiateMsg { admin: None },
+        )
+        .unwrap();
+
+        // for this unit test, we have to set ica info manually or else the contract will error
+        STATE
+            .update(&mut deps.storage, |mut state| -> StdResult<ContractState> {
+                state.set_ica_info("ica_address", "channel-0");
+                Ok(state)
+            })
+            .unwrap();
+
+        // Ensure the contract admin can send custom messages
+        let custom_msg_str = r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#;
+        let base64_msg = base64::encode(custom_msg_str.as_bytes());
+
+        let messages = vec![Binary::from_base64(&base64_msg).unwrap()];
+        let msg = ExecuteMsg::SendCustomIcaMessages {
+            messages,
+            packet_memo: None,
+            timeout_seconds: None,
+        };
+        let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+        let expected_packet =
+            InterchainAccountPacketData::from_strings(vec![custom_msg_str.to_string()], None)
+                .unwrap();
+        let expected_msg = expected_packet.to_ibc_msg(&env, "channel-0", None).unwrap();
+
+        assert_eq!(1, res.messages.len());
+        assert_eq!(res.messages[0], SubMsg::new(expected_msg));
+
+        // Ensure a non-admin cannot send custom messages
+        let info = mock_info("non-admin", &[]);
+        let msg = ExecuteMsg::SendCustomIcaMessages {
+            messages: vec![],
+            packet_memo: None,
+            timeout_seconds: None,
+        };
+
+        let res = execute(deps.as_mut(), env, info, msg);
+        assert_eq!(res.unwrap_err().to_string(), "unauthorized".to_string());
+    }
+}
