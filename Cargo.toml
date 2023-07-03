@@ -50,4 +50,4 @@ serde-json-wasm = "0.5.1"
 thiserror = { version = "1.0.31" }
 
 [dev-dependencies]
-cw-multi-test = "0.16.2"
+base64 = "0.13.1"
