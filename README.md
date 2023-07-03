@@ -2,7 +2,7 @@
 
 This is a CosmWasm smart contract that communicates with the golang ica/host module on the host chain to create and manage one interchain account. This contract can also execute callbacks based on the result of the interchain account transaction. Because this is a CosmWasm implementation of the entire ICA controller, the chain that this contract is deployed on need **not** have the ICA module enabled. This contract can be deployed on any chain that supports IBC CosmWasm smart contracts.
 
-This contract was originally written to test the json encoding and decoding [feature being added to interchain accounts](https://github.com/cosmos/ibc-go/pull/3796). Therefore, this contract cannot function in mainnet until this PR is merged, and backported to the version of ibc-go used by the host chain.
+This contract was originally written to test the json encoding and decoding [feature being added to interchain accounts](https://github.com/cosmos/ibc-go/pull/3796). Therefore, this contract cannot function in mainnet until this PR backported to the version of ibc-go used by the host chain. The backport is currently in progress.
 
 Note that the same approach used to build this contract can be used to build a contract that works in mainnet today, as long as the correct protobuf messages are used.
 
