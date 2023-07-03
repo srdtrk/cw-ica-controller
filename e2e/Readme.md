@@ -27,4 +27,4 @@ The tests are run in the github CI after every push to the `main` branch. See th
 
 ## About the tests
 
-The tests are currently run on wasmd `v0.40.2` and ibc-go's simd `pr-3796` which implements json encoding for interchain accounts module. Once this pr is merged, we will update the tests to use the latest version of ibc-go's simd.
+The tests are currently run on wasmd `v0.40.2` and ibc-go's simd `main` which implements json encoding for interchain accounts module. The json encoding feature has not yet been backported to any release versions of ibc-go yet, so we are using the `main` branch.
