@@ -247,6 +247,8 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		err := s.Relayer.StopRelayer(ctx, s.ExecRep)
 		s.Require().NoError(err)
 
+		time.Sleep(3 * time.Second)
+
 		timeout := uint64(3)
 		customMsg := fmt.Sprintf(`{"send_custom_ica_messages":{"messages":[], "timeout_seconds":%d}}`, timeout)
 
@@ -254,7 +256,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), customMsg)
 		s.Require().NoError(err)
 
-		// Start the relayer again after 3 seconds:
+		// Start the relayer again after 10 seconds:
 		time.Sleep(10 * time.Second)
 		err = s.Relayer.StartRelayer(ctx, s.ExecRep)
 		s.Require().NoError(err)
