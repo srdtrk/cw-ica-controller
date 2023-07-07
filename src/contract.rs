@@ -79,9 +79,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 mod execute {
     use cosmwasm_std::coins;
 
-    use crate::{
-        ibc::types::packet::InterchainAccountPacketData, types::cosmos_msg::CosmosMessages,
-    };
+    use crate::{ibc::types::packet::IcaPacketData, types::cosmos_msg::CosmosMessages};
 
     use super::*;
 
@@ -103,7 +101,7 @@ mod execute {
             .map(|msg| String::from_utf8(msg.0))
             .collect();
 
-        let ica_packet = InterchainAccountPacketData::from_strings(ica_messages?, packet_memo)?;
+        let ica_packet = IcaPacketData::from_strings(ica_messages?, packet_memo)?;
         let send_packet_msg = ica_packet.to_ibc_msg(&env, ica_info.channel_id, timeout_seconds)?;
 
         Ok(Response::default().add_message(send_packet_msg))
@@ -126,7 +124,7 @@ mod execute {
             amount: coins(100, "stake"),
         }
         .to_string();
-        let ica_packet = InterchainAccountPacketData::from_strings(vec![predefined_message], None)?;
+        let ica_packet = IcaPacketData::from_strings(vec![predefined_message], None)?;
         let send_packet_msg = ica_packet.to_ibc_msg(&env, &ica_info.channel_id, None)?;
 
         Ok(Response::default().add_message(send_packet_msg))
@@ -154,7 +152,7 @@ mod query {
 
 #[cfg(test)]
 mod tests {
-    use crate::ibc::types::packet::InterchainAccountPacketData;
+    use crate::ibc::types::packet::IcaPacketData;
 
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
@@ -221,8 +219,7 @@ mod tests {
         let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
 
         let expected_packet =
-            InterchainAccountPacketData::from_strings(vec![custom_msg_str.to_string()], None)
-                .unwrap();
+            IcaPacketData::from_strings(vec![custom_msg_str.to_string()], None).unwrap();
         let expected_msg = expected_packet.to_ibc_msg(&env, "channel-0", None).unwrap();
 
         assert_eq!(1, res.messages.len());

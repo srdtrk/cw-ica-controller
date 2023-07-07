@@ -10,10 +10,10 @@ use crate::types::ContractError;
 /// DEFAULT_TIMEOUT_SECONDS is the default timeout for [`InterchainAccountPacketData`]
 pub const DEFAULT_TIMEOUT_SECONDS: u64 = 600;
 
-/// InterchainAccountPacketData is comprised of a raw transaction, type of transaction and optional memo field.
+/// IcaPacketData is comprised of a raw transaction, type of transaction and optional memo field.
 /// Currently, the host only supports json (or proto) serialized Any messages as raw transactions.
 #[cw_serde]
-pub struct InterchainAccountPacketData {
+pub struct IcaPacketData {
     /// Type defines a classification of message issued from a controller
     /// chain to its associated interchain accounts host.
     ///
@@ -33,7 +33,7 @@ pub struct InterchainAccountPacketData {
     pub memo: Option<String>,
 }
 
-impl InterchainAccountPacketData {
+impl IcaPacketData {
     /// Creates a new InterchainAccountPacketData
     pub fn new(data: Vec<u8>, memo: Option<String>) -> Self {
         Self {
@@ -131,7 +131,7 @@ mod tests {
             pub messages: Vec<CosmosMessages>,
         }
 
-        let packet_from_string = InterchainAccountPacketData::from_strings(
+        let packet_from_string = IcaPacketData::from_strings(
             vec![r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#.to_string()], None).unwrap();
 
         let packet_data = packet_from_string.data;
