@@ -153,15 +153,15 @@ mod query {
 #[cfg(test)]
 mod tests {
     use crate::ibc::types::packet::IcaPacketData;
+    use crate::types::cosmos_msg::CosmosMessages;
 
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::SubMsg;
+    use cosmwasm_std::{coins, SubMsg};
 
     #[test]
     fn test_instantiate() {
         let mut deps = mock_dependencies();
-
         let env = mock_env();
         let info = mock_info("creator", &[]);
 
@@ -231,6 +231,59 @@ mod tests {
             messages: vec![],
             packet_memo: None,
             timeout_seconds: None,
+        };
+
+        let res = execute(deps.as_mut(), env, info, msg);
+        assert_eq!(res.unwrap_err().to_string(), "unauthorized".to_string());
+    }
+
+    #[test]
+    fn test_execute_send_predefined_action() {
+        let mut deps = mock_dependencies();
+
+        let env = mock_env();
+        let info = mock_info("creator", &[]);
+
+        // Instantiate the contract
+        let _res = instantiate(
+            deps.as_mut(),
+            env.clone(),
+            info.clone(),
+            InstantiateMsg { admin: None },
+        )
+        .unwrap();
+
+        // for this unit test, we have to set ica info manually or else the contract will error
+        STATE
+            .update(&mut deps.storage, |mut state| -> StdResult<ContractState> {
+                state.set_ica_info("ica_address", "channel-0");
+                Ok(state)
+            })
+            .unwrap();
+
+        // Ensure the contract admin can send predefined messages
+        let msg = ExecuteMsg::SendPredefinedAction {
+            to_address: "to_address".to_string(),
+        };
+        let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+        let expected_msg = CosmosMessages::MsgSend {
+            from_address: "ica_address".to_string(),
+            to_address: "to_address".to_string(),
+            amount: coins(100, "stake"),
+        }
+        .to_string();
+
+        let expected_packet = IcaPacketData::from_strings(vec![expected_msg], None).unwrap();
+        let expected_msg = expected_packet.to_ibc_msg(&env, "channel-0", None).unwrap();
+
+        assert_eq!(1, res.messages.len());
+        assert_eq!(res.messages[0], SubMsg::new(expected_msg));
+
+        // Ensure a non-admin cannot send predefined messages
+        let info = mock_info("non-admin", &[]);
+        let msg = ExecuteMsg::SendPredefinedAction {
+            to_address: "to_address".to_string(),
         };
 
         let res = execute(deps.as_mut(), env, info, msg);
