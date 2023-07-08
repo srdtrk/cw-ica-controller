@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
+	"github.com/stretchr/testify/require"
 
 	sdkmath "cosmossdk.io/math"
 
@@ -15,7 +15,7 @@ import (
 
 	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos/wasm"
 
-	"github.com/stretchr/testify/require"
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
 )
 
 func TestInstantiateMsg(t *testing.T) {

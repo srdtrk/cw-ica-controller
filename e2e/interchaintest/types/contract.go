@@ -4,6 +4,7 @@ import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
 )
 
