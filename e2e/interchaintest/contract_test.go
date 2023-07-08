@@ -8,8 +8,7 @@ import (
 	"testing"
 	"time"
 
-	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
-	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
+	"github.com/stretchr/testify/suite"
 
 	sdkmath "cosmossdk.io/math"
 
@@ -17,13 +16,14 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 
-	"github.com/strangelove-ventures/interchaintest/v7/ibc"
-	"github.com/strangelove-ventures/interchaintest/v7/testutil"
-
 	icatypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/strangelove-ventures/interchaintest/v7/ibc"
+	"github.com/strangelove-ventures/interchaintest/v7/testutil"
+
+	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
 )
 
 type ContractTestSuite struct {
@@ -233,11 +233,15 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 	// sets up the contract and does the channel handshake for the contract test suite.
 	s.SetupContractTestSuite(ctx)
 	wasmd, simd := s.ChainA, s.ChainB
-	wasmdUser := s.UserA
+	wasmdUser, simdUser := s.UserA, s.UserB
 
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, s.IcaAddress)
 
+	contractState, err := s.Contract.QueryContractState(ctx)
+	s.Require().NoError(err)
+
+	var simdChannelsLen int
 	s.Run("TestTimeout", func() {
 		// We will send a message to the host that will timeout after 3 seconds.
 		// You cannot use 0 seconds because block timestamp will be greater than the timeout timestamp which is not allowed.
@@ -247,22 +251,29 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		err := s.Relayer.StopRelayer(ctx, s.ExecRep)
 		s.Require().NoError(err)
 
-		time.Sleep(3 * time.Second)
+		time.Sleep(5 * time.Second)
 
 		timeout := uint64(3)
-		customMsg := fmt.Sprintf(`{"send_custom_ica_messages":{"messages":[], "timeout_seconds":%d}}`, timeout)
-
 		// Execute the contract:
-		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), customMsg)
+		err = s.Contract.ExecCustomIcaMessages(ctx, wasmdUser.KeyName(), []sdk.Msg{}, nil, &timeout)
 		s.Require().NoError(err)
 
-		// Start the relayer again after 10 seconds:
-		time.Sleep(10 * time.Second)
+		// Wait until timeout:
+		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+		s.Require().NoError(err)
+
 		err = s.Relayer.StartRelayer(ctx, s.ExecRep)
 		s.Require().NoError(err)
 
 		// Wait until timeout acknoledgement is received:
-		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+		err = testutil.WaitForBlocks(ctx, 2, wasmd, simd)
+		s.Require().NoError(err)
+
+		// Flush to make sure the channel is closed in simd:
+		err = s.Relayer.Flush(ctx, s.ExecRep, s.PathName, contractState.IcaInfo.ChannelID)
+		s.Require().NoError(err)
+
+		err = testutil.WaitForBlocks(ctx, 2, wasmd, simd)
 		s.Require().NoError(err)
 
 		// Check if channel was closed:
@@ -274,7 +285,8 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		simdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, simd.Config().ChainID)
 		s.Require().NoError(err)
 		// sometimes there is a redundant channel for unknown reasons
-		s.Require().Greater(len(simdChannels), 0)
+		simdChannelsLen = len(simdChannels)
+		s.Require().Greater(simdChannelsLen, 0)
 		s.Require().Equal(channeltypes.CLOSED.String(), simdChannels[0].State)
 
 		// Check if contract callbacks were executed:
@@ -288,6 +300,76 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		contractChannelState, err := s.Contract.QueryChannelState(ctx)
 		s.Require().NoError(err)
 		s.Require().Equal(channeltypes.CLOSED.String(), contractChannelState.ChannelStatus)
+	})
+
+	s.Run("TestChannelReopening", func() {
+		version := fmt.Sprintf(`{"version":"ics27-1","controller_connection_id":"%s","host_connection_id":"%s","address":"%s","encoding":"proto3json","tx_type":"sdk_multi_msg"}`, s.ChainAConnID, s.ChainBConnID, s.IcaAddress)
+
+		// Create channel with override:
+		s.CreateChannelWithOverride(ctx, s.Contract.Port(), icatypes.HostPortID, ibc.Ordered, version)
+
+		// Wait for the channel to get set up
+		err := testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
+		s.Require().NoError(err)
+
+		// Check if a new channel was opened in simd
+		simdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, simd.Config().ChainID)
+		s.Require().NoError(err)
+		// An extra channel may be created in simd for unknown reasons.
+		s.Require().Greater(len(simdChannels), simdChannelsLen)
+		s.Require().Equal(channeltypes.OPEN.String(), simdChannels[simdChannelsLen].State)
+		simdChannelsLen = len(simdChannels)
+
+		// Check if a new channel was opened in wasmd:
+		wasmdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, wasmd.Config().ChainID)
+		s.Require().NoError(err)
+		s.Require().Equal(2, len(wasmdChannels))
+		wasmdChannel := wasmdChannels[1]
+		s.Require().Equal(channeltypes.OPEN.String(), wasmdChannel.State)
+
+		// Check if contract channel state was updated:
+		contractChannelState, err := s.Contract.QueryChannelState(ctx)
+		s.Require().NoError(err)
+		s.Require().Equal(channeltypes.OPEN.String(), contractChannelState.ChannelStatus)
+		s.Require().Equal(wasmdChannel.Version, contractChannelState.Channel.Version)
+		s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionID)
+		s.Require().Equal(wasmdChannel.ChannelID, contractChannelState.Channel.Endpoint.ChannelID)
+		s.Require().Equal(wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortID)
+		s.Require().Equal(wasmdChannel.Counterparty.ChannelID, contractChannelState.Channel.CounterpartyEndpoint.ChannelID)
+		s.Require().Equal(wasmdChannel.Counterparty.PortID, contractChannelState.Channel.CounterpartyEndpoint.PortID)
+		s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
+
+		contractState, err := s.Contract.QueryContractState(ctx)
+		s.Require().NoError(err)
+		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
+		s.Require().Equal(s.IcaAddress, contractState.IcaInfo.IcaAddress)
+
+		callbackCounter, err := s.Contract.QueryCallbackCounter(ctx)
+		s.Require().NoError(err)
+
+		s.Require().Equal(uint64(0), callbackCounter.Success)
+		s.Require().Equal(uint64(0), callbackCounter.Error)
+		s.Require().Equal(uint64(1), callbackCounter.Timeout)
+	})
+
+	s.Run("TestPredefinedActionAfterReopen", func() {
+		err := s.Contract.ExecPredefinedAction(ctx, wasmdUser.KeyName(), simdUser.FormattedAddress())
+		s.Require().NoError(err)
+
+		err = testutil.WaitForBlocks(ctx, 6, wasmd, simd)
+		s.Require().NoError(err)
+
+		icaBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
+		s.Require().NoError(err)
+		s.Require().Equal(int64(1000000000-100), icaBalance)
+
+		// Check if contract callbacks were executed:
+		callbackCounter, err := s.Contract.QueryCallbackCounter(ctx)
+		s.Require().NoError(err)
+
+		s.Require().Equal(uint64(1), callbackCounter.Success)
+		s.Require().Equal(uint64(0), callbackCounter.Error)
+		s.Require().Equal(uint64(1), callbackCounter.Timeout)
 	})
 }
 
