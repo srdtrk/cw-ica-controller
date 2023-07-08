@@ -78,7 +78,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 mod execute {
     use cosmwasm_std::coins;
 
-    use crate::{ibc::types::packet::IcaPacketData, types::cosmos_msg::CosmosMessages};
+    use crate::{ibc::types::packet::IcaPacketData, types::cosmos_msg::ExampleCosmosMessages};
 
     use super::*;
 
@@ -117,7 +117,7 @@ mod execute {
         contract_state.verify_admin(info.sender)?;
 
         let ica_info = contract_state.get_ica_info()?;
-        let predefined_message = CosmosMessages::MsgSend {
+        let predefined_message = ExampleCosmosMessages::MsgSend {
             from_address: ica_info.ica_address,
             to_address,
             amount: coins(100, "stake"),
@@ -152,7 +152,7 @@ mod query {
 #[cfg(test)]
 mod tests {
     use crate::ibc::types::packet::IcaPacketData;
-    use crate::types::cosmos_msg::CosmosMessages;
+    use crate::types::cosmos_msg::ExampleCosmosMessages;
 
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
@@ -266,7 +266,7 @@ mod tests {
         };
         let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
 
-        let expected_msg = CosmosMessages::MsgSend {
+        let expected_msg = ExampleCosmosMessages::MsgSend {
             from_address: "ica_address".to_string(),
             to_address: "to_address".to_string(),
             amount: coins(100, "stake"),

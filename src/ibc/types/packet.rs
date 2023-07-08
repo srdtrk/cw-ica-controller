@@ -120,7 +120,7 @@ mod tests {
     use cosmwasm_std::{coins, from_binary, Binary};
     use serde::{Deserialize, Serialize};
 
-    use crate::types::cosmos_msg::CosmosMessages;
+    use crate::types::cosmos_msg::ExampleCosmosMessages;
 
     use super::*;
 
@@ -128,7 +128,7 @@ mod tests {
     fn test_packet_data() {
         #[derive(Serialize, Deserialize)]
         struct TestCosmosTx {
-            pub messages: Vec<CosmosMessages>,
+            pub messages: Vec<ExampleCosmosMessages>,
         }
 
         let packet_from_string = IcaPacketData::from_strings(
@@ -137,7 +137,7 @@ mod tests {
         let packet_data = packet_from_string.data;
         let cosmos_tx: TestCosmosTx = from_binary(&Binary(packet_data)).unwrap();
 
-        let expected = CosmosMessages::MsgSend {
+        let expected = ExampleCosmosMessages::MsgSend {
             from_address: "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk".to_string(),
             to_address: "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk".to_string(),
             amount: coins(5000, "stake".to_string()),

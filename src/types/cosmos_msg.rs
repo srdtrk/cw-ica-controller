@@ -1,11 +1,11 @@
-//! This module defines the [`CosmosMessages`] enum which is used to encode Cosmos messages
+//! This module defines the [`ExampleCosmosMessages`] enum which is used to encode Cosmos messages
 
 use cosmwasm_std::Coin;
 #[cfg(test)]
 use serde::Deserialize;
 use serde::Serialize;
 
-/// CosmosMessages is a list of Cosmos messages that can be sent to the ICA host.
+/// ExampleCosmosMessages is a list of Cosmos messages that can be sent to the ICA host.
 ///
 /// This enum corresponds to the [Any](https://github.com/cosmos/cosmos-sdk/blob/v0.47.3/codec/types/any.go#L11-L52)
 /// type defined in the Cosmos SDK. The Any type is used to encode and decode Cosmos messages. It also has a built-in
@@ -14,13 +14,13 @@ use serde::Serialize;
 ///
 /// In general, this ICA controller should be used with custom messages and **not with the
 /// messages defined here**. The messages defined here are to demonstrate how an ICA controller
-/// can be used with registered CosmosMessages (in case the contract is a DAO with **predefined actions**)
+/// can be used with registered ExampleCosmosMessages (in case the contract is a DAO with **predefined actions**)
 ///
 /// This enum does not derive Deserialize, see issue [#1443](https://github.com/CosmWasm/cosmwasm/issues/1443)
 #[derive(Serialize, Clone, Debug, PartialEq)]
 #[cfg_attr(test, derive(Deserialize))]
 #[serde(tag = "@type")]
-pub enum CosmosMessages {
+pub enum ExampleCosmosMessages {
     /// This is a Cosmos message to send tokens from one account to another.
     #[serde(rename = "/cosmos.bank.v1beta1.MsgSend")]
     MsgSend {
@@ -55,7 +55,7 @@ pub enum CosmosMessages {
     #[serde(rename = "/cosmos.gov.v1beta1.MsgSubmitProposal")]
     MsgSubmitProposalLegacy {
         /// Content is another Cosmos message.
-        content: Box<CosmosMessages>,
+        content: Box<ExampleCosmosMessages>,
         /// Initial deposit to the proposal.
         initial_deposit: Vec<Coin>,
         /// Proposer's address. (In this case, ICA address)
@@ -102,7 +102,7 @@ pub enum CosmosMessages {
     },
 }
 
-impl ToString for CosmosMessages {
+impl ToString for ExampleCosmosMessages {
     fn to_string(&self) -> String {
         serde_json_wasm::to_string(self).unwrap()
     }
