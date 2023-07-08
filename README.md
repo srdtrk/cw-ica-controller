@@ -41,6 +41,10 @@ The format that json messages have to take are defined by the cosmos-sdk's json 
 
 This contract supports callbacks. See `src/ibc/relay.rs` for how to decode whether a transaction was successful or not. Currently, a counter is incremented to record how many transactions were successful and how many failed. This is just a placeholder for more complex logic that can be executed in the callback.
 
+### Channel Closing and Reopening
+
+In this contract, the only way to close the ica channel is to timeout the channel (you can see this in the end to end tests). This is because the semantics of ordered channels in IBC is that any timeout will cause the channel to be closed. The contract is then able to create a new channel with the same interchain account address, and continue to use the same interchain account. This can also be seen in the end to end tests.
+
 ## Testing
 
 There are two kinds of tests in this repository: unit tests and end to end tests. The unit tests are located inside the rust files in the `src` directory. The end to end tests are located in the `e2e` directory.
@@ -59,7 +63,6 @@ This contract is not meant to be used in production. It is meant to be used as a
 
 - The contract cannot create multiple interchain accounts. It can only create one.
 - ICA channels must be ordered (enforced by golang ica/host module). Due to the semantics of ordered channels in IBC, any timeout will cause the channel to be closed.
-- Channel re-opening is not supported (yet).
 - The relayer must start the channel handshake on the contract's chain. This is not possible to do in the contract itself. See e2e tests for an example of how to do this.
 - The contract cannot initialize with an empty string as the version. This is due to a limitation of the IBCModule interface provided by ibc-go, see issue [#3942](https://github.com/cosmos/ibc-go/issues/3942).
 
