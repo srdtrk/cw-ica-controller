@@ -21,6 +21,12 @@ go test -v . -run TestWithContractTestSuite -testify.m $TEST_NAME
 
 where `$TEST_NAME` is one of the three tests listed above.
 
+Before running the tests, you must have built the optimized contract in the `/artifacts` directory. To do this, run the following command from the root of the repository:
+
+```text
+cargo run-script optimize
+```
+
 ## In the CI
 
 The tests are run in the github CI after every push to the `main` branch. See the [github actions workflow](https://github.com/srdtrk/cw-ica-controller/blob/main/.github/workflows/e2e.yml) for more details.
