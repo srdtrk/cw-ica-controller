@@ -3,7 +3,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
-use cw2::set_contract_version;
 
 use crate::types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::types::state::{
@@ -11,7 +10,7 @@ use crate::types::state::{
 };
 use crate::types::ContractError;
 
-// version info for migration info
+// version info for migration
 const CONTRACT_NAME: &str = "crates.io:cw-ica-controller";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -23,7 +22,8 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
     let admin = if let Some(admin) = msg.admin {
         deps.api.addr_validate(&admin)?
     } else {
@@ -179,6 +179,11 @@ mod tests {
         assert_eq!(counter.success, 0);
         assert_eq!(counter.error, 0);
         assert_eq!(counter.timeout, 0);
+
+        // Ensure that the contract name and version are saved correctly
+        let contract_version = cw2::get_contract_version(&deps.storage).unwrap();
+        assert_eq!(contract_version.contract, CONTRACT_NAME);
+        assert_eq!(contract_version.version, CONTRACT_VERSION);
     }
 
     #[test]
