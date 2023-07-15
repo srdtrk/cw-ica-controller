@@ -303,10 +303,8 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 	})
 
 	s.Run("TestChannelReopening", func() {
-		version := fmt.Sprintf(`{"version":"ics27-1","controller_connection_id":"%s","host_connection_id":"%s","address":"%s","encoding":"proto3json","tx_type":"sdk_multi_msg"}`, s.ChainAConnID, s.ChainBConnID, s.IcaAddress)
-
-		// Create channel with override:
-		s.CreateChannelWithOverride(ctx, s.Contract.Port(), icatypes.HostPortID, ibc.Ordered, version)
+		// Create channel with override and empty version:
+		s.CreateChannelWithOverride(ctx, s.Contract.Port(), icatypes.HostPortID, ibc.Ordered, "")
 
 		// Wait for the channel to get set up
 		err := testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
@@ -331,7 +329,8 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		contractChannelState, err := s.Contract.QueryChannelState(ctx)
 		s.Require().NoError(err)
 		s.Require().Equal(channeltypes.OPEN.String(), contractChannelState.ChannelStatus)
-		s.Require().Equal(wasmdChannel.Version, contractChannelState.Channel.Version)
+		// The version string is wrapped by the fee middleware. We we cannot check it directly here.
+		// s.Require().Equal(wasmdChannel.Version, contractChannelState.Channel.Version)
 		s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionID)
 		s.Require().Equal(wasmdChannel.ChannelID, contractChannelState.Channel.Endpoint.ChannelID)
 		s.Require().Equal(wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortID)
