@@ -28,10 +28,21 @@ pub struct IcaMetadata {
     pub address: String,
     /// The encoding of the messages sent to the ICA host.
     /// This contract only supports json encoding.
-    pub encoding: String,
+    pub encoding: TxEncoding,
     /// The type of transaction that is sent to the ICA host.
     /// There is currently only one supported type: `sdk_multi_msg`.
     pub tx_type: String,
+}
+
+/// Encoding is the encoding of the transactions sent to the ICA host.
+#[cw_serde]
+pub enum TxEncoding {
+    /// Protobuf is the protobuf serialization of the CosmosSDK's Any.
+    #[serde(rename = "proto")]
+    Protobuf,
+    /// Proto3Json is the json serialization of the CosmosSDK's Any.
+    #[serde(rename = "proto3json")]
+    Proto3Json,
 }
 
 impl IcaMetadata {
@@ -41,7 +52,7 @@ impl IcaMetadata {
         controller_connection_id: String,
         host_connection_id: String,
         address: String,
-        encoding: String,
+        encoding: TxEncoding,
         tx_type: String,
     ) -> Self {
         Self {
@@ -85,7 +96,7 @@ impl IcaMetadata {
             // supported, so this is a fallback option.
             host_connection_id: counterparty_connection_id,
             address: "".to_string(),
-            encoding: "proto3json".to_string(),
+            encoding: TxEncoding::Proto3Json,
             tx_type: "sdk_multi_msg".to_string(),
         }
     }
@@ -108,8 +119,8 @@ impl IcaMetadata {
         if !self.address.is_empty() {
             validate_ica_address(&self.address)?;
         }
-        if self.encoding != "proto3json" {
-            return Err(ContractError::UnsupportedCodec(self.encoding.clone()));
+        if self.encoding != TxEncoding::Proto3Json {
+            return Err(ContractError::UnsupportedCodec(self.encoding.to_string()));
         }
         if self.tx_type != "sdk_multi_msg" {
             return Err(ContractError::UnsupportedTxType(self.tx_type.clone()));
@@ -135,6 +146,12 @@ impl IcaMetadata {
 }
 
 impl ToString for IcaMetadata {
+    fn to_string(&self) -> String {
+        serde_json_wasm::to_string(self).unwrap()
+    }
+}
+
+impl ToString for TxEncoding {
     fn to_string(&self) -> String {
         serde_json_wasm::to_string(self).unwrap()
     }
@@ -187,7 +204,7 @@ mod tests {
             "connection-0".to_string(),
             "connection-1".to_string(),
             "".to_string(),
-            "proto3json".to_string(),
+            TxEncoding::Proto3Json,
             "sdk_multi_msg".to_string(),
         )
     }
