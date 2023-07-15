@@ -1,4 +1,5 @@
-//! This module defines the [`ExampleCosmosMessages`] enum which is used to encode Cosmos messages
+//! This module defines the [`ExampleCosmosMessages`] enum which is used to encode Cosmos messages as
+//! Any's in [`proto3json`](crate::ibc::types::metadata::TxEncoding::Proto3Json) encoding format.
 
 use cosmwasm_std::Coin;
 
@@ -13,7 +14,8 @@ use cosmwasm_std::Coin;
 /// messages defined here**. The messages defined here are to demonstrate how an ICA controller
 /// can be used with registered ExampleCosmosMessages (in case the contract is a DAO with **predefined actions**)
 ///
-/// This enum does not derive serde::Deserialize, see issue [#1443](https://github.com/CosmWasm/cosmwasm/issues/1443)
+/// This enum does not derive [Deserialize](serde::Deserialize), see issue
+/// [#1443](https://github.com/CosmWasm/cosmwasm/issues/1443)
 #[derive(serde::Serialize, Clone, Debug, PartialEq)]
 #[cfg_attr(test, derive(serde::Deserialize))]
 #[serde(tag = "@type")]
