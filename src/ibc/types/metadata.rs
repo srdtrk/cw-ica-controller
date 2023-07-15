@@ -6,15 +6,15 @@
 //! ICA controller and the ICA host. It encodes key information about the messages exchanged
 //! between the ICA controller and the ICA host.
 
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Deps, IbcChannel};
-use serde::{Deserialize, Serialize};
 
 use crate::types::{state::CHANNEL_STATE, ContractError};
 
 use super::keys::ICA_VERSION;
 
 /// IcaMetadata is the metadata of the IBC application communicated during the handshake.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[cw_serde]
 pub struct IcaMetadata {
     /// The version of the IBC application.
     pub version: String,

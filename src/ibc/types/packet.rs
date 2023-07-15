@@ -118,7 +118,6 @@ pub mod acknowledgement {
 mod tests {
     use acknowledgement::AcknowledgementData;
     use cosmwasm_std::{coins, from_binary, Binary};
-    use serde::{Deserialize, Serialize};
 
     use crate::types::cosmos_msg::ExampleCosmosMessages;
 
@@ -126,7 +125,7 @@ mod tests {
 
     #[test]
     fn test_packet_data() {
-        #[derive(Serialize, Deserialize)]
+        #[derive(serde::Serialize, serde::Deserialize)]
         struct TestCosmosTx {
             pub messages: Vec<ExampleCosmosMessages>,
         }

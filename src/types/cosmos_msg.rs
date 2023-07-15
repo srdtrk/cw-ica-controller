@@ -1,9 +1,6 @@
 //! This module defines the [`ExampleCosmosMessages`] enum which is used to encode Cosmos messages
 
 use cosmwasm_std::Coin;
-#[cfg(test)]
-use serde::Deserialize;
-use serde::Serialize;
 
 /// ExampleCosmosMessages is a list of Cosmos messages that can be sent to the ICA host.
 ///
@@ -16,9 +13,9 @@ use serde::Serialize;
 /// messages defined here**. The messages defined here are to demonstrate how an ICA controller
 /// can be used with registered ExampleCosmosMessages (in case the contract is a DAO with **predefined actions**)
 ///
-/// This enum does not derive Deserialize, see issue [#1443](https://github.com/CosmWasm/cosmwasm/issues/1443)
-#[derive(Serialize, Clone, Debug, PartialEq)]
-#[cfg_attr(test, derive(Deserialize))]
+/// This enum does not derive serde::Deserialize, see issue [#1443](https://github.com/CosmWasm/cosmwasm/issues/1443)
+#[derive(serde::Serialize, Clone, Debug, PartialEq)]
+#[cfg_attr(test, derive(serde::Deserialize))]
 #[serde(tag = "@type")]
 pub enum ExampleCosmosMessages {
     /// This is a Cosmos message to send tokens from one account to another.
@@ -109,10 +106,7 @@ impl ToString for ExampleCosmosMessages {
 }
 
 mod msg_transfer {
-    use super::*;
-
-    #[derive(Serialize, Clone, Debug, PartialEq)]
-    #[cfg_attr(test, derive(Deserialize))]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
     pub struct Height {
         pub revision_number: u64,
         pub revision_height: u64,

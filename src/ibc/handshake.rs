@@ -74,7 +74,7 @@ mod ibc_channel_open {
             return Err(ContractError::InvalidHostPort {});
         }
 
-        // Deserialize the metadata
+        // serde::Deserialize the metadata
         let metadata: IcaMetadata = if channel.version.is_empty() {
             // if empty, use create new metadata.
             IcaMetadata::from_channel(deps.as_ref(), &channel)
@@ -122,7 +122,7 @@ mod ibc_channel_open {
             return Err(ContractError::InvalidControllerPort {});
         }
 
-        // Deserialize the metadata
+        // serde::Deserialize the metadata
         let metadata: IcaMetadata =
             serde_json_wasm::from_str(&counterparty_version).map_err(|_| {
                 ContractError::UnknownDataType(
