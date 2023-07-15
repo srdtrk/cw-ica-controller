@@ -31,6 +31,8 @@ cargo run-script optimize
 
 The tests are run in the github CI after every push to the `main` branch. See the [github actions workflow](https://github.com/srdtrk/cw-ica-controller/blob/main/.github/workflows/e2e.yml) for more details.
 
+For some unknown reason, the timeout test sometimes fails in the CI (I'd say about 20-25% of the time). In this case, feel free to rerun the CI job.
+
 ## About the tests
 
 The tests are currently run on wasmd `v0.40.2` and ibc-go's simd `main` which implements json encoding for interchain accounts module. The json encoding feature has not yet been backported to any release versions of ibc-go yet, so we are using the `main` branch.
