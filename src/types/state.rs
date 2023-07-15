@@ -4,6 +4,8 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, IbcChannel};
 use cw_storage_plus::Item;
 
+use super::ContractError;
+
 pub use channel::ChannelState;
 pub use contract::{CallbackCounter, ContractState};
 
@@ -17,7 +19,7 @@ pub const CHANNEL_STATE: Item<ChannelState> = Item::new("ica_channel");
 pub const CALLBACK_COUNTER: Item<CallbackCounter> = Item::new("callback_counter");
 
 mod contract {
-    use crate::types::ContractError;
+    use crate::ibc::types::metadata::TxEncoding;
 
     use super::*;
 
@@ -64,8 +66,9 @@ mod contract {
             &mut self,
             ica_address: impl Into<String>,
             channel_id: impl Into<String>,
+            encoding: TxEncoding,
         ) {
-            self.ica_info = Some(IcaInfo::new(ica_address, channel_id));
+            self.ica_info = Some(IcaInfo::new(ica_address, channel_id, encoding));
         }
 
         /// Deletes the ICA info
@@ -79,6 +82,7 @@ mod contract {
     pub struct IcaInfo {
         pub ica_address: String,
         pub channel_id: String,
+        pub encoding: TxEncoding,
     }
 
     /// CallbackCounter tracks the number of callbacks in store.
@@ -96,10 +100,15 @@ mod contract {
 
     impl IcaInfo {
         /// Creates a new IcaInfo
-        pub fn new(ica_address: impl Into<String>, channel_id: impl Into<String>) -> Self {
+        pub fn new(
+            ica_address: impl Into<String>,
+            channel_id: impl Into<String>,
+            encoding: TxEncoding,
+        ) -> Self {
             Self {
                 ica_address: ica_address.into(),
                 channel_id: channel_id.into(),
+                encoding,
             }
         }
     }

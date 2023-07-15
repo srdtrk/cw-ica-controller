@@ -139,7 +139,11 @@ mod ibc_channel_open {
         STATE.update(
             deps.storage,
             |mut contract_state| -> Result<_, ContractError> {
-                contract_state.set_ica_info(metadata.address, &channel.endpoint.channel_id);
+                contract_state.set_ica_info(
+                    metadata.address,
+                    &channel.endpoint.channel_id,
+                    metadata.encoding,
+                );
                 Ok(contract_state)
             },
         )?;

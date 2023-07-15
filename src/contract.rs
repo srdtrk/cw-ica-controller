@@ -151,7 +151,7 @@ mod query {
 
 #[cfg(test)]
 mod tests {
-    use crate::ibc::types::packet::IcaPacketData;
+    use crate::ibc::types::{metadata::TxEncoding, packet::IcaPacketData};
     use crate::types::cosmos_msg::ExampleCosmosMessages;
 
     use super::*;
@@ -205,7 +205,7 @@ mod tests {
         // for this unit test, we have to set ica info manually or else the contract will error
         STATE
             .update(&mut deps.storage, |mut state| -> StdResult<ContractState> {
-                state.set_ica_info("ica_address", "channel-0");
+                state.set_ica_info("ica_address", "channel-0", TxEncoding::Proto3Json);
                 Ok(state)
             })
             .unwrap();
@@ -260,7 +260,7 @@ mod tests {
         // for this unit test, we have to set ica info manually or else the contract will error
         STATE
             .update(&mut deps.storage, |mut state| -> StdResult<ContractState> {
-                state.set_ica_info("ica_address", "channel-0");
+                state.set_ica_info("ica_address", "channel-0", TxEncoding::Proto3Json);
                 Ok(state)
             })
             .unwrap();
