@@ -68,7 +68,7 @@ impl IcaPacketData {
     /// ```
     ///
     /// In this example, the proposer must be the ICA controller's address.
-    pub fn from_strings(
+    pub fn from_json_strings(
         messages: Vec<String>,
         memo: Option<String>,
     ) -> Result<Self, ContractError> {
@@ -130,7 +130,7 @@ mod tests {
             pub messages: Vec<ExampleCosmosMessages>,
         }
 
-        let packet_from_string = IcaPacketData::from_strings(
+        let packet_from_string = IcaPacketData::from_json_strings(
             vec![r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#.to_string()], None).unwrap();
 
         let packet_data = packet_from_string.data;
