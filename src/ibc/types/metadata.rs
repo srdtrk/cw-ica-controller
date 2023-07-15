@@ -6,7 +6,7 @@
 //! ICA controller and the ICA host. It encodes key information about the messages exchanged
 //! between the ICA controller and the ICA host.
 
-use cosmwasm_std::IbcChannel;
+use cosmwasm_std::{IbcChannel, QuerierWrapper};
 use serde::{Deserialize, Serialize};
 
 use crate::types::ContractError;
@@ -55,13 +55,18 @@ impl IcaMetadata {
     }
 
     /// Creates a new IcaMetadata from an IbcChannel
-    pub fn from_channel(channel: &IbcChannel) -> Self {
+    pub fn from_channel(querier: &QuerierWrapper, channel: &IbcChannel) -> Self {
+        use super::stargate::query;
+        let counterparty_connection_id =
+            query::counterparty_connection_id(querier, channel.connection_id.clone())
+                .unwrap_or_default();
         Self {
             version: ICA_VERSION.to_string(),
             controller_connection_id: channel.connection_id.clone(),
-            // counterparty connection_id is not exposed in the IbcChannel struct
-            // so handshake will fail in non-test environments if this function is used
-            host_connection_id: channel.connection_id.clone(),
+            // counterparty connection_id is not exposed to the contract, so we
+            // use a stargate query to get it. Stargate queries are not universally
+            // supported, so this is a fallback option.
+            host_connection_id: counterparty_connection_id,
             address: "".to_string(),
             encoding: "proto3json".to_string(),
             tx_type: "sdk_multi_msg".to_string(),
@@ -129,7 +134,7 @@ fn validate_ica_address(address: &str) -> Result<(), ContractError> {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{IbcEndpoint, IbcOrder};
+    use cosmwasm_std::{testing::mock_dependencies, IbcEndpoint, IbcOrder};
 
     use super::*;
 
@@ -172,6 +177,9 @@ mod tests {
 
     #[test]
     fn test_validate_success() {
+        let deps = mock_dependencies();
+        let wrapped_querier = QuerierWrapper::new(&deps.querier);
+
         let channel = mock_channel(
             "ics27-1",
             "connection-0",
@@ -180,12 +188,15 @@ mod tests {
             "channel-1",
             "port-1",
         );
-        let metadata = IcaMetadata::from_channel(&channel);
+        let metadata = IcaMetadata::from_channel(&wrapped_querier, &channel);
         assert!(metadata.validate(&channel).is_ok());
     }
 
     #[test]
     fn test_validate_fail() {
+        let deps = mock_dependencies();
+        let wrapped_querier = QuerierWrapper::new(&deps.querier);
+
         let channel_1 = mock_channel(
             "ics27-1",
             "connection-0",
@@ -202,7 +213,7 @@ mod tests {
             "channel-1",
             "port-1",
         );
-        let metadata = IcaMetadata::from_channel(&channel_1);
+        let metadata = IcaMetadata::from_channel(&wrapped_querier, &channel_1);
         assert!(metadata.validate(&channel_2).is_err());
     }
 

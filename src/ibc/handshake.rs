@@ -79,7 +79,7 @@ mod ibc_channel_open {
             // if empty, use the default metadata.
             // However, CosmWasm does not expose the counterparty connection_id
             // so handshake will fail in non-testing environment if empty
-            IcaMetadata::from_channel(&channel)
+            IcaMetadata::from_channel(&deps.querier, &channel)
         } else {
             serde_json_wasm::from_str(&channel.version).map_err(|_| {
                 ContractError::UnknownDataType(
