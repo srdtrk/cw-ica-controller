@@ -38,7 +38,7 @@ pub struct IcaMetadata {
 #[cw_serde]
 pub enum TxEncoding {
     /// Protobuf is the protobuf serialization of the CosmosSDK's Any.
-    #[serde(rename = "proto")]
+    #[serde(rename = "proto3")]
     Protobuf,
     /// Proto3Json is the json serialization of the CosmosSDK's Any.
     #[serde(rename = "proto3json")]
