@@ -25,7 +25,8 @@ jobs:
       matrix:
         test:
           - TestIcaContractChannelHandshake
-          - TestIcaContractExecution
+          - TestIcaContractExecutionProto3JsonEncoding
+          - TestIcaContractExecutionProtobufEncoding
           - TestIcaContractTimeoutPacket
     name: ${{ matrix.test }}
     runs-on: ubuntu-latest
