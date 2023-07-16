@@ -19,27 +19,29 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     /// SendCustomIcaMessages sends custom messages from the ICA controller to the ICA host.
     SendCustomIcaMessages {
-        /// Base64-encoded json messages to send to the ICA host.
+        /// Base64-encoded json or proto messages to send to the ICA host.
         ///
-        /// # Example Message:
+        /// # Example JSON Message:
         ///
-        /// This is a legacy text governance proposal message.
+        /// This is a legacy text governance proposal message serialized using proto3json.
         ///
         /// ```json
         /// {
-        ///   "@type": "/cosmos.gov.v1beta1.MsgSubmitProposal",
-        ///   "content": {
-        ///     "@type": "/cosmos.gov.v1beta1.TextProposal",
-        ///     "title": "IBC Gov Proposal",
-        ///     "description": "tokens for all!"
-        ///   },
-        ///   "initial_deposit": [{ "denom": "stake", "amount": "5000" }],
-        ///   "proposer": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk"
+        ///   "messages": {
+        ///     "@type": "/cosmos.gov.v1beta1.MsgSubmitProposal",
+        ///     "content": {
+        ///       "@type": "/cosmos.gov.v1beta1.TextProposal",
+        ///       "title": "IBC Gov Proposal",
+        ///       "description": "tokens for all!"
+        ///     },
+        ///     "initial_deposit": [{ "denom": "stake", "amount": "5000" }],
+        ///     "proposer": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk"
+        ///   }
         /// }
         /// ```
         ///
         /// where proposer is the ICA controller's address.
-        messages: Vec<Binary>,
+        messages: Binary,
         /// Optional memo to include in the ibc packet.
         #[serde(skip_serializing_if = "Option::is_none")]
         packet_memo: Option<String>,

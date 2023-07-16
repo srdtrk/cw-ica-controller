@@ -87,20 +87,15 @@ mod execute {
         deps: DepsMut,
         env: Env,
         info: MessageInfo,
-        messages: Vec<Binary>,
+        messages: Binary,
         packet_memo: Option<String>,
         timeout_seconds: Option<u64>,
     ) -> Result<Response, ContractError> {
         let contract_state = STATE.load(deps.storage)?;
         contract_state.verify_admin(info.sender)?;
-
         let ica_info = contract_state.get_ica_info()?;
-        let ica_messages: Result<Vec<String>, _> = messages
-            .into_iter()
-            .map(|msg| String::from_utf8(msg.0))
-            .collect();
 
-        let ica_packet = IcaPacketData::from_json_strings(ica_messages?, packet_memo)?;
+        let ica_packet = IcaPacketData::new(messages.to_vec(), packet_memo);
         let send_packet_msg = ica_packet.to_ibc_msg(&env, ica_info.channel_id, timeout_seconds)?;
 
         Ok(Response::default().add_message(send_packet_msg))
@@ -187,7 +182,7 @@ mod tests {
     }
 
     #[test]
-    fn test_execute_send_custom_ica_messages() {
+    fn test_execute_send_custom_json_ica_messages() {
         let mut deps = mock_dependencies();
 
         let env = mock_env();
@@ -212,9 +207,10 @@ mod tests {
 
         // Ensure the contract admin can send custom messages
         let custom_msg_str = r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#;
-        let base64_msg = base64::encode(custom_msg_str.as_bytes());
+        let messages_str = format!(r#"{{"messages": [{}]}}"#, custom_msg_str);
+        let base64_json_messages = base64::encode(messages_str.as_bytes());
+        let messages = Binary::from_base64(&base64_json_messages).unwrap();
 
-        let messages = vec![Binary::from_base64(&base64_msg).unwrap()];
         let msg = ExecuteMsg::SendCustomIcaMessages {
             messages,
             packet_memo: None,
@@ -232,7 +228,7 @@ mod tests {
         // Ensure a non-admin cannot send custom messages
         let info = mock_info("non-admin", &[]);
         let msg = ExecuteMsg::SendCustomIcaMessages {
-            messages: vec![],
+            messages: Binary(vec![]),
             packet_memo: None,
             timeout_seconds: None,
         };
