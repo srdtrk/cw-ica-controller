@@ -129,19 +129,27 @@ func (s *ContractTestSuite) TestIcaContractChannelHandshake() {
 	})
 }
 
-func (s *ContractTestSuite) TestIcaContractExecution() {
+func (s *ContractTestSuite) TestIcaContractExecutionProto3JsonEncoding() {
+	s.IcaContractExecutionTestWithEncoding(icatypes.EncodingProto3JSON)
+}
+
+func (s *ContractTestSuite) TestIcaContractExecutionProtobufEncoding() {
+	s.IcaContractExecutionTestWithEncoding(icatypes.EncodingProtobuf)
+}
+
+func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string) {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 	// sets up the contract and does the channel handshake for the contract test suite.
-	s.SetupContractTestSuite(ctx, icatypes.EncodingProto3JSON)
+	s.SetupContractTestSuite(ctx, encoding)
 	wasmd, simd := s.ChainA, s.ChainB
 	wasmdUser, simdUser := s.UserA, s.UserB
 
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, s.IcaAddress)
 
-	s.Run("TestSendPredefinedActionSuccess", func() {
+	s.Run(fmt.Sprintf("TestSendPredefinedActionSuccess-%s", encoding), func() {
 		err := s.Contract.ExecPredefinedAction(ctx, wasmdUser.KeyName(), simdUser.FormattedAddress())
 		s.Require().NoError(err)
 
@@ -161,7 +169,7 @@ func (s *ContractTestSuite) TestIcaContractExecution() {
 		s.Require().Equal(uint64(0), callbackCounter.Timeout)
 	})
 
-	s.Run("TestSendCustomIcaMessagesSuccess", func() {
+	s.Run(fmt.Sprintf("TestSendCustomIcaMessagesSuccess-%s", encoding), func() {
 		// Send custom ICA messages through the contract:
 		// Let's create a governance proposal on simd and deposit some funds to it.
 		testProposal := govtypes.TextProposal{
@@ -184,7 +192,7 @@ func (s *ContractTestSuite) TestIcaContractExecution() {
 		}
 
 		// Execute the contract:
-		err = s.Contract.ExecCustomIcaMessages(ctx, wasmdUser.KeyName(), []proto.Message{proposalMsg, depositMsg}, icatypes.EncodingProto3JSON, nil, nil)
+		err = s.Contract.ExecCustomIcaMessages(ctx, wasmdUser.KeyName(), []proto.Message{proposalMsg, depositMsg}, encoding, nil, nil)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
@@ -205,7 +213,7 @@ func (s *ContractTestSuite) TestIcaContractExecution() {
 		// We do not check title and description of the proposal because this is a legacy proposal.
 	})
 
-	s.Run("TestSendCustomIcaMessagesError", func() {
+	s.Run(fmt.Sprintf("TestSendCustomIcaMessagesError-%s", encoding), func() {
 		// Test erroneous callback:
 		// Send incorrect custom ICA messages through the contract:
 		badMessage := base64.StdEncoding.EncodeToString([]byte("bad message"))
