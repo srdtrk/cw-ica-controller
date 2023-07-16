@@ -26,18 +26,20 @@ pub enum ExecuteMsg {
         /// This is a legacy text governance proposal message serialized using proto3json.
         ///
         /// ```json
-        /// {
-        ///   "messages": {
-        ///     "@type": "/cosmos.gov.v1beta1.MsgSubmitProposal",
-        ///     "content": {
-        ///       "@type": "/cosmos.gov.v1beta1.TextProposal",
-        ///       "title": "IBC Gov Proposal",
-        ///       "description": "tokens for all!"
-        ///     },
-        ///     "initial_deposit": [{ "denom": "stake", "amount": "5000" }],
-        ///     "proposer": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk"
-        ///   }
-        /// }
+        ///  {
+        ///    "messages": [
+        ///      {
+        ///        "@type": "/cosmos.gov.v1beta1.MsgSubmitProposal",
+        ///        "content": {
+        ///          "@type": "/cosmos.gov.v1beta1.TextProposal",
+        ///          "title": "IBC Gov Proposal",
+        ///          "description": "tokens for all!"
+        ///        },
+        ///        "initial_deposit": [{ "denom": "stake", "amount": "5000" }],
+        ///        "proposer": "cosmos1k4epd6js8aa7fk4e5l7u6dwttxfarwu6yald9hlyckngv59syuyqnlqvk8"
+        ///      }
+        ///    ]
+        ///  }
         /// ```
         ///
         /// where proposer is the ICA controller's address.
