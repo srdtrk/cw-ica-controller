@@ -4,10 +4,11 @@ The e2e tests are built using the [interchaintest](https://github.com/strangelov
 
 ## Running the tests locally
 
-All contract tests are located in `interchaintest/contract_test.go` file. Currently, there are three tests in this file:
+All contract tests are located in `interchaintest/contract_test.go` file. Currently, there are four tests in this file:
 
 - `TestIcaContractChannelHandshake`
-- `TestIcaContractExecution`
+- `TestIcaContractExecutionProto3JsonEncoding`
+- `TestIcaContractExecutionProtobufEncoding`
 - `TestIcaContractTimeoutPacket`
 
 (These three tests used to be one monolithic test, but they were split into three in order to run them in parallel in the CI.)
@@ -19,7 +20,7 @@ cd interchaintest/
 go test -v . -run TestWithContractTestSuite -testify.m $TEST_NAME
 ```
 
-where `$TEST_NAME` is one of the three tests listed above.
+where `$TEST_NAME` is one of the four tests listed above.
 
 Before running the tests, you must have built the optimized contract in the `/artifacts` directory. To do this, run the following command from the root of the repository:
 
