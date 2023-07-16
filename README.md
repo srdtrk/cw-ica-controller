@@ -16,28 +16,108 @@ To create an interchain account, the relayer must start the channel handshake on
 
 In this contract, the `execute` message is used to commit a packet to be sent to the host chain. This contract has two ways of executing an interchain transaction:
 
-1. `SendCustomIcaMessages`: This message requires the sender to give json/base64 encoded messages that will be sent to the host chain. The host chain will decode the messages and execute them. The result of the execution will be sent back to this contract, and the callback will be executed.
+1. `SendCustomIcaMessages`: This message requires the sender to give base64 encoded messages that will be sent to the host chain. The host chain will decode the messages and execute them. The result of the execution is sent back to this contract, and a callback is executed based on the result.
 
-The format that json messages have to take are defined by the cosmos-sdk's json codec. The following is an example of a json message that is submitting a text legacy governance: (In this example, the `proposer` is the address of the interchain account on the host chain)
+If the channel is using `proto3json` encoding, then the format that json messages have to take are defined by the cosmos-sdk's json codec. The following is an example of a json message that is submitting a text legacy governance: (In this example, the `proposer` is the address of the interchain account on the host chain)
 
 ```json
 {
-  "@type": "/cosmos.gov.v1beta1.MsgSubmitProposal",
-  "content": {
-    "@type": "/cosmos.gov.v1beta1.TextProposal",
-    "title": "IBC Gov Proposal",
-    "description": "tokens for all!"
-  },
-  "initial_deposit": [{ "denom": "stake", "amount": "5000" }],
-  "proposer": "cosmos1k4epd6js8aa7fk4e5l7u6dwttxfarwu6yald9hlyckngv59syuyqnlqvk8"
+  "messages": [
+    {
+      "@type": "/cosmos.gov.v1beta1.MsgSubmitProposal",
+      "content": {
+        "@type": "/cosmos.gov.v1beta1.TextProposal",
+        "title": "IBC Gov Proposal",
+        "description": "tokens for all!"
+      },
+      "initial_deposit": [{ "denom": "stake", "amount": "5000" }],
+      "proposer": "cosmos1k4epd6js8aa7fk4e5l7u6dwttxfarwu6yald9hlyckngv59syuyqnlqvk8"
+    }
+  ]
 }
 ```
 
-2. `SendPredefinedAction`: This message sends a 100 stake from the ica account to a user defined address on the host chain. This action is used to demonstrate how you can have a contract that executes a predefined action on the host chain. This is more useful for DAOs or other contracts that need to execute specific actions on the host chain.
+If the channel is using `proto3` (protobuf) encoding, then the format that protobuf messages have to take are defined by the cosmos-sdk's protobuf codec. Protobuf messages do not have nice human readable formats like json messages do. In the rust the `cosmos-sdk-proto` library is used to generate the protobuf messages as follows:
+
+```rust
+use cosmos_sdk_proto::{
+    cosmos::{bank::v1beta1::MsgSend, base::v1beta1::Coin},
+    traits::MessageExt,
+};
+
+// ...
+
+let predefined_proto_message = MsgSend {
+    from_address: ica_info.ica_address,
+    to_address,
+    amount: vec![Coin {
+        denom: "stake".to_string(),
+        amount: "100".to_string(),
+    }],
+};
+
+IcaPacketData::from_proto_anys(predefined_proto_message.to_any()?);
+```
+
+where `from_proto_anys` is defined as:
+
+```rust
+pub use cosmos_sdk_proto::ibc::applications::interchain_accounts::v1::CosmosTx;
+
+// ...
+
+/// Creates a new IcaPacketData from a list of [`cosmos_sdk_proto::Any`] messages
+pub fn from_proto_anys(messages: Vec<cosmos_sdk_proto::Any>, memo: Option<String>) -> Self {
+    let cosmos_tx = CosmosTx { messages };
+    let data = cosmos_tx.encode_to_vec();
+    Self::new(data, memo)
+}
+```
+
+And in golang [(see e2e tests)](./e2e/interchaintest/types/contract_msg.go) we use the `SerializeCosmosTxWithEncoding` from ibc-go to encode the protobuf messages where encoding is either `proto3` or `proto3json`:
+
+```go
+// NewSendCustomIcaMessagesMsg creates a new SendCustomIcaMessagesMsg.
+func NewSendCustomIcaMessagesMsg(cdc codec.BinaryCodec, msgs []proto.Message, encoding string, memo *string, timeout *uint64) string {
+	type SendCustomIcaMessagesMsg struct {
+		Messages       string  `json:"messages"`
+		PacketMemo     *string `json:"packet_memo,omitempty"`
+		TimeoutSeconds *uint64 `json:"timeout_seconds,omitempty"`
+	}
+
+	type SendCustomIcaMessagesMsgWrapper struct {
+		SendCustomIcaMessagesMsg SendCustomIcaMessagesMsg `json:"send_custom_ica_messages"`
+	}
+
+	bz, err := icatypes.SerializeCosmosTxWithEncoding(cdc, msgs, encoding)
+	if err != nil {
+		panic(err)
+	}
+
+	messages := base64.StdEncoding.EncodeToString(bz)
+
+	msg := SendCustomIcaMessagesMsgWrapper{
+		SendCustomIcaMessagesMsg: SendCustomIcaMessagesMsg{
+			Messages:       messages,
+			PacketMemo:     memo,
+			TimeoutSeconds: timeout,
+		},
+	}
+
+	jsonBytes, err := json.Marshal(msg)
+	if err != nil {
+		panic(err)
+	}
+
+	return string(jsonBytes)
+}
+```
+
+2. `SendPredefinedAction`: This message sends a 100 stake from the ica account to a user defined address on the host chain. This action is used to demonstrate how you can have a contract that executes a predefined action on the host chain. This is more useful for DAOs or other contracts that need to execute specific actions on the host chain. This message type checks which encoding the channel is using, and sends the appropriate message to the host chain. The host chain then executes the message, and sends the result back to this contract. A callback is then executed based on the result.
 
 ### Execute a callback
 
-This contract supports callbacks. See `src/ibc/relay.rs` for how to decode whether a transaction was successful or not. Currently, a counter is incremented to record how many transactions were successful and how many failed. This is just a placeholder for more complex logic that can be executed in the callback.
+This contract supports callbacks. See [`src/ibc/relay.rs`](./src/ibc/relay.rs) to learn how to decode whether a transaction was successful or not. Currently, a counter is incremented to record how many transactions were successful and how many failed. This is just a placeholder for more complex logic that can be executed in the callback.
 
 ### Channel Closing and Reopening
 
