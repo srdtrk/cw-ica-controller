@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
 
 	sdkmath "cosmossdk.io/math"
@@ -38,13 +39,13 @@ func TestExecuteMsgs(t *testing.T) {
 	sendPredefinedActionMsg := types.NewSendPredefinedActionMsg(testAddress)
 	require.Equal(t, `{"send_predefined_action":{"to_address":"srdtrk"}}`, sendPredefinedActionMsg)
 
-	sendCustomIcaMessagesMsg := types.NewSendCustomIcaMessagesMsg(nil, nil, nil, nil)
+	sendCustomIcaMessagesMsg := types.NewSendCustomIcaMessagesMsg(nil, nil, "", nil, nil)
 	require.Equal(t, `{"send_custom_ica_messages":{"messages":[]}}`, sendCustomIcaMessagesMsg)
 	memo := "test"
-	sendCustomIcaMessagesMsg = types.NewSendCustomIcaMessagesMsg(nil, nil, &memo, nil)
+	sendCustomIcaMessagesMsg = types.NewSendCustomIcaMessagesMsg(nil, nil, "", &memo, nil)
 	require.Equal(t, `{"send_custom_ica_messages":{"messages":[],"packet_memo":"test"}}`, sendCustomIcaMessagesMsg)
 	timeout := uint64(150)
-	sendCustomIcaMessagesMsg = types.NewSendCustomIcaMessagesMsg(nil, nil, nil, &timeout)
+	sendCustomIcaMessagesMsg = types.NewSendCustomIcaMessagesMsg(nil, nil, "", nil, &timeout)
 	require.Equal(t, `{"send_custom_ica_messages":{"messages":[],"timeout_seconds":150}}`, sendCustomIcaMessagesMsg)
 
 	// Test with custom messages:
@@ -78,7 +79,7 @@ func TestExecuteMsgs(t *testing.T) {
 		Amount:     sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(10000000))),
 	}
 
-	customMsg := types.NewSendCustomIcaMessagesMsg(wasm.WasmEncoding().Codec, []sdk.Msg{proposalMsg, depositMsg}, nil, nil)
+	customMsg := types.NewSendCustomIcaMessagesMsg(wasm.WasmEncoding().Codec, []proto.Message{proposalMsg, depositMsg}, "proto3json", nil, nil)
 	unmarshaledCustomMsg := SendCustomIcaMessagesMsgWrapper{}
 	err = json.Unmarshal([]byte(customMsg), &unmarshaledCustomMsg)
 	require.NoError(t, err)

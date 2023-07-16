@@ -3,7 +3,7 @@ package types
 import (
 	"context"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/gogoproto/proto"
 
 	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
 )
@@ -44,10 +44,10 @@ func (c *Contract) Port() string {
 // ExecCustomMessages invokes the contract's `CustomIcaMessages` message as the caller
 func (c *Contract) ExecCustomIcaMessages(
 	ctx context.Context, callerKeyName string,
-	messages []sdk.Msg, memo *string,
-	timeout *uint64,
+	messages []proto.Message, encoding string,
+	memo *string, timeout *uint64,
 ) error {
-	customMsg := NewSendCustomIcaMessagesMsg(c.chain.Config().EncodingConfig.Codec, messages, memo, timeout)
+	customMsg := NewSendCustomIcaMessagesMsg(c.chain.Config().EncodingConfig.Codec, messages, encoding, memo, timeout)
 	err := c.Execute(ctx, callerKeyName, customMsg)
 	return err
 }

@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/cosmos/gogoproto/proto"
+
 	codec "github.com/cosmos/cosmos-sdk/codec"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	icatypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/types"
 )
 
 // NewInstantiateMsg creates a new InstantiateMsg.
@@ -25,32 +27,23 @@ func NewSendPredefinedActionMsg(to_address string) string {
 }
 
 // NewSendCustomIcaMessagesMsg creates a new SendCustomIcaMessagesMsg.
-func NewSendCustomIcaMessagesMsg(cdc codec.BinaryCodec, msgs []sdk.Msg, memo *string, timeout *uint64) string {
+func NewSendCustomIcaMessagesMsg(cdc codec.BinaryCodec, msgs []proto.Message, encoding string, memo *string, timeout *uint64) string {
 	type SendCustomIcaMessagesMsg struct {
-		Messages       []string `json:"messages"`
-		PacketMemo     *string  `json:"packet_memo,omitempty"`
-		TimeoutSeconds *uint64  `json:"timeout_seconds,omitempty"`
+		Messages       string  `json:"messages"`
+		PacketMemo     *string `json:"packet_memo,omitempty"`
+		TimeoutSeconds *uint64 `json:"timeout_seconds,omitempty"`
 	}
 
 	type SendCustomIcaMessagesMsgWrapper struct {
 		SendCustomIcaMessagesMsg SendCustomIcaMessagesMsg `json:"send_custom_ica_messages"`
 	}
 
-	messages := make([]string, len(msgs))
-
-	for i, msg := range msgs {
-		// message must first be converted to Any because the host expects to
-		// unmarshal the message from Any not from the concrete type.
-		protoAny, err := codectypes.NewAnyWithValue(msg)
-		if err != nil {
-			panic(err)
-		}
-		bz, err := cdc.(*codec.ProtoCodec).MarshalJSON(protoAny)
-		if err != nil {
-			panic(err)
-		}
-		messages[i] = base64.StdEncoding.EncodeToString(bz)
+	bz, err := icatypes.SerializeCosmosTxWithEncoding(cdc, msgs, encoding)
+	if err != nil {
+		panic(err)
 	}
+
+	messages := base64.StdEncoding.EncodeToString(bz)
 
 	msg := SendCustomIcaMessagesMsgWrapper{
 		SendCustomIcaMessagesMsg: SendCustomIcaMessagesMsg{

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/suite"
 
 	sdkmath "cosmossdk.io/math"
@@ -35,7 +36,7 @@ type ContractTestSuite struct {
 
 // SetupContractAndChannel starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 // sets up the contract and does the channel handshake for the contract test suite.
-func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context) {
+func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding string) {
 	// This starts the chains, relayer, creates the user accounts, and creates the ibc clients and connections.
 	s.SetupSuite(ctx, chainSpecs)
 
@@ -44,7 +45,7 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context) {
 	s.Contract, err = types.StoreAndInstantiateNewContract(ctx, s.ChainA, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
 
-	version := fmt.Sprintf(`{"version":"ics27-1","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"proto3json","tx_type":"sdk_multi_msg"}`, s.ChainAConnID, s.ChainBConnID)
+	version := fmt.Sprintf(`{"version":"%s","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"%s","tx_type":"%s"}`, icatypes.Version, s.ChainAConnID, s.ChainBConnID, encoding, icatypes.TxTypeSDKMultiMsg)
 	err = s.Relayer.CreateChannel(ctx, s.ExecRep, s.PathName, ibc.CreateChannelOptions{
 		SourcePortName: s.Contract.Port(),
 		DestPortName:   icatypes.HostPortID,
@@ -72,7 +73,7 @@ func (s *ContractTestSuite) TestIcaContractChannelHandshake() {
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 	// sets up the contract and does the channel handshake for the contract test suite.
-	s.SetupContractTestSuite(ctx)
+	s.SetupContractTestSuite(ctx, icatypes.EncodingProto3JSON)
 	wasmd, simd := s.ChainA, s.ChainB
 	wasmdUser := s.UserA
 
@@ -133,7 +134,7 @@ func (s *ContractTestSuite) TestIcaContractExecution() {
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 	// sets up the contract and does the channel handshake for the contract test suite.
-	s.SetupContractTestSuite(ctx)
+	s.SetupContractTestSuite(ctx, icatypes.EncodingProto3JSON)
 	wasmd, simd := s.ChainA, s.ChainB
 	wasmdUser, simdUser := s.UserA, s.UserB
 
@@ -183,7 +184,7 @@ func (s *ContractTestSuite) TestIcaContractExecution() {
 		}
 
 		// Execute the contract:
-		err = s.Contract.ExecCustomIcaMessages(ctx, wasmdUser.KeyName(), []sdk.Msg{proposalMsg, depositMsg}, nil, nil)
+		err = s.Contract.ExecCustomIcaMessages(ctx, wasmdUser.KeyName(), []proto.Message{proposalMsg, depositMsg}, icatypes.EncodingProto3JSON, nil, nil)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
@@ -208,7 +209,7 @@ func (s *ContractTestSuite) TestIcaContractExecution() {
 		// Test erroneous callback:
 		// Send incorrect custom ICA messages through the contract:
 		badMessage := base64.StdEncoding.EncodeToString([]byte("bad message"))
-		badCustomMsg := `{"send_custom_ica_messages":{"messages":["` + badMessage + `"]}}`
+		badCustomMsg := `{"send_custom_ica_messages":{"messages":"` + badMessage + `"}}`
 
 		// Execute the contract:
 		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), badCustomMsg)
@@ -231,7 +232,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 	// sets up the contract and does the channel handshake for the contract test suite.
-	s.SetupContractTestSuite(ctx)
+	s.SetupContractTestSuite(ctx, icatypes.EncodingProto3JSON)
 	wasmd, simd := s.ChainA, s.ChainB
 	wasmdUser, simdUser := s.UserA, s.UserB
 
@@ -255,7 +256,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 
 		timeout := uint64(3)
 		// Execute the contract:
-		err = s.Contract.ExecCustomIcaMessages(ctx, wasmdUser.KeyName(), []sdk.Msg{}, nil, &timeout)
+		err = s.Contract.ExecCustomIcaMessages(ctx, wasmdUser.KeyName(), []proto.Message{}, icatypes.EncodingProto3JSON, nil, &timeout)
 		s.Require().NoError(err)
 
 		// Wait until timeout:
