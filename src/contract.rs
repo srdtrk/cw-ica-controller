@@ -78,7 +78,15 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 mod execute {
     use cosmwasm_std::coins;
 
-    use crate::{ibc::types::packet::IcaPacketData, types::cosmos_msg::ExampleCosmosMessages};
+    use crate::{
+        ibc::types::{metadata::TxEncoding, packet::IcaPacketData},
+        types::cosmos_msg::ExampleCosmosMessages,
+    };
+
+    use cosmos_sdk_proto::{
+        cosmos::{bank::v1beta1::MsgSend, base::v1beta1::Coin},
+        traits::MessageExt,
+    };
 
     use super::*;
 
@@ -110,15 +118,30 @@ mod execute {
     ) -> Result<Response, ContractError> {
         let contract_state = STATE.load(deps.storage)?;
         contract_state.verify_admin(info.sender)?;
-
         let ica_info = contract_state.get_ica_info()?;
-        let predefined_message = ExampleCosmosMessages::MsgSend {
-            from_address: ica_info.ica_address,
-            to_address,
-            amount: coins(100, "stake"),
-        }
-        .to_string();
-        let ica_packet = IcaPacketData::from_json_strings(vec![predefined_message], None)?;
+
+        let ica_packet = match ica_info.encoding {
+            TxEncoding::Protobuf => {
+                let predefined_proto_message = MsgSend {
+                    from_address: ica_info.ica_address,
+                    to_address,
+                    amount: vec![Coin {
+                        denom: "stake".to_string(),
+                        amount: "100".to_string(),
+                    }],
+                };
+                IcaPacketData::from_proto_anys(vec![predefined_proto_message.to_any()?], None)
+            }
+            TxEncoding::Proto3Json => {
+                let predefined_json_message = ExampleCosmosMessages::MsgSend {
+                    from_address: ica_info.ica_address,
+                    to_address,
+                    amount: coins(100, "stake"),
+                }
+                .to_string();
+                IcaPacketData::from_json_strings(vec![predefined_json_message], None)?
+            }
+        };
         let send_packet_msg = ica_packet.to_ibc_msg(&env, &ica_info.channel_id, None)?;
 
         Ok(Response::default().add_message(send_packet_msg))

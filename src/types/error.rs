@@ -21,6 +21,9 @@ pub enum ContractError {
     #[error("json_serde_wasm deserialization error: {0}")]
     JsonWasmDeserialize(#[from] serde_json_wasm::de::Error),
 
+    #[error("prost encoding error: {0}")]
+    ProstEncodeError(#[from] cosmos_sdk_proto::prost::EncodeError),
+
     #[error("unauthorized")]
     Unauthorized {},
 
