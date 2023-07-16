@@ -119,9 +119,6 @@ impl IcaMetadata {
         if !self.address.is_empty() {
             validate_ica_address(&self.address)?;
         }
-        if self.encoding != TxEncoding::Proto3Json {
-            return Err(ContractError::UnsupportedCodec(self.encoding.to_string()));
-        }
         if self.tx_type != "sdk_multi_msg" {
             return Err(ContractError::UnsupportedTxType(self.tx_type.clone()));
         }
