@@ -39,7 +39,7 @@ pub mod query {
     }
 
     /// Contains the types used in query responses.
-    pub mod response {
+    mod response {
         /// QueryConnectionResponse is the response type for the Query/Connection RPC
         /// method. Besides the connection end, it includes a proof and the height from
         /// which the proof was retrieved.
