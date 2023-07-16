@@ -1,18 +1,19 @@
-//! This module defines the [`ExampleCosmosMessages`] enum which is used to encode Cosmos messages as
-//! Any's in [`proto3json`](crate::ibc::types::metadata::TxEncoding::Proto3Json) encoding format.
+//! This module defines the [`ExampleCosmosMessages`] enum which is used to encode Cosmos messages as Any's in
+//! [`proto3json`](crate::ibc::types::metadata::TxEncoding::Proto3Json) encoding format.
 
 use cosmwasm_std::Coin;
 
-/// ExampleCosmosMessages is a list of Cosmos messages that can be sent to the ICA host.
+/// ExampleCosmosMessages is a list of Cosmos messages that can be sent to the ICA host if the channel handshake is
+/// completed with the [`proto3json`](crate::ibc::types::metadata::TxEncoding::Proto3Json) encoding format.
 ///
 /// This enum corresponds to the [Any](https://github.com/cosmos/cosmos-sdk/blob/v0.47.3/codec/types/any.go#L11-L52)
 /// type defined in the Cosmos SDK. The Any type is used to encode and decode Cosmos messages. It also has a built-in
 /// json codec. This enum is used to encode Cosmos messages using json so that they can be deserialized as an Any by
 /// the host chain using the Cosmos SDK's json codec.
 ///
-/// In general, this ICA controller should be used with custom messages and **not with the
-/// messages defined here**. The messages defined here are to demonstrate how an ICA controller
-/// can be used with registered ExampleCosmosMessages (in case the contract is a DAO with **predefined actions**)
+/// In general, this ICA controller should be used with custom messages and **not with the messages defined here**.
+/// The messages defined here are to demonstrate how an ICA controller can be used with registered
+/// ExampleCosmosMessages (in case the contract is a DAO with **predefined actions**)
 ///
 /// This enum does not derive [Deserialize](serde::Deserialize), see issue
 /// [#1443](https://github.com/CosmWasm/cosmwasm/issues/1443)
