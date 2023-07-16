@@ -5,13 +5,20 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{to_binary, Env, IbcMsg, IbcTimeout};
 
+pub use cosmos_sdk_proto::ibc::applications::interchain_accounts::v1::CosmosTx;
+use cosmos_sdk_proto::traits::Message;
+
 use crate::types::ContractError;
 
-/// DEFAULT_TIMEOUT_SECONDS is the default timeout for [`InterchainAccountPacketData`]
+/// DEFAULT_TIMEOUT_SECONDS is the default timeout for [`IcaPacketData`]
 pub const DEFAULT_TIMEOUT_SECONDS: u64 = 600;
 
 /// IcaPacketData is comprised of a raw transaction, type of transaction and optional memo field.
-/// Currently, the host only supports json (or proto) serialized Any messages as raw transactions.
+/// Currently, the host only supports [protobuf](super::metadata::TxEncoding::Protobuf) or
+/// [proto3json](super::metadata::TxEncoding::Proto3Json) serialized Cosmos transactions.
+///
+/// If protobuf is used, then the raw transaction must encoded using
+/// [`CosmosTx`](cosmos_sdk_proto::ibc::applications::interchain_accounts::v1::CosmosTx).
 #[cw_serde]
 pub struct IcaPacketData {
     /// Type defines a classification of message issued from a controller
@@ -34,7 +41,7 @@ pub struct IcaPacketData {
 }
 
 impl IcaPacketData {
-    /// Creates a new InterchainAccountPacketData
+    /// Creates a new IcaPacketData
     pub fn new(data: Vec<u8>, memo: Option<String>) -> Self {
         Self {
             r#type: 1,
@@ -43,7 +50,7 @@ impl IcaPacketData {
         }
     }
 
-    /// Creates a new InterchainAccountPacketData from a list of JSON strings
+    /// Creates a new IcaPacketData from a list of JSON strings
     ///
     /// The messages must be serialized as JSON strings in the format expected by the ICA host.
     /// The following is an example of a serialized [`IcaCosmosTx`](ica_cosmos_tx::IcaCosmosTx) with one legacy gov proposal message:
@@ -78,7 +85,14 @@ impl IcaPacketData {
         Ok(Self::new(data, memo))
     }
 
-    /// Creates an IBC SendPacket message from the InterchainAccountPacketData
+    /// Creates a new IcaPacketData from a list of [`cosmos_sdk_proto::Any`] messages
+    pub fn from_proto_anys(messages: Vec<cosmos_sdk_proto::Any>, memo: Option<String>) -> Self {
+        let cosmos_tx = CosmosTx { messages };
+        let data = cosmos_tx.encode_to_vec();
+        Self::new(data, memo)
+    }
+
+    /// Creates an IBC SendPacket message from the IcaPacketData
     pub fn to_ibc_msg(
         &self,
         env: &Env,
@@ -97,7 +111,7 @@ impl IcaPacketData {
     }
 }
 
-/// contains the [`AcknowledgementData`] that is the acknowledgement to an ibc packet
+/// contains the [`AcknowledgementData`] struct which is the acknowledgement to an ica packet
 pub mod acknowledgement {
     use cosmwasm_std::Binary;
 
