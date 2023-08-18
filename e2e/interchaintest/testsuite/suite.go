@@ -51,8 +51,8 @@ func (s *TestSuite) SetupSuite(ctx context.Context, chainSpecs []*interchaintest
 	s.ChainA = chains[0].(*cosmos.CosmosChain)
 	s.ChainB = chains[1].(*cosmos.CosmosChain)
 
-	// This is currently the only relayer image that works with the main (next) version of ibc-go
-	customRelayerImage := relayer.CustomDockerImage("damiannolan/rly", "", "100:1000")
+	// docker run -it --rm --entrypoint echo ghcr.io/cosmos/relayer "$(id -u):$(id -g)"
+	customRelayerImage := relayer.CustomDockerImage("ghcr.io/cosmos/relayer", "", "100:1000")
 
 	s.Relayer = interchaintest.NewBuiltinRelayerFactory(
 		ibc.CosmosRly,
