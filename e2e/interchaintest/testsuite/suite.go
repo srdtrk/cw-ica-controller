@@ -110,7 +110,8 @@ func (s *TestSuite) SetupSuite(ctx context.Context, chainSpecs []*interchaintest
 	// Query for the newly created connection in wasmd
 	connections, err := s.Relayer.GetConnections(ctx, s.ExecRep, s.ChainA.Config().ChainID)
 	s.Require().NoError(err)
-	s.Require().Equal(1, len(connections))
+	// localhost is always a connection since ibc-go v7.1+
+	s.Require().Equal(2, len(connections))
 	wasmdConnection := connections[0]
 	s.Require().NotEqual("connection-localhost", wasmdConnection.ID)
 	s.ChainAConnID = wasmdConnection.ID
@@ -118,7 +119,7 @@ func (s *TestSuite) SetupSuite(ctx context.Context, chainSpecs []*interchaintest
 	// Query for the newly created connection in simd
 	connections, err = s.Relayer.GetConnections(ctx, s.ExecRep, s.ChainB.Config().ChainID)
 	s.Require().NoError(err)
-	// localhost is always a connection in main (next) version of ibc-go
+	// localhost is always a connection since ibc-go v7.1+
 	s.Require().Equal(2, len(connections))
 	simdConnection := connections[0]
 	s.Require().NotEqual("connection-localhost", simdConnection.ID)
