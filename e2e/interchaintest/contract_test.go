@@ -312,8 +312,9 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 	})
 
 	s.Run("TestChannelReopening", func() {
+		version := fmt.Sprintf(`{"version":"%s","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"%s","tx_type":"%s"}`, icatypes.Version, s.ChainAConnID, s.ChainBConnID, icatypes.EncodingProto3JSON, icatypes.TxTypeSDKMultiMsg)
 		// Create channel with override and empty version:
-		s.CreateChannelWithOverride(ctx, s.Contract.Port(), icatypes.HostPortID, ibc.Ordered, "")
+		s.CreateChannelWithOverride(ctx, s.Contract.Port(), icatypes.HostPortID, ibc.Ordered, version)
 
 		// Wait for the channel to get set up
 		err := testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
@@ -364,7 +365,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		err := s.Contract.ExecPredefinedAction(ctx, wasmdUser.KeyName(), simdUser.FormattedAddress())
 		s.Require().NoError(err)
 
-		err = testutil.WaitForBlocks(ctx, 6, wasmd, simd)
+		err = testutil.WaitForBlocks(ctx, 8, wasmd, simd)
 		s.Require().NoError(err)
 
 		icaBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
