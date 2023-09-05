@@ -365,7 +365,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		err := s.Contract.ExecPredefinedAction(ctx, wasmdUser.KeyName(), simdUser.FormattedAddress())
 		s.Require().NoError(err)
 
-		err = testutil.WaitForBlocks(ctx, 8, wasmd, simd)
+		err = testutil.WaitForBlocks(ctx, 10, wasmd, simd)
 		s.Require().NoError(err)
 
 		icaBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
