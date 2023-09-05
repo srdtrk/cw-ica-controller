@@ -40,7 +40,7 @@ var chainSpecs = []*interchaintest.ChainSpec{
 			Images: []ibc.DockerImage{
 				{
 					Repository: "ghcr.io/cosmos/ibc-go-simd", // FOR LOCAL IMAGE USE: Docker Image Name
-					Version:    "main",                       // FOR LOCAL IMAGE USE: Docker Image Tag
+					Version:    "v7.3.0",                     // FOR LOCAL IMAGE USE: Docker Image Tag
 				},
 			},
 			Bin:                    "simd",
@@ -50,7 +50,7 @@ var chainSpecs = []*interchaintest.ChainSpec{
 			GasAdjustment:          1.3,
 			TrustingPeriod:         "508h",
 			NoHostMount:            false,
-			UsingNewGenesisCommand: true,
+			UsingNewGenesisCommand: false,
 		},
 	},
 }
