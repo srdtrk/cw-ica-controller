@@ -146,4 +146,4 @@ This contract is not meant to be used in production. It is meant to be used as a
 
 ## Acknowledgements
 
-Much thanks to [Art3mix](https://github.com/Art3miX) for all the helpful discussions and nailing down of the encoding/decoding issues.
+Much thanks to [Art3mix](https://github.com/Art3miX) for all the helpful discussions and nailing down of the encoding/decoding issues. Also thanks to [0xekez](https://github.com/0xekez) for their work on [cw-ibc-example](https://github.com/0xekez/cw-ibc-example) which was a great reference for CosmWasm IBC endpoints and interchaintest.
