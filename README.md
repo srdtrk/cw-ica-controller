@@ -1,5 +1,7 @@
 # CosmWasm ICA Controller Contract
 
+![cw-ica-controller](./cw-ica-controller.svg)
+
 This is a CosmWasm smart contract that communicates with the golang ica/host module on the host chain to create and manage one interchain account. This contract can also execute callbacks based on the result of the interchain account transaction. Because this is a CosmWasm implementation of the entire ICA controller, the chain that this contract is deployed on need **not** have the ICA module enabled. This contract can be deployed on any chain that supports IBC CosmWasm smart contracts.
 
 This contract was originally written to test the json encoding/decoding [feature being added to interchain accounts txs](https://github.com/cosmos/ibc-go/pull/3796). Previously, the only way to encode ica txs was to use Protobuf (`proto3`) encoding. Proto3Json encoding/decoding feature is supported in ibc-go v7.3+. This contract now supports both proto3json and protobuf encoding/decoding. In current mainnets (ibc-go v7.2 and below), only protobuf encoding/decoding is supported.
