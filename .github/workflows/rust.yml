@@ -1,8 +1,10 @@
 # Based on https://github.com/actions-rs/example/blob/master/.github/workflows/quickstart.yml
-
-on: [push, pull_request]
-
 name: rust
+
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
   test:
@@ -16,7 +18,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: 1.69.0
+          toolchain: 1.73.0
           target: wasm32-unknown-unknown
           override: true
 
@@ -47,7 +49,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: 1.70.0
+          toolchain: 1.73.0
           override: true
           components: rustfmt, clippy
 
