@@ -83,10 +83,8 @@ mod execute {
         types::cosmos_msg::ExampleCosmosMessages,
     };
 
-    use cosmos_sdk_proto::{
-        cosmos::{bank::v1beta1::MsgSend, base::v1beta1::Coin},
-        traits::MessageExt,
-    };
+    use cosmos_sdk_proto::cosmos::{bank::v1beta1::MsgSend, base::v1beta1::Coin};
+    use cosmos_sdk_proto::Any;
 
     use super::*;
 
@@ -130,7 +128,10 @@ mod execute {
                         amount: "100".to_string(),
                     }],
                 };
-                IcaPacketData::from_proto_anys(vec![predefined_proto_message.to_any()?], None)
+                IcaPacketData::from_proto_anys(
+                    vec![Any::from_msg(&predefined_proto_message)?],
+                    None,
+                )
             }
             TxEncoding::Proto3Json => {
                 let predefined_json_message = ExampleCosmosMessages::MsgSend {
