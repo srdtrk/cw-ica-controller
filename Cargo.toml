@@ -32,7 +32,7 @@ overflow-checks = true
 
 [features]
 # for more explicit tests, cargo test --features=backtraces
-# backtraces = ["cosmwasm-std/backtraces"]
+backtraces = ["cosmwasm-std/backtraces"]
 # use library feature to disable all instantiate/execute/query exports
 library = []
 
@@ -40,7 +40,7 @@ library = []
 optimize = """docker run --rm -v "$(pwd)":/code \
   --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \
   --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/rust-optimizer:0.12.13
+  cosmwasm/rust-optimizer:0.14.0
 """
 
 [dependencies]
