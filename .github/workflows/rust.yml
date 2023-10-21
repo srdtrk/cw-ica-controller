@@ -1,8 +1,10 @@
 # Based on https://github.com/actions-rs/example/blob/master/.github/workflows/quickstart.yml
-
-on: [push, pull_request]
-
 name: rust
+
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
   test:
