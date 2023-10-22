@@ -4,7 +4,7 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
-use crate::types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::types::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::types::state::{
     CallbackCounter, ChannelState, ContractState, CALLBACK_COUNTER, CHANNEL_STATE, STATE,
 };
@@ -73,6 +73,18 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetChannel {} => to_binary(&query::channel(deps)?),
         QueryMsg::GetCallbackCounter {} => to_binary(&query::callback_counter(deps)?),
     }
+}
+
+/// Migrate contract if version is lower than current version
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    migrate::validate_semver(deps.as_ref())?;
+
+    cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    // If state structure changed in any contract version in the way migration is needed, it
+    // should occur here
+
+    Ok(Response::default())
 }
 
 mod execute {
@@ -165,6 +177,30 @@ mod query {
     /// Returns the saved callback counter.
     pub fn callback_counter(deps: Deps) -> StdResult<CallbackCounter> {
         CALLBACK_COUNTER.load(deps.storage)
+    }
+}
+
+mod migrate {
+    use super::*;
+
+    pub fn validate_semver(deps: Deps) -> Result<(), ContractError> {
+        let prev_cw2_version = cw2::get_contract_version(deps.storage)?;
+        if prev_cw2_version.contract != CONTRACT_NAME {
+            return Err(ContractError::InvalidMigrationVersion {
+                expected: CONTRACT_NAME.to_string(),
+                actual: prev_cw2_version.contract,
+            });
+        }
+
+        let version: semver::Version = CONTRACT_VERSION.parse()?;
+        let prev_version: semver::Version = prev_cw2_version.version.parse()?;
+        if prev_version >= version {
+            return Err(ContractError::InvalidMigrationVersion {
+                expected: format!("> {}", prev_version),
+                actual: CONTRACT_VERSION.to_string(),
+            });
+        }
+        Ok(())
     }
 }
 
