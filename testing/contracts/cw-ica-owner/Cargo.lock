@@ -243,6 +243,7 @@ dependencies = [
  "cw-storage-plus",
  "cw2",
  "schemars",
+ "semver",
  "serde",
  "serde-json-wasm",
  "thiserror",
