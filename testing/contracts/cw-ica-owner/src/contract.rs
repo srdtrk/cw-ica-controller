@@ -5,7 +5,7 @@ use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult}
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{STATE, ContractState};
+use crate::state::{ContractState, STATE};
 
 /*
 // version info for migration info
@@ -26,7 +26,10 @@ pub fn instantiate(
         info.sender
     };
 
-    STATE.save(deps.storage, &ContractState::new(admin, msg.ica_controller_code_id))?;
+    STATE.save(
+        deps.storage,
+        &ContractState::new(admin, msg.ica_controller_code_id),
+    )?;
     Ok(Response::default())
 }
 
