@@ -24,8 +24,14 @@ pub enum ContractError {
     #[error("prost encoding error: {0}")]
     ProstEncodeError(#[from] cosmos_sdk_proto::prost::EncodeError),
 
+    #[error("semver parse error: {0}")]
+    SemverError(#[from] semver::Error),
+
     #[error("unauthorized")]
     Unauthorized {},
+
+    #[error("invalid migration version: expected {expected}, got {actual}")]
+    InvalidMigrationVersion { expected: String, actual: String },
 
     #[error("invalid channel ordering")]
     InvalidChannelOrdering {},

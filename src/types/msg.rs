@@ -76,3 +76,7 @@ pub enum QueryMsg {
     #[returns(crate::types::state::CallbackCounter)]
     GetCallbackCounter {},
 }
+
+/// The message to migrate this contract.
+#[cw_serde]
+pub struct MigrateMsg {}
