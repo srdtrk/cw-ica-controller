@@ -4,9 +4,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{
-    to_binary, Addr, Binary, CosmosMsg, QuerierWrapper, StdResult, WasmMsg,
-};
+use cosmwasm_std::{to_binary, Addr, Binary, CosmosMsg, QuerierWrapper, StdResult, WasmMsg};
 
 use crate::types::{msg, state};
 
