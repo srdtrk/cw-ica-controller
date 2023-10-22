@@ -1,9 +1,12 @@
-//! This file contains helper functions for working with this contract.
+//! This file contains helper functions for working with this contract from
+//! external contracts.
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{to_binary, Addr, CosmosMsg, StdResult, WasmMsg, Binary, WasmQuery, QuerierWrapper};
+use cosmwasm_std::{
+    to_binary, Addr, Binary, CosmosMsg, QuerierWrapper, StdResult, WasmMsg,
+};
 
 use crate::types::{msg, state};
 
@@ -47,6 +50,46 @@ impl CwIcaControllerContract {
     /// query_state queries the [`state::ContractState`] of this contract
     pub fn query_state(&self, querier: QuerierWrapper) -> StdResult<state::ContractState> {
         querier.query_wasm_smart(self.addr(), &msg::QueryMsg::GetContractState {})
+    }
+
+    /// query_callback_counter queries the [`state::CallbackCounter`] of this contract
+    pub fn query_callback_counter(
+        &self,
+        querier: QuerierWrapper,
+    ) -> StdResult<state::CallbackCounter> {
+        querier.query_wasm_smart(self.addr(), &msg::QueryMsg::GetCallbackCounter {})
+    }
+
+    /// update_admin creates a [`WasmMsg::UpdateAdmin`] message targeting this contract
+    pub fn update_admin(&self, admin: impl Into<String>) -> StdResult<CosmosMsg> {
+        Ok(WasmMsg::UpdateAdmin {
+            contract_addr: self.addr().into(),
+            admin: admin.into(),
+        }
+        .into())
+    }
+
+    /// clear_admin creates a [`WasmMsg::ClearAdmin`] message targeting this contract
+    pub fn clear_admin(&self) -> StdResult<CosmosMsg> {
+        Ok(WasmMsg::ClearAdmin {
+            contract_addr: self.addr().into(),
+        }
+        .into())
+    }
+
+    /// migrate creates a [`WasmMsg::Migrate`] message targeting this contract
+    pub fn migrate(
+        &self,
+        msg: impl Into<msg::MigrateMsg>,
+        new_code_id: u64,
+    ) -> StdResult<CosmosMsg> {
+        let msg = to_binary(&msg.into())?;
+        Ok(WasmMsg::Migrate {
+            contract_addr: self.addr().into(),
+            new_code_id,
+            msg,
+        }
+        .into())
     }
 }
 
