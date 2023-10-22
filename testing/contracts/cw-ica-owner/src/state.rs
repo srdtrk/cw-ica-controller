@@ -21,12 +21,12 @@ mod contract {
         /// The admin of this contract.
         pub admin: Addr,
         /// The code ID of the cw-ica-controller contract.
-        pub ica_controller_code_id: u32,
+        pub ica_controller_code_id: u64,
     }
 
     impl ContractState {
         /// Creates a new ContractState.
-        pub fn new(admin: Addr, ica_controller_code_id: u32) -> Self {
+        pub fn new(admin: Addr, ica_controller_code_id: u64) -> Self {
             Self {
                 admin,
                 ica_controller_code_id,
