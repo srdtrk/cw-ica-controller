@@ -25,7 +25,7 @@ pub enum ContractError {
     ProstEncodeError(#[from] cosmos_sdk_proto::prost::EncodeError),
 
     #[error("semver parse error: {0}")]
-    FromStrError(#[from] semver::Error),
+    SemverError(#[from] semver::Error),
 
     #[error("unauthorized")]
     Unauthorized {},
