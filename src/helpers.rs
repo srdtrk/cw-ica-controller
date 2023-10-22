@@ -1,11 +1,11 @@
-//! This file contains helper functions for working with the CwIcaControllerContract.
+//! This file contains helper functions for working with this contract.
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{to_binary, Addr, CosmosMsg, StdResult, WasmMsg};
+use cosmwasm_std::{to_binary, Addr, CosmosMsg, StdResult, WasmMsg, Binary, WasmQuery, QuerierWrapper};
 
-use crate::types::msg;
+use crate::types::{msg, state};
 
 /// CwIcaControllerContract is a wrapper around Addr that provides helpers
 /// for working with this contract.
@@ -29,7 +29,7 @@ impl CwIcaControllerContract {
     }
 
     /// call creates a [`WasmMsg::Execute`] message targeting this contract,
-    pub fn call<T: Into<msg::ExecuteMsg>>(&self, msg: T) -> StdResult<CosmosMsg> {
+    pub fn call(&self, msg: impl Into<msg::ExecuteMsg>) -> StdResult<CosmosMsg> {
         let msg = to_binary(&msg.into())?;
         Ok(WasmMsg::Execute {
             contract_addr: self.addr().into(),
@@ -37,6 +37,16 @@ impl CwIcaControllerContract {
             funds: vec![],
         }
         .into())
+    }
+
+    /// query_channel queries the [`state::ChannelState`] of this contract
+    pub fn query_channel(&self, querier: QuerierWrapper) -> StdResult<state::ChannelState> {
+        querier.query_wasm_smart(self.addr(), &msg::QueryMsg::GetChannel {})
+    }
+
+    /// query_state queries the [`state::ContractState`] of this contract
+    pub fn query_state(&self, querier: QuerierWrapper) -> StdResult<state::ContractState> {
+        querier.query_wasm_smart(self.addr(), &msg::QueryMsg::GetContractState {})
     }
 }
 
@@ -52,9 +62,9 @@ impl CwIcaControllerCode {
     }
 
     /// instantiate creates a [`WasmMsg::Instantiate`] message targeting this code
-    pub fn instantiate<T: Into<msg::InstantiateMsg>>(
+    pub fn instantiate(
         &self,
-        msg: T,
+        msg: impl Into<msg::InstantiateMsg>,
         label: impl Into<String>,
         admin: Option<impl Into<String>>,
     ) -> StdResult<CosmosMsg> {
@@ -65,6 +75,26 @@ impl CwIcaControllerCode {
             funds: vec![],
             label: label.into(),
             admin: admin.map(|s| s.into()),
+        }
+        .into())
+    }
+
+    /// instantiate2 creates a [`WasmMsg::Instantiate2`] message targeting this code
+    pub fn instantiate2(
+        &self,
+        msg: impl Into<msg::InstantiateMsg>,
+        label: impl Into<String>,
+        admin: Option<impl Into<String>>,
+        salt: impl Into<Binary>,
+    ) -> StdResult<CosmosMsg> {
+        let msg = to_binary(&msg.into())?;
+        Ok(WasmMsg::Instantiate2 {
+            code_id: self.code_id(),
+            msg,
+            funds: vec![],
+            label: label.into(),
+            admin: admin.map(|s| s.into()),
+            salt: salt.into(),
         }
         .into())
     }
