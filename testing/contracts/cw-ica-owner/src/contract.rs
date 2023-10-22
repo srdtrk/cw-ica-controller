@@ -38,9 +38,11 @@ pub fn execute(
     _deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    _msg: ExecuteMsg,
+    msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    unimplemented!()
+    match msg {
+        ExecuteMsg::CreateIcaContract {} => unimplemented!(),
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

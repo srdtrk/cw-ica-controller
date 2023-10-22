@@ -7,7 +7,9 @@ pub struct InstantiateMsg {
 }
 
 #[cw_serde]
-pub enum ExecuteMsg {}
+pub enum ExecuteMsg {
+    CreateIcaContract {},
+}
 
 #[cw_serde]
 #[derive(QueryResponses)]
