@@ -59,6 +59,7 @@ serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde-json-wasm = "0.5.1"
 thiserror = { version = "1.0.31" }
 cosmos-sdk-proto = { version = "0.20.0", default-features = false }
+semver = "1.0"
 
 [dev-dependencies]
 base64 = "0.13.1"
