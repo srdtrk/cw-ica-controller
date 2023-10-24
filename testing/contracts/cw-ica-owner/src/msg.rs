@@ -8,7 +8,7 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    CreateIcaContract {},
+    CreateIcaContract { salt: Option<String> },
 }
 
 #[cw_serde]
