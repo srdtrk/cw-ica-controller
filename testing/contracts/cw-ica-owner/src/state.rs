@@ -8,9 +8,9 @@ pub use ica::{IcaContractState, IcaState};
 /// The item used to store the state of the IBC application.
 pub const STATE: Item<ContractState> = Item::new("state");
 /// The map used to store the state of the cw-ica-controller contracts.
-pub const ICA_STATES: Map<u32, IcaContractState> = Map::new("ica_states");
+pub const ICA_STATES: Map<u64, IcaContractState> = Map::new("ica_states");
 /// The item used to store the count of the cw-ica-controller contracts.
-pub const ICA_COUNT: Item<u32> = Item::new("ica_count");
+pub const ICA_COUNT: Item<u64> = Item::new("ica_count");
 
 mod contract {
     use super::*;

@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 // use cw2::set_contract_version;
 
 use crate::error::ContractError;
@@ -48,8 +48,12 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
-    unimplemented!()
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::GetContractState {} => to_binary(&query::state(deps)?),
+        QueryMsg::GetIcaContractState { ica_id } => to_binary(&query::ica_state(deps, ica_id)?),
+        QueryMsg::GetIcaCount {} => to_binary(&query::ica_count(deps)?),
+    }
 }
 
 mod execute {
@@ -111,6 +115,27 @@ mod execute {
         ICA_COUNT.save(deps.storage, &(ica_count + 1))?;
 
         Ok(Response::new().add_message(cosmos_msg))
+    }
+}
+
+mod query {
+    use crate::state::{IcaContractState, ICA_COUNT, ICA_STATES};
+
+    use super::*;
+
+    /// Returns the saved contract state.
+    pub fn state(deps: Deps) -> StdResult<ContractState> {
+        STATE.load(deps.storage)
+    }
+
+    /// Returns the saved ICA state for the given ICA ID.
+    pub fn ica_state(deps: Deps, ica_id: u64) -> StdResult<IcaContractState> {
+        ICA_STATES.load(deps.storage, ica_id)
+    }
+
+    /// Returns the saved ICA count.
+    pub fn ica_count(deps: Deps) -> StdResult<u64> {
+        ICA_COUNT.load(deps.storage)
     }
 }
 

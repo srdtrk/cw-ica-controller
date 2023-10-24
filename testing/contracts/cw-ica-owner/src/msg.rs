@@ -13,4 +13,14 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum QueryMsg {}
+pub enum QueryMsg {
+    /// GetContractState returns the contact's state.
+    #[returns(crate::state::ContractState)]
+    GetContractState {},
+    /// GetIcaState returns the ICA state for the given ICA ID.
+    #[returns(crate::state::IcaContractState)]
+    GetIcaContractState { ica_id: u64 },
+    /// GetIcaCount returns the number of ICAs.
+    #[returns(u64)]
+    GetIcaCount {},
+}
