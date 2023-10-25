@@ -30,7 +30,7 @@ import (
 type ContractTestSuite struct {
 	mysuite.TestSuite
 
-	Contract   *types.Contract
+	Contract   *types.IcaContract
 	IcaAddress string
 }
 
@@ -40,10 +40,11 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding
 	// This starts the chains, relayer, creates the user accounts, and creates the ibc clients and connections.
 	s.SetupSuite(ctx, chainSpecs)
 
-	var err error
 	// Upload and Instantiate the contract on wasmd:
-	s.Contract, err = types.StoreAndInstantiateNewContract(ctx, s.ChainA, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
+	contract, err := types.StoreAndInstantiateNewContract(ctx, s.ChainA, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
+
+	s.Contract = types.NewIcaContract(*contract)
 
 	version := fmt.Sprintf(`{"version":"%s","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"%s","tx_type":"%s"}`, icatypes.Version, s.ChainAConnID, s.ChainBConnID, encoding, icatypes.TxTypeSDKMultiMsg)
 	err = s.Relayer.CreateChannel(ctx, s.ExecRep, s.PathName, ibc.CreateChannelOptions{
@@ -62,6 +63,7 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding
 	contractState, err := s.Contract.QueryContractState(ctx)
 	s.Require().NoError(err)
 	s.IcaAddress = contractState.IcaInfo.IcaAddress
+	s.Contract.SetIcaAddress(s.IcaAddress)
 }
 
 func TestWithContractTestSuite(t *testing.T) {

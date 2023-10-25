@@ -1,5 +1,13 @@
 package types
 
+import "encoding/json"
+
+// QueryResponse is used to represent the response of a query.
+// It may contain different types of data, so we need to unmarshal it
+type QueryResponse struct {
+	Response json.RawMessage `json:"data"`
+}
+
 // CwIbcEndpoint is the endpoint of a channel defined in CosmWasm
 type CwIbcEndpoint struct {
 	PortID    string `json:"port_id"`
