@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/cosmos/gogoproto/proto"
+
+	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
 )
 
 type IcaContract struct {
@@ -20,6 +22,31 @@ func NewIcaContract(contract Contract) *IcaContract {
 
 func (c *IcaContract) SetIcaAddress(icaAddress string) {
 	c.IcaAddress = icaAddress
+}
+
+// StoreAndInstantiateNewIcaContract stores the contract code and instantiates a new contract as the caller.
+// Returns a new Contract instance.
+func StoreAndInstantiateNewIcaContract(
+	ctx context.Context, chain *cosmos.CosmosChain,
+	callerKeyName, fileName string,
+) (*IcaContract, error) {
+	codeId, err := chain.StoreContract(ctx, callerKeyName, fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	contractAddr, err := chain.InstantiateContract(ctx, callerKeyName, codeId, newInstantiateMsg(nil), true)
+	if err != nil {
+		return nil, err
+	}
+
+	contract := Contract{
+		Address: contractAddr,
+		CodeID:  codeId,
+		chain:   chain,
+	}
+
+	return NewIcaContract(contract), nil
 }
 
 // ExecCustomMessages invokes the contract's `CustomIcaMessages` message as the caller
