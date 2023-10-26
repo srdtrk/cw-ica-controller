@@ -41,13 +41,13 @@ func (c *IcaContract) ExecPredefinedAction(ctx context.Context, callerKeyName st
 
 // QueryContractState queries the contract's state
 func (c *IcaContract) QueryContractState(ctx context.Context) (*IcaContractState, error) {
-	queryResp := QueryResponse{}
+	queryResp := QueryResponse[IcaContractState]{}
 	err := c.chain.QueryContract(ctx, c.Address, newGetContractStateQueryMsg(), &queryResp)
 	if err != nil {
 		return nil, err
 	}
 
-	contractState, err := queryResp.getContractState()
+	contractState, err := queryResp.GetResp()
 	if err != nil {
 		return nil, err
 	}
@@ -57,13 +57,13 @@ func (c *IcaContract) QueryContractState(ctx context.Context) (*IcaContractState
 
 // QueryChannelState queries the channel state stored in the contract
 func (c *IcaContract) QueryChannelState(ctx context.Context) (*IcaContractChannelState, error) {
-	queryResp := QueryResponse{}
+	queryResp := QueryResponse[IcaContractChannelState]{}
 	err := c.chain.QueryContract(ctx, c.Address, newGetChannelQueryMsg(), &queryResp)
 	if err != nil {
 		return nil, err
 	}
 
-	channelState, err := queryResp.getChannelState()
+	channelState, err := queryResp.GetResp()
 	if err != nil {
 		return nil, err
 	}
@@ -73,13 +73,13 @@ func (c *IcaContract) QueryChannelState(ctx context.Context) (*IcaContractChanne
 
 // QueryCallbackCounter queries the callback counter stored in the contract
 func (c *IcaContract) QueryCallbackCounter(ctx context.Context) (*IcaContractCallbackCounter, error) {
-	queryResp := QueryResponse{}
+	queryResp := QueryResponse[IcaContractCallbackCounter]{}
 	err := c.chain.QueryContract(ctx, c.Address, newGetCallbackCounterQueryMsg(), &queryResp)
 	if err != nil {
 		return nil, err
 	}
 
-	callbackCounter, err := queryResp.getCallbackCounter()
+	callbackCounter, err := queryResp.GetResp()
 	if err != nil {
 		return nil, err
 	}
