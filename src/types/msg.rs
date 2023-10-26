@@ -12,6 +12,29 @@ pub struct InstantiateMsg {
     /// If not specified, the sender is the admin.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub admin: Option<String>,
+    /// The options to initialize the IBC channel upon contract instantiation.
+    /// If not specified, the IBC channel is not initialized, and the relayer must.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub channel_open_init_options: Option<instantiate::ChannelOpenInitOptions>,
+}
+
+/// Helper types for [`InstantiateMsg`].
+mod instantiate {
+    use super::*;
+    use crate::ibc::types::metadata::TxEncoding;
+
+    /// The message used to provide the MsgChannelOpenInit with the required data.
+    #[cw_serde]
+    pub struct ChannelOpenInitOptions {
+        /// The connection id on this chain.
+        pub connection_id: String,
+        /// The counterparty connection id on the counterparty chain.
+        pub counterparty_connection_id: String,
+        /// The counterparty port id. If not specified, [crate::ibc::types::keys::HOST_PORT_ID] is used.
+        pub counterparty_port_id: Option<String>,
+        /// TxEncoding is the encoding used for the ICA txs. If not specified, [TxEncoding::Protobuf] is used.
+        pub tx_encoding: Option<TxEncoding>,
+    }
 }
 
 /// The messages to execute the ICA controller contract.

@@ -4,6 +4,7 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
+use crate::ibc::types::stargate::channel::ica_contract_channel_init;
 use crate::types::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::types::state::{
     CallbackCounter, ChannelState, ContractState, CALLBACK_COUNTER, CHANNEL_STATE, STATE,
@@ -18,7 +19,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -35,7 +36,19 @@ pub fn instantiate(
     // Initialize the callback counter.
     CALLBACK_COUNTER.save(deps.storage, &CallbackCounter::default())?;
 
-    Ok(Response::default())
+    // If channel open init options are provided, open the channel.
+    if let Some(channel_open_init_options) = msg.channel_open_init_options {
+        let ica_channel_init_msg = ica_contract_channel_init(
+            env.contract.address.to_string(),
+            channel_open_init_options.connection_id,
+            channel_open_init_options.counterparty_port_id,
+            channel_open_init_options.counterparty_connection_id,
+            channel_open_init_options.tx_encoding,
+        );
+        Ok(Response::new().add_message(ica_channel_init_msg))
+    } else {
+        Ok(Response::default())
+    }
 }
 
 /// Handles the execution of the contract.
@@ -219,7 +232,10 @@ mod tests {
         let env = mock_env();
         let info = mock_info("creator", &[]);
 
-        let msg = InstantiateMsg { admin: None };
+        let msg = InstantiateMsg {
+            admin: None,
+            channel_open_init_options: None,
+        };
 
         // Ensure the contract is instantiated successfully
         let res = instantiate(deps.as_mut(), env, info.clone(), msg).unwrap();
@@ -253,7 +269,10 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            InstantiateMsg { admin: None },
+            InstantiateMsg {
+                admin: None,
+                channel_open_init_options: None,
+            },
         )
         .unwrap();
 
@@ -309,7 +328,10 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            InstantiateMsg { admin: None },
+            InstantiateMsg {
+                admin: None,
+                channel_open_init_options: None,
+            },
         )
         .unwrap();
 

@@ -33,15 +33,15 @@ pub mod channel {
     /// If the counterparty port id is not provided, [`keys::HOST_PORT_ID`] is used.
     /// If the tx encoding is not provided, [`metadata::TxEncoding::Protobuf`] is used.
     pub fn ica_contract_channel_init(
-        contract_address: impl Into<String> + Copy,
-        connection_id: impl Into<String> + Copy,
+        contract_address: impl Into<String> + Clone,
+        connection_id: impl Into<String> + Clone,
         counterparty_port_id: Option<impl Into<String>>,
         counterparty_connection_id: impl Into<String>,
         tx_encoding: Option<metadata::TxEncoding>,
     ) -> CosmosMsg {
         let version_metadata = metadata::IcaMetadata::new(
             keys::ICA_VERSION.into(),
-            connection_id.into().clone(),
+            connection_id.clone().into(),
             counterparty_connection_id.into(),
             String::new(),
             tx_encoding.unwrap_or(metadata::TxEncoding::Protobuf),
@@ -49,7 +49,7 @@ pub mod channel {
         );
 
         let msg_channel_open_init = new_ica_msg_channel_open_init(
-            contract_address,
+            contract_address.clone(),
             format!("wasm.{}", contract_address.into()),
             connection_id,
             counterparty_port_id,
