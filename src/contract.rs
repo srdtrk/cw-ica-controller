@@ -60,6 +60,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::CreateChannel(options) => execute::create_channel(deps, env, info, options),
         ExecuteMsg::SendCustomIcaMessages {
             messages,
             packet_memo,
@@ -105,13 +106,33 @@ mod execute {
 
     use crate::{
         ibc::types::{metadata::TxEncoding, packet::IcaPacketData},
-        types::cosmos_msg::ExampleCosmosMessages,
+        types::{cosmos_msg::ExampleCosmosMessages, msg::options::ChannelOpenInitOptions},
     };
 
     use cosmos_sdk_proto::cosmos::{bank::v1beta1::MsgSend, base::v1beta1::Coin};
     use cosmos_sdk_proto::Any;
 
     use super::*;
+
+    /// Submits a stargate MsgChannelOpenInit to the chain.
+    pub fn create_channel(
+        deps: DepsMut,
+        env: Env,
+        info: MessageInfo,
+        options: ChannelOpenInitOptions,
+    ) -> Result<Response, ContractError> {
+        let contract_state = STATE.load(deps.storage)?;
+        contract_state.verify_admin(info.sender)?;
+
+        let ica_channel_init_msg = ica_contract_channel_init(
+            env.contract.address.to_string(),
+            options.connection_id,
+            options.counterparty_port_id,
+            options.counterparty_connection_id,
+            options.tx_encoding,
+        );
+        Ok(Response::new().add_message(ica_channel_init_msg))
+    }
 
     // Sends custom messages to the ICA host.
     pub fn send_custom_ica_messages(
