@@ -46,6 +46,15 @@ func (c *Contract) Port() string {
 	return "wasm." + c.Address
 }
 
+func (c *Contract) ExecCreateChannel(
+	ctx context.Context, callerKeyName string, connectionId string,
+	counterpartyConnectionId string, counterpartyPortId *string, txEncoding *string,
+) error {
+	msg := NewCreateChannelMsg(connectionId, counterpartyConnectionId, counterpartyPortId, txEncoding)
+	err := c.Execute(ctx, callerKeyName, msg)
+	return err
+}
+
 // ExecCustomMessages invokes the contract's `CustomIcaMessages` message as the caller
 func (c *Contract) ExecCustomIcaMessages(
 	ctx context.Context, callerKeyName string,

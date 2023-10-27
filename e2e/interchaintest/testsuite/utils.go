@@ -3,6 +3,8 @@ package testsuite
 import (
 	"context"
 
+	"cosmossdk.io/math"
+
 	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
 	"github.com/strangelove-ventures/interchaintest/v7/ibc"
 	"github.com/strangelove-ventures/interchaintest/v7/testutil"
@@ -29,7 +31,7 @@ func (s *TestSuite) fundAddress(ctx context.Context, chain *cosmos.CosmosChain, 
 	err := chain.SendFunds(ctx, keyName, ibc.WalletAmount{
 		Address: address,
 		Denom:   chain.Config().Denom,
-		Amount:  1000000000,
+		Amount:  math.NewInt(1_000_000_000),
 	})
 	s.Require().NoError(err)
 
