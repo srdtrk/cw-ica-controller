@@ -242,15 +242,15 @@ func (s *ContractTestSuite) TestFailedIcaContractInstantiatedChannelHandshake() 
 		s.Require().NoError(err)
 
 		// Wait for the channel to get set up
-		err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
+		err = testutil.WaitForBlocks(ctx, 7, s.ChainA, s.ChainB)
 		s.Require().NoError(err)
 
 		// Test if the handshake was successful
 		wasmdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, wasmd.Config().ChainID)
 		s.Require().NoError(err)
-		s.Require().Equal(1, len(wasmdChannels))
+		s.Require().Equal(2, len(wasmdChannels))
 
-		wasmdChannel := wasmdChannels[0]
+		wasmdChannel := wasmdChannels[1]
 		s.T().Logf("wasmd channel: %s", toJSONString(wasmdChannel))
 		s.Require().Equal(s.Contract.Port(), wasmdChannel.PortID)
 		s.Require().Equal(icatypes.HostPortID, wasmdChannel.Counterparty.PortID)
