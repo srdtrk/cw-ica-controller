@@ -14,6 +14,15 @@ type Contract struct {
 	chain   *cosmos.CosmosChain
 }
 
+// NewContract creates a new Contract instance
+func NewContract(address string, codeId string, chain *cosmos.CosmosChain) *Contract {
+	return &Contract{
+		Address: address,
+		CodeID:  codeId,
+		chain:   chain,
+	}
+}
+
 // StoreAndInstantiateNewContract stores the contract code and instantiates a new contract as the caller.
 // Returns a new Contract instance.
 func StoreAndInstantiateNewContract(
@@ -30,11 +39,7 @@ func StoreAndInstantiateNewContract(
 		return nil, err
 	}
 
-	return &Contract{
-		Address: contractAddr,
-		CodeID:  codeId,
-		chain:   chain,
-	}, nil
+	return NewContract(contractAddr, codeId, chain), nil
 }
 
 func (c *Contract) Port() string {
