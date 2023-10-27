@@ -7,6 +7,7 @@ The e2e tests are built using the [interchaintest](https://github.com/strangelov
 All contract tests are located in `interchaintest/contract_test.go` file. Currently, there are four tests in this file:
 
 - `TestIcaContractChannelHandshake`
+- `TestIcaContractInstantiatedChannelHandshake`
 - `TestIcaContractExecutionProto3JsonEncoding`
 - `TestIcaContractExecutionProtobufEncoding`
 - `TestIcaContractTimeoutPacket`
