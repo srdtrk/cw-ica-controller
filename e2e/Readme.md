@@ -8,7 +8,7 @@ All contract tests are located in `interchaintest/contract_test.go` file. Curren
 
 - `TestIcaContractChannelHandshake`
 - `TestIcaContractInstantiatedChannelHandshake`
-- `TestFailedIcaContractInstantiatedChannelHandshake`
+- `TestRecoveredIcaContractInstantiatedChannelHandshake`
 - `TestIcaContractExecutionProto3JsonEncoding`
 - `TestIcaContractExecutionProtobufEncoding`
 - `TestIcaContractTimeoutPacket`

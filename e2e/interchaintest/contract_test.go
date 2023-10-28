@@ -142,7 +142,7 @@ func (s *ContractTestSuite) TestIcaContractInstantiatedChannelHandshake() {
 	// Instantiate the contract with channel:
 	instantiateMsg := types.NewInstantiateMsgWithChannelInitOptions(nil, s.ChainAConnID, s.ChainBConnID, nil, nil)
 
-	contractAddr, err := wasmd.InstantiateContract(ctx, wasmdUser.KeyName(), codeId, instantiateMsg, true, "--gas", "2000000")
+	contractAddr, err := wasmd.InstantiateContract(ctx, wasmdUser.KeyName(), codeId, instantiateMsg, true, "--gas", "1000000")
 	s.Require().NoError(err)
 
 	s.Contract = types.NewContract(contractAddr, codeId, wasmd)
@@ -207,7 +207,7 @@ func (s *ContractTestSuite) TestIcaContractInstantiatedChannelHandshake() {
 	})
 }
 
-func (s *ContractTestSuite) TestFailedIcaContractInstantiatedChannelHandshake() {
+func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake() {
 	ctx := context.Background()
 
 	s.SetupSuite(ctx, chainSpecs)
