@@ -95,10 +95,7 @@ mod ibc_channel_open {
 
         if let Some(init_options) = init_options {
             if init_options.connection_id != channel.connection_id {
-                return Err(ContractError::InvalidMsgOpenChannelInit {
-                    expected: init_options.connection_id,
-                    actual: channel.connection_id,
-                });
+                return Err(ContractError::InvalidMsgOpenChannelInit { expected: init_options.connection_id, actual: channel.connection_id });
             }
 
             // counterparty connection id cannot be checked since it is not given.
@@ -106,17 +103,11 @@ mod ibc_channel_open {
             // counterparty connection id since the handshake will fail.
 
             if init_options.counterparty_port_id() != channel.counterparty_endpoint.port_id {
-                return Err(ContractError::InvalidMsgOpenChannelInit {
-                    expected: init_options.counterparty_port_id(),
-                    actual: channel.counterparty_endpoint.port_id,
-                });
+                return Err(ContractError::InvalidMsgOpenChannelInit { expected: init_options.counterparty_port_id(), actual: channel.counterparty_endpoint.port_id });
             }
 
             if init_options.tx_encoding() != metadata.encoding {
-                return Err(ContractError::InvalidMsgOpenChannelInit {
-                    expected: init_options.tx_encoding().to_string(),
-                    actual: metadata.encoding.to_string(),
-                });
+                return Err(ContractError::InvalidMsgOpenChannelInit { expected: init_options.tx_encoding().to_string(), actual: metadata.encoding.to_string() });
             }
         }
 
