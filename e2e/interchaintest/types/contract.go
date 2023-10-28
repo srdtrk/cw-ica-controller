@@ -14,6 +14,15 @@ type Contract struct {
 	chain   *cosmos.CosmosChain
 }
 
+// NewContract creates a new Contract instance
+func NewContract(address string, codeId string, chain *cosmos.CosmosChain) *Contract {
+	return &Contract{
+		Address: address,
+		CodeID:  codeId,
+		chain:   chain,
+	}
+}
+
 // StoreAndInstantiateNewContract stores the contract code and instantiates a new contract as the caller.
 // Returns a new Contract instance.
 func StoreAndInstantiateNewContract(
@@ -30,15 +39,21 @@ func StoreAndInstantiateNewContract(
 		return nil, err
 	}
 
-	return &Contract{
-		Address: contractAddr,
-		CodeID:  codeId,
-		chain:   chain,
-	}, nil
+	return NewContract(contractAddr, codeId, chain), nil
 }
 
 func (c *Contract) Port() string {
 	return "wasm." + c.Address
+}
+
+func (c *Contract) ExecCreateChannel(
+	ctx context.Context, callerKeyName string, connectionId string,
+	counterpartyConnectionId string, counterpartyPortId *string,
+	txEncoding *string, extraExecTxArgs ...string,
+) error {
+	msg := NewCreateChannelMsg(connectionId, counterpartyConnectionId, counterpartyPortId, txEncoding)
+	err := c.Execute(ctx, callerKeyName, msg, extraExecTxArgs...)
+	return err
 }
 
 // ExecCustomMessages invokes the contract's `CustomIcaMessages` message as the caller
@@ -58,8 +73,8 @@ func (c *Contract) ExecPredefinedAction(ctx context.Context, callerKeyName strin
 	return err
 }
 
-func (c *Contract) Execute(ctx context.Context, callerKeyName string, execMsg string) error {
-	_, err := c.chain.ExecuteContract(ctx, callerKeyName, c.Address, execMsg)
+func (c *Contract) Execute(ctx context.Context, callerKeyName string, execMsg string, extraExecTxArgs ...string) error {
+	_, err := c.chain.ExecuteContract(ctx, callerKeyName, c.Address, execMsg, extraExecTxArgs...)
 	return err
 }
 

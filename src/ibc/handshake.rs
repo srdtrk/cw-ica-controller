@@ -1,6 +1,5 @@
 //! This module contains the entry points for the IBC handshake.
 
-#[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse, IbcChannel, IbcChannelCloseMsg,
@@ -15,7 +14,7 @@ use crate::types::{
 
 /// Handles the `OpenInit` and `OpenTry` parts of the IBC handshake.
 /// In this application, we only handle `OpenInit` messages since we are the ICA controller
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn ibc_channel_open(
     deps: DepsMut,
     _env: Env,
@@ -29,7 +28,7 @@ pub fn ibc_channel_open(
 
 /// Handles the `OpenAck` and `OpenConfirm` parts of the IBC handshake.
 /// In this application, we only handle `OpenAck` messages since we are the ICA controller
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn ibc_channel_connect(
     deps: DepsMut,
     _env: Env,
@@ -45,7 +44,7 @@ pub fn ibc_channel_connect(
 }
 
 /// Handles the `ChanCloseInit` and `ChanCloseConfirm` for the IBC module.
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn ibc_channel_close(
     deps: DepsMut,
     _env: Env,
@@ -65,6 +64,13 @@ mod ibc_channel_open {
         deps: DepsMut,
         channel: IbcChannel,
     ) -> Result<IbcChannelOpenResponse, ContractError> {
+        // Check if open init is allowed, and then disable further open init
+        let mut contract_state = STATE.load(deps.storage)?;
+
+        contract_state.verify_open_init_allowed()?;
+        contract_state.disable_channel_open_init();
+        STATE.save(deps.storage, &contract_state)?;
+
         // Validate the channel ordering
         if channel.order != IbcOrder::Ordered {
             return Err(ContractError::InvalidChannelOrdering {});

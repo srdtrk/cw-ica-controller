@@ -1,24 +1,21 @@
 //! This module handles the execution logic of the contract.
 
-#[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
+use crate::ibc::types::stargate::channel::new_ica_channel_open_init_cosmos_msg;
+use crate::types::keys::{CONTRACT_NAME, CONTRACT_VERSION};
 use crate::types::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::types::state::{
     CallbackCounter, ChannelState, ContractState, CALLBACK_COUNTER, CHANNEL_STATE, STATE,
 };
 use crate::types::ContractError;
 
-// version info for migration
-const CONTRACT_NAME: &str = "crates.io:cw-ica-controller";
-const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-
 /// Instantiates the contract.
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -35,11 +32,24 @@ pub fn instantiate(
     // Initialize the callback counter.
     CALLBACK_COUNTER.save(deps.storage, &CallbackCounter::default())?;
 
-    Ok(Response::default())
+    // If channel open init options are provided, open the channel.
+    if let Some(channel_open_init_options) = msg.channel_open_init_options {
+        let ica_channel_open_init_msg = new_ica_channel_open_init_cosmos_msg(
+            env.contract.address.to_string(),
+            channel_open_init_options.connection_id,
+            channel_open_init_options.counterparty_port_id,
+            channel_open_init_options.counterparty_connection_id,
+            channel_open_init_options.tx_encoding,
+        );
+
+        Ok(Response::new().add_message(ica_channel_open_init_msg))
+    } else {
+        Ok(Response::default())
+    }
 }
 
 /// Handles the execution of the contract.
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn execute(
     deps: DepsMut,
     env: Env,
@@ -47,6 +57,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::CreateChannel(options) => execute::create_channel(deps, env, info, options),
         ExecuteMsg::SendCustomIcaMessages {
             messages,
             packet_memo,
@@ -66,7 +77,7 @@ pub fn execute(
 }
 
 /// Handles the query of the contract.
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetContractState {} => to_binary(&query::state(deps)?),
@@ -76,7 +87,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 /// Migrate contract if version is lower than current version
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     migrate::validate_semver(deps.as_ref())?;
 
@@ -92,13 +103,37 @@ mod execute {
 
     use crate::{
         ibc::types::{metadata::TxEncoding, packet::IcaPacketData},
-        types::cosmos_msg::ExampleCosmosMessages,
+        types::{cosmos_msg::ExampleCosmosMessages, msg::options::ChannelOpenInitOptions},
     };
 
     use cosmos_sdk_proto::cosmos::{bank::v1beta1::MsgSend, base::v1beta1::Coin};
     use cosmos_sdk_proto::Any;
 
     use super::*;
+
+    /// Submits a stargate MsgChannelOpenInit to the chain.
+    pub fn create_channel(
+        deps: DepsMut,
+        env: Env,
+        info: MessageInfo,
+        options: ChannelOpenInitOptions,
+    ) -> Result<Response, ContractError> {
+        let mut contract_state = STATE.load(deps.storage)?;
+        contract_state.verify_admin(info.sender)?;
+
+        contract_state.enable_channel_open_init();
+        STATE.save(deps.storage, &contract_state)?;
+
+        let ica_channel_open_init_msg = new_ica_channel_open_init_cosmos_msg(
+            env.contract.address.to_string(),
+            options.connection_id,
+            options.counterparty_port_id,
+            options.counterparty_connection_id,
+            options.tx_encoding,
+        );
+
+        Ok(Response::new().add_message(ica_channel_open_init_msg))
+    }
 
     // Sends custom messages to the ICA host.
     pub fn send_custom_ica_messages(
@@ -219,7 +254,10 @@ mod tests {
         let env = mock_env();
         let info = mock_info("creator", &[]);
 
-        let msg = InstantiateMsg { admin: None };
+        let msg = InstantiateMsg {
+            admin: None,
+            channel_open_init_options: None,
+        };
 
         // Ensure the contract is instantiated successfully
         let res = instantiate(deps.as_mut(), env, info.clone(), msg).unwrap();
@@ -253,7 +291,10 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            InstantiateMsg { admin: None },
+            InstantiateMsg {
+                admin: None,
+                channel_open_init_options: None,
+            },
         )
         .unwrap();
 
@@ -309,7 +350,10 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            InstantiateMsg { admin: None },
+            InstantiateMsg {
+                admin: None,
+                channel_open_init_options: None,
+            },
         )
         .unwrap();
 

@@ -45,6 +45,9 @@ pub enum ContractError {
     #[error("invalid interchain accounts version: expected {expected}, got {actual}")]
     InvalidVersion { expected: String, actual: String },
 
+    #[error("MsgChannelOpenInit is not allowed")]
+    ChannelOpenInitNotAllowed {},
+
     #[error("codec is not supported: unsupported codec format {0}")]
     UnsupportedCodec(String),
 

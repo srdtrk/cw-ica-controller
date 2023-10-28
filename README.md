@@ -2,7 +2,7 @@
 
 ![cw-ica-controller](./cw-ica-controller.svg)
 
-This is a CosmWasm smart contract that communicates with the golang ica/host module on the host chain to create and manage one interchain account. This contract can also execute callbacks based on the result of the interchain account transaction. Because this is a CosmWasm implementation of the entire ICA controller, the chain that this contract is deployed on need **not** have the ICA module enabled. This contract can be deployed on any chain that supports IBC CosmWasm smart contracts.
+This is a CosmWasm smart contract that communicates with the golang ica/host module on the host chain to create and manage **one** interchain account. This contract can also execute callbacks based on the result of the interchain account transaction. Because this is a CosmWasm implementation of the entire ICA controller, the chain that this contract is deployed on need **not** have the ICA module enabled. This contract can be deployed on any chain that supports IBC CosmWasm smart contracts.
 
 This contract was originally written to test the json encoding/decoding [feature being added to interchain accounts txs](https://github.com/cosmos/ibc-go/pull/3796). Previously, the only way to encode ica txs was to use Protobuf (`proto3`) encoding. Proto3Json encoding/decoding feature is supported in ibc-go v7.3+. This contract now supports both proto3json and protobuf encoding/decoding. In current mainnets (ibc-go v7.2 and below), only protobuf encoding/decoding is supported.
 
@@ -12,7 +12,37 @@ The following is a brief overview of the contract's functionality. You can also 
 
 ### Create an interchain account
 
-To create an interchain account, the relayer must start the channel handshake on the contract's chain. See end to end tests for an example of how to do this. Unfortunately, this is not possible to do in the contract itself. Also, you cannot initialize the channel handshake with an empty string as the version, this is due to a limitation of the IBCModule interface provided by ibc-go, see issue [#3942](https://github.com/cosmos/ibc-go/issues/3942). (The contract can now be initialized with an empty version string if the chain supports stargate queries, but this is not the case for the end to end tests.) The version string we are using for tests is: `{"version":"ics27-1","controller_connection_id":"connection-0","host_connection_id":"connection-0","address":"","encoding":"proto3json","tx_type":"sdk_multi_msg"}` (encoding is replaced with `"proto3"` to test protobuf encoding/decoding). You can see all this in the [end to end tests](./e2e/).
+This contract provides two ways to create an interchain account:
+
+1. Using `InstantiateMsg` and/or `ExecuteMsg::CreateChannel`
+2. Using the relayer
+
+#### Using `InstantiateMsg` and/or `ExecuteMsg::CreateChannel`
+
+**This contract only accepts the first `MsgChannelOpenInit` message that is submitted to it or one that is submitted by the contract itself.**
+
+`InstantiateMsg` is the recommended way to initiate the channel handshake since it would not allow any relayer to front run the first `MsgChannelOpenInit` that the contract allows. If the `channel_open_init_options` field is not specified in `InstantiateMsg`, then the IBC channel is not initialized at contract instantiation. Then a relayer can start the channel handshake on the contract's chain or you must submit an `ExecuteMsg::CreateChannel`.
+
+```rust, ignore
+/// The message to instantiate the ICA controller contract.
+#[cw_serde]
+pub struct InstantiateMsg {
+    /// The address of the admin of the ICA application.
+    /// If not specified, the sender is the admin.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub admin: Option<String>,
+    /// The options to initialize the IBC channel upon contract instantiation.
+    /// If not specified, the IBC channel is not initialized, and the relayer must.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub channel_open_init_options: Option<options::ChannelOpenInitOptions>,
+}
+```
+
+#### Using the Relayer
+
+Assuming that the contract was not initialized with `channel_open_init_options`, then the relayer can start the channel handshake on the contract's chain.
+
+To create an interchain account, the relayer must start the channel handshake on the contract's chain. See end to end tests for an example of how to do this. Unfortunately, you cannot initialize the channel handshake with an empty string as the version, this is due to a limitation of the IBCModule interface provided by ibc-go, see issue [#3942](https://github.com/cosmos/ibc-go/issues/3942). (The contract can now be initialized with an empty version string if the chain supports stargate queries, but this is not the case for the end to end tests and is not recommended.) The version string we are using for the end to end tests is: `{"version":"ics27-1","controller_connection_id":"connection-0","host_connection_id":"connection-0","address":"","encoding":"proto3json","tx_type":"sdk_multi_msg"}` (encoding is replaced with `"proto3"` to test protobuf encoding/decoding). You can see all this in the [end to end tests](./e2e/).
 
 ### Execute an interchain account transaction
 
@@ -41,7 +71,7 @@ If the channel is using `proto3json` encoding, then the format that json message
 
 If the channel is using `proto3` (protobuf) encoding, then the format that protobuf messages have to take are defined by the cosmos-sdk's protobuf codec. Protobuf messages do not have nice human readable formats like json messages do. In the rust the `cosmos-sdk-proto` library is used to generate the protobuf messages as follows:
 
-```rust
+```rust, ignore
 use cosmos_sdk_proto::{
     cosmos::{bank::v1beta1::MsgSend, base::v1beta1::Coin},
     traits::MessageExt,
@@ -63,7 +93,7 @@ IcaPacketData::from_proto_anys(predefined_proto_message.to_any()?);
 
 where `from_proto_anys` is defined as:
 
-```rust
+```rust, ignore
 pub use cosmos_sdk_proto::ibc::applications::interchain_accounts::v1::CosmosTx;
 
 // ...
@@ -123,7 +153,7 @@ This contract supports callbacks. See [`src/ibc/relay.rs`](./src/ibc/relay.rs) t
 
 ### Channel Closing and Reopening
 
-In this contract, the only way to close the ica channel is to timeout the channel (you can see this in the end to end tests). This is because the semantics of ordered channels in IBC is that any timeout will cause the channel to be closed. The contract is then able to create a new channel with the same interchain account address, and continue to use the same interchain account. This can also be seen in the end to end tests.
+If the ICA channel is closed, for example, due to a timed out packet. (This is because the semantics of ordered channels in IBC is that any timeout will cause the channel to be closed.) The contract is then able to create a new channel with the same interchain account address, and continue to use the same interchain account. To do this, you submit a `ExecuteMsg::CreateChannel`. This can also be seen in the end to end tests.
 
 ## Testing
 

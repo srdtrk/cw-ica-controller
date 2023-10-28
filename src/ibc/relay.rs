@@ -3,7 +3,6 @@
 //! - The IBC packet timeout.
 //! - The IBC packet receive.
 
-#[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     from_binary, DepsMut, Env, IbcBasicResponse, IbcPacketAckMsg, IbcPacketReceiveMsg,
@@ -18,7 +17,7 @@ use crate::types::{
 use super::types::{events, packet::acknowledgement::AcknowledgementData};
 
 /// Implements the IBC module's `OnAcknowledgementPacket` handler.
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn ibc_packet_ack(
     deps: DepsMut,
     _env: Env,
@@ -32,7 +31,7 @@ pub fn ibc_packet_ack(
 }
 
 /// Handles the `PacketTimeout` for the IBC module.
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn ibc_packet_timeout(
     deps: DepsMut,
     _env: Env,
@@ -56,7 +55,7 @@ pub fn ibc_packet_timeout(
 }
 
 /// Handles the `PacketReceive` for the IBC module.
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn ibc_packet_receive(
     _deps: DepsMut,
     _env: Env,

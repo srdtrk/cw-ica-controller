@@ -25,6 +25,8 @@ jobs:
       matrix:
         test:
           - TestIcaContractChannelHandshake
+          - TestIcaRelayerInstantiatedChannelHandshake
+          - TestRecoveredIcaContractInstantiatedChannelHandshake
           - TestIcaContractExecutionProto3JsonEncoding
           - TestIcaContractExecutionProtobufEncoding
           - TestIcaContractTimeoutPacket
