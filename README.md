@@ -19,7 +19,9 @@ This contract provides to ways to create an interchain account:
 
 #### Using `InstantiateMsg` and/or `ExecuteMsg::CreateChannel`
 
-This is the recommended way to initiate the channel handshake. This method also requires a relayer to be relaying on the contract's port id. If the `channel_open_init_options` field is not specified in the `InstantiateMsg`, then the IBC channel is not initialized at contract instantiation. Then a relayer must start the channel handshake on the contract's chain or you must submit an `ExecuteMsg::CreateChannel` message which is prone to front running as channel creation is permissionless.
+This contract only accepts the first `MsgChannelOpenInit` message that is submitted to it or one that is submitted by the contract itself.
+
+`InstantiateMsg` is the recommended way to initiate the channel handshake since it would not allow any relayer to front run the first `MsgChannelOpenInit`. If the `channel_open_init_options` field is not specified in the `InstantiateMsg`, then the IBC channel is not initialized at contract instantiation. Then a relayer can start the channel handshake on the contract's chain or you must submit an `ExecuteMsg::CreateChannel`.
 
 ```rust
 /// The message to instantiate the ICA controller contract.
@@ -35,8 +37,6 @@ pub struct InstantiateMsg {
     pub channel_open_init_options: Option<options::ChannelOpenInitOptions>,
 }
 ```
-
-This method works by getting the contract to submit a `MsgChannelOpenInit` message using the stargate feature, thereby removing the need for a relayer to submit the message. We also ensure that if other relayers try to submit the same message, then the contract will only accept the first message.
 
 #### Using the Relayer
 
