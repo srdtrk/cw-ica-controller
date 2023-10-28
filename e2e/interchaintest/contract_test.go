@@ -479,12 +479,13 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 	})
 
 	s.Run("TestChannelReopening", func() {
-		version := fmt.Sprintf(`{"version":"%s","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"%s","tx_type":"%s"}`, icatypes.Version, s.ChainAConnID, s.ChainBConnID, icatypes.EncodingProto3JSON, icatypes.TxTypeSDKMultiMsg)
-		// Create channel with override and empty version:
-		s.CreateChannelWithOverride(ctx, s.Contract.Port(), icatypes.HostPortID, ibc.Ordered, version)
+		// Reopen the channel:
+		txEncoding := icatypes.EncodingProto3JSON
+		err := s.Contract.ExecCreateChannel(ctx, wasmdUser.KeyName(), s.ChainAConnID, s.ChainBConnID, nil, &txEncoding, "--gas", "500000")
+		s.Require().NoError(err)
 
 		// Wait for the channel to get set up
-		err := testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
+		err = testutil.WaitForBlocks(ctx, 9, s.ChainA, s.ChainB)
 		s.Require().NoError(err)
 
 		// Check if a new channel was opened in simd
