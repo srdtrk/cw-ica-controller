@@ -2,8 +2,7 @@ name: release wasm
 
 on:
   release:
-    types: [created, edited]
-  workflow_dispatch:
+    types: [published]
 
 jobs:
   release:
