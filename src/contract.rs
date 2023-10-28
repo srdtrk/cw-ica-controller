@@ -7,7 +7,7 @@ use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
 use crate::ibc::types::stargate::channel::ica_contract_channel_init;
 use crate::types::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::types::state::{
-    CallbackCounter, ChannelState, ContractState, CALLBACK_COUNTER, CHANNEL_OPEN_INIT_OPTIONS,
+    CallbackCounter, ChannelState, ContractState, CALLBACK_COUNTER,
     CHANNEL_STATE, STATE,
 };
 use crate::types::ContractError;
@@ -39,8 +39,6 @@ pub fn instantiate(
 
     // If channel open init options are provided, open the channel.
     if let Some(channel_open_init_options) = msg.channel_open_init_options {
-        CHANNEL_OPEN_INIT_OPTIONS.save(deps.storage, &channel_open_init_options)?;
-
         let ica_channel_init_msg = ica_contract_channel_init(
             env.contract.address.to_string(),
             channel_open_init_options.connection_id,
@@ -125,10 +123,11 @@ mod execute {
         info: MessageInfo,
         options: ChannelOpenInitOptions,
     ) -> Result<Response, ContractError> {
-        let contract_state = STATE.load(deps.storage)?;
+        let mut contract_state = STATE.load(deps.storage)?;
         contract_state.verify_admin(info.sender)?;
 
-        CHANNEL_OPEN_INIT_OPTIONS.save(deps.storage, &options)?;
+        contract_state.enable_channel_open_init();
+        STATE.save(deps.storage, &contract_state)?;
 
         let ica_channel_init_msg = ica_contract_channel_init(
             env.contract.address.to_string(),
