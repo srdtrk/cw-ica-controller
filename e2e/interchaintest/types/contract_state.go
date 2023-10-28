@@ -2,8 +2,9 @@ package types
 
 // ContractState is used to represent its state in Contract's storage
 type ContractState struct {
-	Admin   string          `json:"admin"`
-	IcaInfo ContractIcaInfo `json:"ica_info"`
+	Admin                string          `json:"admin"`
+	IcaInfo              ContractIcaInfo `json:"ica_info"`
+	AllowChannelOpenInit bool            `json:"allow_channel_open_init"`
 }
 
 // ContractIcaInfo is used to represent the ICA info in the contract's state

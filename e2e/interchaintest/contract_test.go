@@ -37,23 +37,18 @@ type ContractTestSuite struct {
 // SetupContractAndChannel starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 // sets up the contract and does the channel handshake for the contract test suite.
 func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding string) {
-	// This starts the chains, relayer, creates the user accounts, and creates the ibc clients and connections.
 	s.SetupSuite(ctx, chainSpecs)
 
-	var err error
-	// Upload and Instantiate the contract on wasmd:
-	s.Contract, err = types.StoreAndInstantiateNewContract(ctx, s.ChainA, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
+	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
 
-	version := fmt.Sprintf(`{"version":"%s","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"%s","tx_type":"%s"}`, icatypes.Version, s.ChainAConnID, s.ChainBConnID, encoding, icatypes.TxTypeSDKMultiMsg)
-	err = s.Relayer.CreateChannel(ctx, s.ExecRep, s.PathName, ibc.CreateChannelOptions{
-		SourcePortName: s.Contract.Port(),
-		DestPortName:   icatypes.HostPortID,
-		Order:          ibc.Ordered,
-		// cannot use an empty version here, see README
-		Version: version,
-	})
+	// Instantiate the contract with channel:
+	instantiateMsg := types.NewInstantiateMsgWithChannelInitOptions(nil, s.ChainAConnID, s.ChainBConnID, nil, &encoding)
+
+	contractAddr, err := s.ChainA.InstantiateContract(ctx, s.UserA.KeyName(), codeId, instantiateMsg, true, "--gas", "500000")
 	s.Require().NoError(err)
+
+	s.Contract = types.NewContract(contractAddr, codeId, s.ChainA)
 
 	// Wait for the channel to get set up
 	err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
@@ -61,6 +56,7 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding
 
 	contractState, err := s.Contract.QueryContractState(ctx)
 	s.Require().NoError(err)
+
 	s.IcaAddress = contractState.IcaInfo.IcaAddress
 }
 
@@ -129,23 +125,28 @@ func (s *ContractTestSuite) TestIcaContractChannelHandshake() {
 	})
 }
 
-func (s *ContractTestSuite) TestIcaContractInstantiatedChannelHandshake() {
+func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 	ctx := context.Background()
 
+	// This starts the chains, relayer, creates the user accounts, and creates the ibc clients and connections.
 	s.SetupSuite(ctx, chainSpecs)
 	wasmd, simd := s.ChainA, s.ChainB
 	wasmdUser := s.UserA
 
-	codeId, err := wasmd.StoreContract(ctx, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
+	var err error
+	// Upload and Instantiate the contract on wasmd:
+	s.Contract, err = types.StoreAndInstantiateNewContract(ctx, wasmd, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
 
-	// Instantiate the contract with channel:
-	instantiateMsg := types.NewInstantiateMsgWithChannelInitOptions(nil, s.ChainAConnID, s.ChainBConnID, nil, nil)
-
-	contractAddr, err := wasmd.InstantiateContract(ctx, wasmdUser.KeyName(), codeId, instantiateMsg, true, "--gas", "500000")
+	version := fmt.Sprintf(`{"version":"%s","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"%s","tx_type":"%s"}`, icatypes.Version, s.ChainAConnID, s.ChainBConnID, icatypes.EncodingProtobuf, icatypes.TxTypeSDKMultiMsg)
+	err = s.Relayer.CreateChannel(ctx, s.ExecRep, s.PathName, ibc.CreateChannelOptions{
+		SourcePortName: s.Contract.Port(),
+		DestPortName:   icatypes.HostPortID,
+		Order:          ibc.Ordered,
+		// cannot use an empty version here, see README
+		Version: version,
+	})
 	s.Require().NoError(err)
-
-	s.Contract = types.NewContract(contractAddr, codeId, wasmd)
 
 	// Wait for the channel to get set up
 	err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
@@ -485,7 +486,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		s.Require().NoError(err)
 
 		// Wait for the channel to get set up
-		err = testutil.WaitForBlocks(ctx, 9, s.ChainA, s.ChainB)
+		err = testutil.WaitForBlocks(ctx, 10, s.ChainA, s.ChainB)
 		s.Require().NoError(err)
 
 		// Check if a new channel was opened in simd
