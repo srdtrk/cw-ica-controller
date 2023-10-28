@@ -1,22 +1,18 @@
 //! This module handles the execution logic of the contract.
 
-#[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
 use crate::ibc::types::stargate::channel::ica_contract_channel_init;
+use crate::types::keys::{CONTRACT_NAME, CONTRACT_VERSION};
 use crate::types::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::types::state::{
     CallbackCounter, ChannelState, ContractState, CALLBACK_COUNTER, CHANNEL_STATE, STATE,
 };
 use crate::types::ContractError;
 
-// version info for migration
-const CONTRACT_NAME: &str = "crates.io:cw-ica-controller";
-const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-
 /// Instantiates the contract.
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn instantiate(
     deps: DepsMut,
     env: Env,
@@ -53,7 +49,7 @@ pub fn instantiate(
 }
 
 /// Handles the execution of the contract.
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn execute(
     deps: DepsMut,
     env: Env,
@@ -81,7 +77,7 @@ pub fn execute(
 }
 
 /// Handles the query of the contract.
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetContractState {} => to_binary(&query::state(deps)?),
@@ -91,7 +87,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 /// Migrate contract if version is lower than current version
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     migrate::validate_semver(deps.as_ref())?;
 
