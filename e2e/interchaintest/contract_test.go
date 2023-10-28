@@ -325,7 +325,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 
 		icaBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
-		s.Require().Equal(int64(1000000000-100), icaBalance)
+		s.Require().Equal(sdkmath.NewInt(1000000000-100), icaBalance)
 
 		// Check if contract callbacks were executed:
 		callbackCounter, err := s.Contract.QueryCallbackCounter(ctx)
@@ -537,7 +537,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 
 		icaBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
-		s.Require().Equal(int64(1000000000-100), icaBalance)
+		s.Require().Equal(sdkmath.NewInt(1000000000-100), icaBalance)
 
 		// Check if contract callbacks were executed:
 		callbackCounter, err := s.Contract.QueryCallbackCounter(ctx)
