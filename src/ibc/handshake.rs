@@ -58,6 +58,8 @@ pub fn ibc_channel_close(
 }
 
 mod ibc_channel_open {
+    use crate::types::state::CHANNEL_OPEN_INIT_OPTIONS;
+
     use super::*;
 
     /// Handles the `OpenInit` part of the IBC handshake.
@@ -86,6 +88,37 @@ mod ibc_channel_open {
             })?
         };
         metadata.validate(&channel)?;
+
+        // Validate that the contract allows the channel to be opened
+        // with these parameters
+        let init_options = CHANNEL_OPEN_INIT_OPTIONS.may_load(deps.storage)?;
+
+        if let Some(init_options) = init_options {
+            if init_options.connection_id != channel.connection_id {
+                return Err(ContractError::InvalidMsgOpenChannelInit {
+                    expected: init_options.connection_id,
+                    actual: channel.connection_id,
+                });
+            }
+
+            // counterparty connection id cannot be checked since it is not given.
+            // Luckily, it is not possible to open a channel with a wrong
+            // counterparty connection id since the handshake will fail.
+
+            if init_options.counterparty_port_id() != channel.counterparty_endpoint.port_id {
+                return Err(ContractError::InvalidMsgOpenChannelInit {
+                    expected: init_options.counterparty_port_id(),
+                    actual: channel.counterparty_endpoint.port_id,
+                });
+            }
+
+            if init_options.tx_encoding() != metadata.encoding {
+                return Err(ContractError::InvalidMsgOpenChannelInit {
+                    expected: init_options.tx_encoding().to_string(),
+                    actual: metadata.encoding.to_string(),
+                });
+            }
+        }
 
         // Check if the channel is already exists
         if let Some(channel_state) = CHANNEL_STATE.may_load(deps.storage)? {

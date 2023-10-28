@@ -18,6 +18,20 @@ pub const CHANNEL_STATE: Item<ChannelState> = Item::new("ica_channel");
 /// The item used to store the successful and erroneous callbacks in store.
 pub const CALLBACK_COUNTER: Item<CallbackCounter> = Item::new("callback_counter");
 
+/// This item is used to store the options for the `MsgChannelOpenInit` message.
+///
+/// This is needed because the `MsgChannelOpenInit` message can be submitted by anyone.
+/// This option ensures that whoever submits the message submits it with the options
+/// provided in [CHANNEL_OPEN_INIT_OPTIONS]. Essentially ensuring that the ICA controller
+/// is the one that submits the `MsgChannelOpenInit` message.
+///
+/// Note that a `MsgChannelOpenInit` is automatically submitted by the ICA controller
+/// when it is instantiated with the `channel_open_init_options` option present. Otherwise,
+/// the `MsgChannelOpenInit`message can be emitted with [`super::msg::ExecuteMsg::CreateChannel`]
+/// message. [`super::msg::ExecuteMsg::CreateChannel`] can also be used to update these options.
+pub const CHANNEL_OPEN_INIT_OPTIONS: Item<super::msg::options::ChannelOpenInitOptions> =
+    Item::new("channel_open_init_options");
+
 mod contract {
     use crate::ibc::types::metadata::TxEncoding;
 

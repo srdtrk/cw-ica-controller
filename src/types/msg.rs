@@ -92,7 +92,7 @@ pub struct MigrateMsg {}
 /// Option types for other messages.
 pub mod options {
     use super::*;
-    use crate::ibc::types::metadata::TxEncoding;
+    use crate::ibc::types::{keys::HOST_PORT_ID, metadata::TxEncoding};
 
     /// The message used to provide the MsgChannelOpenInit with the required data.
     #[cw_serde]
@@ -102,8 +102,23 @@ pub mod options {
         /// The counterparty connection id on the counterparty chain.
         pub counterparty_connection_id: String,
         /// The counterparty port id. If not specified, [crate::ibc::types::keys::HOST_PORT_ID] is used.
+        /// Currently, this contract only supports the host port.
         pub counterparty_port_id: Option<String>,
         /// TxEncoding is the encoding used for the ICA txs. If not specified, [TxEncoding::Protobuf] is used.
         pub tx_encoding: Option<TxEncoding>,
+    }
+
+    impl ChannelOpenInitOptions {
+        /// Returns the counterparty port id.
+        pub fn counterparty_port_id(&self) -> String {
+            self.counterparty_port_id
+                .clone()
+                .unwrap_or(HOST_PORT_ID.to_string())
+        }
+
+        /// Returns the tx encoding.
+        pub fn tx_encoding(&self) -> TxEncoding {
+            self.tx_encoding.clone().unwrap_or(TxEncoding::Protobuf)
+        }
     }
 }
