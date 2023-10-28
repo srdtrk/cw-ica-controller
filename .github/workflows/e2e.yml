@@ -26,6 +26,7 @@ jobs:
         test:
           - TestIcaContractChannelHandshake
           - TestIcaContractInstantiatedChannelHandshake
+          - TestRecoveredIcaContractInstantiatedChannelHandshake
           - TestIcaContractExecutionProto3JsonEncoding
           - TestIcaContractExecutionProtobufEncoding
           - TestIcaContractTimeoutPacket
