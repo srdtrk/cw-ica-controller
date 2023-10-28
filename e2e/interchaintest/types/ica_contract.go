@@ -49,6 +49,16 @@ func StoreAndInstantiateNewIcaContract(
 	return NewIcaContract(contract), nil
 }
 
+func (c *Contract) ExecCreateChannel(
+	ctx context.Context, callerKeyName string, connectionId string,
+	counterpartyConnectionId string, counterpartyPortId *string,
+	txEncoding *string, extraExecTxArgs ...string,
+) error {
+	msg := NewCreateChannelMsg(connectionId, counterpartyConnectionId, counterpartyPortId, txEncoding)
+	err := c.Execute(ctx, callerKeyName, msg, extraExecTxArgs...)
+	return err
+}
+
 // ExecCustomMessages invokes the contract's `CustomIcaMessages` message as the caller
 func (c *IcaContract) ExecCustomIcaMessages(
 	ctx context.Context, callerKeyName string,

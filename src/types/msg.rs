@@ -12,11 +12,19 @@ pub struct InstantiateMsg {
     /// If not specified, the sender is the admin.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub admin: Option<String>,
+    /// The options to initialize the IBC channel upon contract instantiation.
+    /// If not specified, the IBC channel is not initialized, and the relayer must.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub channel_open_init_options: Option<options::ChannelOpenInitOptions>,
 }
 
 /// The messages to execute the ICA controller contract.
 #[cw_serde]
 pub enum ExecuteMsg {
+    /// CreateChannel makes the contract submit a stargate MsgChannelOpenInit to the chain.
+    /// This is a wrapper around [`options::ChannelOpenInitOptions`] and thus requires the
+    /// same fields.
+    CreateChannel(options::ChannelOpenInitOptions),
     /// SendCustomIcaMessages sends custom messages from the ICA controller to the ICA host.
     SendCustomIcaMessages {
         /// Base64-encoded json or proto messages to send to the ICA host.
@@ -80,3 +88,37 @@ pub enum QueryMsg {
 /// The message to migrate this contract.
 #[cw_serde]
 pub struct MigrateMsg {}
+
+/// Option types for other messages.
+pub mod options {
+    use super::*;
+    use crate::ibc::types::{keys::HOST_PORT_ID, metadata::TxEncoding};
+
+    /// The message used to provide the MsgChannelOpenInit with the required data.
+    #[cw_serde]
+    pub struct ChannelOpenInitOptions {
+        /// The connection id on this chain.
+        pub connection_id: String,
+        /// The counterparty connection id on the counterparty chain.
+        pub counterparty_connection_id: String,
+        /// The counterparty port id. If not specified, [crate::ibc::types::keys::HOST_PORT_ID] is used.
+        /// Currently, this contract only supports the host port.
+        pub counterparty_port_id: Option<String>,
+        /// TxEncoding is the encoding used for the ICA txs. If not specified, [TxEncoding::Protobuf] is used.
+        pub tx_encoding: Option<TxEncoding>,
+    }
+
+    impl ChannelOpenInitOptions {
+        /// Returns the counterparty port id.
+        pub fn counterparty_port_id(&self) -> String {
+            self.counterparty_port_id
+                .clone()
+                .unwrap_or(HOST_PORT_ID.to_string())
+        }
+
+        /// Returns the tx encoding.
+        pub fn tx_encoding(&self) -> TxEncoding {
+            self.tx_encoding.clone().unwrap_or(TxEncoding::Protobuf)
+        }
+    }
+}
