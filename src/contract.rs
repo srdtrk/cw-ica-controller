@@ -3,7 +3,7 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
-use crate::ibc::types::stargate::channel::ica_contract_channel_init;
+use crate::ibc::types::stargate::channel::new_ica_channel_open_init_cosmos_msg;
 use crate::types::keys::{CONTRACT_NAME, CONTRACT_VERSION};
 use crate::types::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::types::state::{
@@ -34,7 +34,7 @@ pub fn instantiate(
 
     // If channel open init options are provided, open the channel.
     if let Some(channel_open_init_options) = msg.channel_open_init_options {
-        let ica_channel_init_msg = ica_contract_channel_init(
+        let ica_channel_open_init_msg = new_ica_channel_open_init_cosmos_msg(
             env.contract.address.to_string(),
             channel_open_init_options.connection_id,
             channel_open_init_options.counterparty_port_id,
@@ -42,7 +42,7 @@ pub fn instantiate(
             channel_open_init_options.tx_encoding,
         );
 
-        Ok(Response::new().add_message(ica_channel_init_msg))
+        Ok(Response::new().add_message(ica_channel_open_init_msg))
     } else {
         Ok(Response::default())
     }
@@ -124,7 +124,7 @@ mod execute {
         contract_state.enable_channel_open_init();
         STATE.save(deps.storage, &contract_state)?;
 
-        let ica_channel_init_msg = ica_contract_channel_init(
+        let ica_channel_open_init_msg = new_ica_channel_open_init_cosmos_msg(
             env.contract.address.to_string(),
             options.connection_id,
             options.counterparty_port_id,
@@ -132,7 +132,7 @@ mod execute {
             options.tx_encoding,
         );
 
-        Ok(Response::new().add_message(ica_channel_init_msg))
+        Ok(Response::new().add_message(ica_channel_open_init_msg))
     }
 
     // Sends custom messages to the ICA host.

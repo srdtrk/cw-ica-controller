@@ -32,7 +32,7 @@ pub mod channel {
     /// Also generates the handshake version.
     /// If the counterparty port id is not provided, [`keys::HOST_PORT_ID`] is used.
     /// If the tx encoding is not provided, [`metadata::TxEncoding::Protobuf`] is used.
-    pub fn ica_contract_channel_init(
+    pub fn new_ica_channel_open_init_cosmos_msg(
         contract_address: impl Into<String> + Clone,
         connection_id: impl Into<String> + Clone,
         counterparty_port_id: Option<impl Into<String>>,
@@ -48,7 +48,7 @@ pub mod channel {
             "sdk_multi_msg".to_string(),
         );
 
-        let msg_channel_open_init = new_ica_msg_channel_open_init(
+        let msg_channel_open_init = new_ica_channel_open_init_msg(
             contract_address.clone(),
             format!("wasm.{}", contract_address.into()),
             connection_id,
@@ -64,7 +64,7 @@ pub mod channel {
 
     /// Creates a new MsgChannelOpenInit for an ica channel.
     /// If the counterparty port id is not provided, [`keys::HOST_PORT_ID`] is used.
-    fn new_ica_msg_channel_open_init(
+    fn new_ica_channel_open_init_msg(
         signer: impl Into<String>,
         port_id: impl Into<String>,
         connection_id: impl Into<String>,

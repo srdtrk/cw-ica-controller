@@ -12,7 +12,7 @@ The following is a brief overview of the contract's functionality. You can also 
 
 ### Create an interchain account
 
-This contract provides to ways to create an interchain account:
+This contract provides two ways to create an interchain account:
 
 1. Using `InstantiateMsg` and/or `ExecuteMsg::CreateChannel`
 2. Using the relayer
@@ -21,7 +21,7 @@ This contract provides to ways to create an interchain account:
 
 **This contract only accepts the first `MsgChannelOpenInit` message that is submitted to it or one that is submitted by the contract itself.**
 
-`InstantiateMsg` is the recommended way to initiate the channel handshake since it would not allow any relayer to front run the first `MsgChannelOpenInit`. If the `channel_open_init_options` field is not specified in the `InstantiateMsg`, then the IBC channel is not initialized at contract instantiation. Then a relayer can start the channel handshake on the contract's chain or you must submit an `ExecuteMsg::CreateChannel`.
+`InstantiateMsg` is the recommended way to initiate the channel handshake since it would not allow any relayer to front run the first `MsgChannelOpenInit` that the contract allows. If the `channel_open_init_options` field is not specified in `InstantiateMsg`, then the IBC channel is not initialized at contract instantiation. Then a relayer can start the channel handshake on the contract's chain or you must submit an `ExecuteMsg::CreateChannel`.
 
 ```rust, ignore
 /// The message to instantiate the ICA controller contract.
@@ -40,7 +40,7 @@ pub struct InstantiateMsg {
 
 #### Using the Relayer
 
-Assuming that the contract was not initialized with `channel_open_init_options`, then the relayer must start the channel handshake on the contract's chain.
+Assuming that the contract was not initialized with `channel_open_init_options`, then the relayer can start the channel handshake on the contract's chain.
 
 To create an interchain account, the relayer must start the channel handshake on the contract's chain. See end to end tests for an example of how to do this. Unfortunately, you cannot initialize the channel handshake with an empty string as the version, this is due to a limitation of the IBCModule interface provided by ibc-go, see issue [#3942](https://github.com/cosmos/ibc-go/issues/3942). (The contract can now be initialized with an empty version string if the chain supports stargate queries, but this is not the case for the end to end tests and is not recommended.) The version string we are using for the end to end tests is: `{"version":"ics27-1","controller_connection_id":"connection-0","host_connection_id":"connection-0","address":"","encoding":"proto3json","tx_type":"sdk_multi_msg"}` (encoding is replaced with `"proto3"` to test protobuf encoding/decoding). You can see all this in the [end to end tests](./e2e/).
 
