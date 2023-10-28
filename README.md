@@ -153,7 +153,7 @@ This contract supports callbacks. See [`src/ibc/relay.rs`](./src/ibc/relay.rs) t
 
 ### Channel Closing and Reopening
 
-In this contract, the only way to close the ica channel is to timeout the channel (you can see this in the end to end tests). This is because the semantics of ordered channels in IBC is that any timeout will cause the channel to be closed. The contract is then able to create a new channel with the same interchain account address, and continue to use the same interchain account. This can also be seen in the end to end tests.
+If the ICA channel is closed, for example, due to a timed out packet. (This is because the semantics of ordered channels in IBC is that any timeout will cause the channel to be closed.) The contract is then able to create a new channel with the same interchain account address, and continue to use the same interchain account. To do this, you submit a `ExecuteMsg::CreateChannel`. This can also be seen in the end to end tests.
 
 ## Testing
 
