@@ -7,8 +7,7 @@ use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
 use crate::ibc::types::stargate::channel::ica_contract_channel_init;
 use crate::types::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::types::state::{
-    CallbackCounter, ChannelState, ContractState, CALLBACK_COUNTER,
-    CHANNEL_STATE, STATE,
+    CallbackCounter, ChannelState, ContractState, CALLBACK_COUNTER, CHANNEL_STATE, STATE,
 };
 use crate::types::ContractError;
 
