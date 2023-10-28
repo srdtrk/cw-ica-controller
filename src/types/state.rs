@@ -203,3 +203,39 @@ mod channel {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_migration_from_v0_1_2() {
+        /// This is the contract state at version 0.1.2.
+        #[cw_serde]
+        pub struct ContractStateV0_1_2 {
+            /// The address of the admin of the IBC application.
+            pub admin: Addr,
+            /// The Interchain Account (ICA) info needed to send packets.
+            /// This is set during the handshake.
+            #[serde(skip_serializing_if = "Option::is_none")]
+            pub ica_info: Option<contract::IcaInfo>,
+        }
+
+        let mock_state = ContractStateV0_1_2 {
+            admin: Addr::unchecked("admin"),
+            ica_info: None,
+        };
+
+        let serialized = cosmwasm_std::to_binary(&mock_state).unwrap();
+
+        let deserialized: ContractState = cosmwasm_std::from_binary(&serialized).unwrap();
+
+        let exp_state = ContractState {
+            admin: Addr::unchecked("admin"),
+            ica_info: None,
+            allow_channel_open_init: false,
+        };
+
+        assert_eq!(deserialized, exp_state);
+    }
+}
