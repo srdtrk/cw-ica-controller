@@ -19,11 +19,11 @@ This contract provides to ways to create an interchain account:
 
 #### Using `InstantiateMsg` and/or `ExecuteMsg::CreateChannel`
 
-This contract only accepts the first `MsgChannelOpenInit` message that is submitted to it or one that is submitted by the contract itself.
+**This contract only accepts the first `MsgChannelOpenInit` message that is submitted to it or one that is submitted by the contract itself.**
 
 `InstantiateMsg` is the recommended way to initiate the channel handshake since it would not allow any relayer to front run the first `MsgChannelOpenInit`. If the `channel_open_init_options` field is not specified in the `InstantiateMsg`, then the IBC channel is not initialized at contract instantiation. Then a relayer can start the channel handshake on the contract's chain or you must submit an `ExecuteMsg::CreateChannel`.
 
-```rust
+```rust, ignore
 /// The message to instantiate the ICA controller contract.
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -71,7 +71,7 @@ If the channel is using `proto3json` encoding, then the format that json message
 
 If the channel is using `proto3` (protobuf) encoding, then the format that protobuf messages have to take are defined by the cosmos-sdk's protobuf codec. Protobuf messages do not have nice human readable formats like json messages do. In the rust the `cosmos-sdk-proto` library is used to generate the protobuf messages as follows:
 
-```rust
+```rust, ignore
 use cosmos_sdk_proto::{
     cosmos::{bank::v1beta1::MsgSend, base::v1beta1::Coin},
     traits::MessageExt,
@@ -93,7 +93,7 @@ IcaPacketData::from_proto_anys(predefined_proto_message.to_any()?);
 
 where `from_proto_anys` is defined as:
 
-```rust
+```rust, ignore
 pub use cosmos_sdk_proto::ibc::applications::interchain_accounts::v1::CosmosTx;
 
 // ...
