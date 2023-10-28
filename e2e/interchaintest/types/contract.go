@@ -48,10 +48,11 @@ func (c *Contract) Port() string {
 
 func (c *Contract) ExecCreateChannel(
 	ctx context.Context, callerKeyName string, connectionId string,
-	counterpartyConnectionId string, counterpartyPortId *string, txEncoding *string,
+	counterpartyConnectionId string, counterpartyPortId *string,
+	txEncoding *string, extraExecTxArgs ...string,
 ) error {
 	msg := NewCreateChannelMsg(connectionId, counterpartyConnectionId, counterpartyPortId, txEncoding)
-	err := c.Execute(ctx, callerKeyName, msg)
+	err := c.Execute(ctx, callerKeyName, msg, extraExecTxArgs...)
 	return err
 }
 
@@ -72,8 +73,8 @@ func (c *Contract) ExecPredefinedAction(ctx context.Context, callerKeyName strin
 	return err
 }
 
-func (c *Contract) Execute(ctx context.Context, callerKeyName string, execMsg string) error {
-	_, err := c.chain.ExecuteContract(ctx, callerKeyName, c.Address, execMsg)
+func (c *Contract) Execute(ctx context.Context, callerKeyName string, execMsg string, extraExecTxArgs ...string) error {
+	_, err := c.chain.ExecuteContract(ctx, callerKeyName, c.Address, execMsg, extraExecTxArgs...)
 	return err
 }
 

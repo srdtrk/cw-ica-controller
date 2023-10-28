@@ -142,7 +142,7 @@ func (s *ContractTestSuite) TestIcaContractInstantiatedChannelHandshake() {
 	// Instantiate the contract with channel:
 	instantiateMsg := types.NewInstantiateMsgWithChannelInitOptions(nil, s.ChainAConnID, s.ChainBConnID, nil, nil)
 
-	contractAddr, err := wasmd.InstantiateContract(ctx, wasmdUser.KeyName(), codeId, instantiateMsg, true, "--gas", "1000000")
+	contractAddr, err := wasmd.InstantiateContract(ctx, wasmdUser.KeyName(), codeId, instantiateMsg, true, "--gas", "500000")
 	s.Require().NoError(err)
 
 	s.Contract = types.NewContract(contractAddr, codeId, wasmd)
@@ -221,7 +221,7 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 		// Instantiate the contract with channel:
 		instantiateMsg := types.NewInstantiateMsgWithChannelInitOptions(nil, "invalid", s.ChainBConnID, nil, nil)
 
-		_, err = wasmd.InstantiateContract(ctx, wasmdUser.KeyName(), codeId, instantiateMsg, true, "--gas", "2000000")
+		_, err = wasmd.InstantiateContract(ctx, wasmdUser.KeyName(), codeId, instantiateMsg, true, "--gas", "500000")
 		s.Require().ErrorContains(err, "submessages: invalid connection hop ID")
 	})
 
@@ -231,14 +231,14 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 
 		// unfortunately, this doesn't error out because the connection id is in the counterparty.
 		// instead, the handshake never completes. A new channel may be created by the relayer.
-		contractAddr, err := wasmd.InstantiateContract(ctx, wasmdUser.KeyName(), codeId, instantiateMsg, true, "--gas", "2000000")
+		contractAddr, err := wasmd.InstantiateContract(ctx, wasmdUser.KeyName(), codeId, instantiateMsg, true, "--gas", "500000")
 		s.Require().NoError(err)
 
 		s.Contract = types.NewContract(contractAddr, codeId, wasmd)
 	})
 
 	s.Run("TestChannelHandshakeSuccessAfterFail", func() {
-		err = s.Contract.ExecCreateChannel(ctx, wasmdUser.KeyName(), s.ChainAConnID, s.ChainBConnID, nil, nil)
+		err = s.Contract.ExecCreateChannel(ctx, wasmdUser.KeyName(), s.ChainAConnID, s.ChainBConnID, nil, nil, "--gas", "500000")
 		s.Require().NoError(err)
 
 		// Wait for the channel to get set up
