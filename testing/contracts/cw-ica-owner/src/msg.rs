@@ -1,4 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use cw_ica_controller::types::msg::options::ChannelOpenInitOptions;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -8,7 +9,10 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    CreateIcaContract { salt: Option<String> },
+    CreateIcaContract {
+        salt: Option<String>,
+        channel_open_init_options: Option<ChannelOpenInitOptions>,
+    },
 }
 
 #[cw_serde]

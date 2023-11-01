@@ -41,9 +41,10 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::CreateIcaContract { salt } => {
-            execute::create_ica_contract(deps, env, info, salt)
-        }
+        ExecuteMsg::CreateIcaContract {
+            salt,
+            channel_open_init_options,
+        } => execute::create_ica_contract(deps, env, info, salt, channel_open_init_options),
     }
 }
 
@@ -58,7 +59,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 mod execute {
     use cosmwasm_std::instantiate2_address;
-    use cw_ica_controller::helpers::CwIcaControllerCode;
+    use cw_ica_controller::{
+        helpers::CwIcaControllerCode, types::msg::options::ChannelOpenInitOptions,
+    };
 
     use crate::state::{self, ICA_COUNT, ICA_STATES};
 
@@ -69,6 +72,7 @@ mod execute {
         env: Env,
         info: MessageInfo,
         salt: Option<String>,
+        channel_open_init_options: Option<ChannelOpenInitOptions>,
     ) -> Result<Response, ContractError> {
         let state = STATE.load(deps.storage)?;
         if state.admin != info.sender {
@@ -79,6 +83,7 @@ mod execute {
 
         let instantiate_msg = cw_ica_controller::types::msg::InstantiateMsg {
             admin: Some(env.contract.address.to_string()),
+            channel_open_init_options,
         };
 
         let ica_count = ICA_COUNT.load(deps.storage).unwrap_or(0);
