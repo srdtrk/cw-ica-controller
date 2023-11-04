@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 // use cw2::set_contract_version;
 
 use crate::error::ContractError;
@@ -45,24 +45,37 @@ pub fn execute(
             salt,
             channel_open_init_options,
         } => execute::create_ica_contract(deps, env, info, salt, channel_open_init_options),
+        ExecuteMsg::SendPredefinedAction { ica_id, to_address } => {
+            execute::send_predefined_action(deps, info, ica_id, to_address)
+        }
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetContractState {} => to_binary(&query::state(deps)?),
-        QueryMsg::GetIcaContractState { ica_id } => to_binary(&query::ica_state(deps, ica_id)?),
-        QueryMsg::GetIcaCount {} => to_binary(&query::ica_count(deps)?),
+        QueryMsg::GetContractState {} => to_json_binary(&query::state(deps)?),
+        QueryMsg::GetIcaContractState { ica_id } => {
+            to_json_binary(&query::ica_state(deps, ica_id)?)
+        }
+        QueryMsg::GetIcaCount {} => to_json_binary(&query::ica_count(deps)?),
     }
 }
 
 mod execute {
-    use cosmwasm_std::instantiate2_address;
+    use cosmwasm_std::{instantiate2_address, Addr};
+    use cw_ica_controller::helpers::CwIcaControllerContract;
+    use cw_ica_controller::ibc::types::packet::IcaPacketData;
+    use cw_ica_controller::types::msg::ExecuteMsg as IcaControllerExecuteMsg;
     use cw_ica_controller::{
-        helpers::CwIcaControllerCode, types::msg::options::ChannelOpenInitOptions,
+        helpers::CwIcaControllerCode, ibc::types::metadata::TxEncoding,
+        types::msg::options::ChannelOpenInitOptions,
     };
 
+    use cosmos_sdk_proto::cosmos::{bank::v1beta1::MsgSend, base::v1beta1::Coin};
+    use cosmos_sdk_proto::Any;
+
+    use crate::cosmos_msg::ExampleCosmosMessages;
     use crate::state::{self, ICA_COUNT, ICA_STATES};
 
     use super::*;
@@ -120,6 +133,63 @@ mod execute {
         ICA_COUNT.save(deps.storage, &(ica_count + 1))?;
 
         Ok(Response::new().add_message(cosmos_msg))
+    }
+
+    /// Sends a predefined action to the ICA host.
+    pub fn send_predefined_action(
+        deps: DepsMut,
+        info: MessageInfo,
+        ica_id: u64,
+        to_address: String,
+    ) -> Result<Response, ContractError> {
+        let contract_state = STATE.load(deps.storage)?;
+        contract_state.verify_admin(info.sender)?;
+
+        let ica_state = ICA_STATES.load(deps.storage, ica_id)?;
+
+        let ica_info = if let Some(ica_info) = ica_state.ica_state {
+            ica_info
+        } else {
+            return Err(ContractError::IcaInfoNotSet {});
+        };
+
+        let cw_ica_contract = CwIcaControllerContract::new(Addr::unchecked(&ica_info.ica_addr));
+
+        let ica_packet = match ica_info.tx_encoding {
+            TxEncoding::Protobuf => {
+                let predefined_proto_message = MsgSend {
+                    from_address: ica_info.ica_addr,
+                    to_address,
+                    amount: vec![Coin {
+                        denom: "stake".to_string(),
+                        amount: "100".to_string(),
+                    }],
+                };
+                IcaPacketData::from_proto_anys(
+                    vec![Any::from_msg(&predefined_proto_message)?],
+                    None,
+                )
+            }
+            TxEncoding::Proto3Json => {
+                let predefined_json_message = ExampleCosmosMessages::MsgSend {
+                    from_address: ica_info.ica_addr,
+                    to_address,
+                    amount: cosmwasm_std::coins(100, "stake"),
+                }
+                .to_string();
+                IcaPacketData::from_json_strings(vec![predefined_json_message], None)
+            }
+        };
+
+        let ica_controller_msg = IcaControllerExecuteMsg::SendCustomIcaMessages {
+            messages: Binary(ica_packet.data),
+            packet_memo: ica_packet.memo,
+            timeout_seconds: None,
+        };
+
+        let msg = cw_ica_contract.call(ica_controller_msg)?;
+
+        Ok(Response::default().add_message(msg))
     }
 }
 

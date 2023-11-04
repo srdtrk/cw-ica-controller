@@ -51,6 +51,7 @@ cw2 = "1.1.0"
 cw-ica-controller = { path = "../../..", features = ["library"] }
 schemars = "0.8.10"
 serde = { version = "1.0.145", default-features = false, features = ["derive"] }
+serde-json-wasm = "0.5.1"
 thiserror = { version = "1.0.31" }
 cosmos-sdk-proto = { version = "0.20.0", default-features = false }
 

@@ -13,6 +13,8 @@ pub const ICA_STATES: Map<u64, IcaContractState> = Map::new("ica_states");
 pub const ICA_COUNT: Item<u64> = Item::new("ica_count");
 
 mod contract {
+    use crate::ContractError;
+
     use super::*;
 
     /// ContractState is the state of the IBC application.
@@ -30,6 +32,15 @@ mod contract {
             Self {
                 admin,
                 ica_controller_code_id,
+            }
+        }
+
+        /// Checks if the address is the admin
+        pub fn verify_admin(&self, sender: impl Into<String>) -> Result<(), ContractError> {
+            if self.admin == sender.into() {
+                Ok(())
+            } else {
+                Err(ContractError::Unauthorized {})
             }
         }
     }
@@ -51,7 +62,7 @@ mod ica {
     #[cw_serde]
     pub struct IcaState {
         pub ica_id: u32,
-        pub ica_addr: Addr,
+        pub ica_addr: String,
         pub tx_encoding: TxEncoding,
         pub channel_state: ChannelState,
     }
@@ -70,7 +81,7 @@ mod ica {
         /// Creates a new [`IcaState`].
         pub fn new(
             ica_id: u32,
-            ica_addr: Addr,
+            ica_addr: String,
             tx_encoding: TxEncoding,
             channel_state: ChannelState,
         ) -> Self {

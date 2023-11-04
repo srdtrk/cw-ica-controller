@@ -9,8 +9,12 @@ pub enum ContractError {
     #[error("error when computing the instantiate2 address: {0}")]
     Instantiate2AddressError(#[from] Instantiate2AddressError),
 
+    #[error("prost encoding error: {0}")]
+    ProstEncodeError(#[from] cosmos_sdk_proto::prost::EncodeError),
+
     #[error("unauthorized")]
     Unauthorized {},
-    // Add any other custom errors you like here.
-    // Look at https://docs.rs/thiserror/1.0.21/thiserror/ for details.
+
+    #[error("ica information is not set")]
+    IcaInfoNotSet {},
 }
