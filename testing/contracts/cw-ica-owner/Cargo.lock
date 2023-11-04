@@ -253,6 +253,7 @@ dependencies = [
 name = "cw-ica-owner"
 version = "0.1.0"
 dependencies = [
+ "cosmos-sdk-proto",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-ica-controller",

@@ -52,6 +52,7 @@ cw-ica-controller = { path = "../../..", features = ["library"] }
 schemars = "0.8.10"
 serde = { version = "1.0.145", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.31" }
+cosmos-sdk-proto = { version = "0.20.0", default-features = false }
 
 [dev-dependencies]
 cw-multi-test = "0.16.5"
