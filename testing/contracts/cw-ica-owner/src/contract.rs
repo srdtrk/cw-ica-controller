@@ -89,9 +89,9 @@ mod execute {
         let ica_count = ICA_COUNT.load(deps.storage).unwrap_or(0);
 
         let salt = salt.unwrap_or(format!(
-            "{}-{}",
-            env.contract.address.to_string(),
-            env.block.time.nanos()
+            // "test",
+            "{}",
+            env.block.time.seconds()
         ));
         let label = format!("icacontroller-{}-{}", env.contract.address, ica_count);
 
@@ -105,11 +105,11 @@ mod execute {
         let code_info = deps
             .querier
             .query_wasm_code_info(state.ica_controller_code_id)?;
-        let code_creator_cannonical = deps.api.addr_canonicalize(&code_info.creator)?;
+        let creator_cannonical = deps.api.addr_canonicalize(env.contract.address.as_str())?;
 
         let contract_addr = deps.api.addr_humanize(&instantiate2_address(
             &code_info.checksum,
-            &code_creator_cannonical,
+            &creator_cannonical,
             salt.as_bytes(),
         )?)?;
 
