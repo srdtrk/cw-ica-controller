@@ -34,7 +34,7 @@ type ContractTestSuite struct {
 	IcaAddress string
 }
 
-// SetupContractAndChannel starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
+// SetupContractTestSuite starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 // sets up the contract and does the channel handshake for the contract test suite.
 func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding string) {
 	s.SetupSuite(ctx, chainSpecs)

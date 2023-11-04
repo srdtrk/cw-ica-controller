@@ -20,11 +20,12 @@ func newOwnerGetIcaContractStateQueryMsg(icaID uint64) map[string]interface{} {
 	}
 }
 
-// newOwnerGetIcaCountQueryMsg creates a new GetIcaCountQueryMsg.
-// This function returns a map[string]interface{} instead of []byte
-// because interchaintest uses json.Marshal to convert the map to a string
-func newOwnerGetIcaCountQueryMsg() map[string]interface{} {
-	return map[string]interface{}{
-		"get_ica_count": struct{}{},
-	}
-}
+//
+// // newOwnerGetIcaCountQueryMsg creates a new GetIcaCountQueryMsg.
+// // This function returns a map[string]interface{} instead of []byte
+// // because interchaintest uses json.Marshal to convert the map to a string
+// func newOwnerGetIcaCountQueryMsg() map[string]interface{} {
+// 	return map[string]interface{}{
+// 		"get_ica_count": struct{}{},
+// 	}
+// }
