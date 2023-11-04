@@ -187,7 +187,7 @@ mod execute {
                     amount: coins(100, "stake"),
                 }
                 .to_string();
-                IcaPacketData::from_json_strings(vec![predefined_json_message], None)?
+                IcaPacketData::from_json_strings(vec![predefined_json_message], None)
             }
         };
         let send_packet_msg = ica_packet.to_ibc_msg(&env, &ica_info.channel_id, None)?;
@@ -320,7 +320,7 @@ mod tests {
         let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
 
         let expected_packet =
-            IcaPacketData::from_json_strings(vec![custom_msg_str.to_string()], None).unwrap();
+            IcaPacketData::from_json_strings(vec![custom_msg_str.to_string()], None);
         let expected_msg = expected_packet.to_ibc_msg(&env, "channel-0", None).unwrap();
 
         assert_eq!(1, res.messages.len());
@@ -378,7 +378,7 @@ mod tests {
         }
         .to_string();
 
-        let expected_packet = IcaPacketData::from_json_strings(vec![expected_msg], None).unwrap();
+        let expected_packet = IcaPacketData::from_json_strings(vec![expected_msg], None);
         let expected_msg = expected_packet.to_ibc_msg(&env, "channel-0", None).unwrap();
 
         assert_eq!(1, res.messages.len());
