@@ -30,7 +30,7 @@ pub fn ibc_packet_ack(
     }
 }
 
-/// Handles the `PacketTimeout` for the IBC module.
+/// Implements the IBC module's `OnTimeoutPacket` handler.
 #[entry_point]
 pub fn ibc_packet_timeout(
     deps: DepsMut,

@@ -1,5 +1,6 @@
 //! This module contains the types used by the contract's execution and state logic.
 
+pub mod callbacks;
 pub mod cosmos_msg;
 mod error;
 pub mod keys;
