@@ -16,6 +16,10 @@ pub struct InstantiateMsg {
     /// If not specified, the IBC channel is not initialized, and the relayer must.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub channel_open_init_options: Option<options::ChannelOpenInitOptions>,
+    /// The contract address that the channel and packet lifecycle callbacks are sent to.
+    /// If not specified, then no callbacks are sent.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub send_callbacks_to: Option<String>,
 }
 
 /// The messages to execute the ICA controller contract.

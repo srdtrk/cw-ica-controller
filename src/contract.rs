@@ -27,8 +27,14 @@ pub fn instantiate(
         info.sender
     };
 
+    let callback_address = if let Some(callback_address) = msg.send_callbacks_to {
+        Some(deps.api.addr_validate(&callback_address)?)
+    } else {
+        None
+    };
+
     // Save the admin. Ica address is determined during handshake.
-    STATE.save(deps.storage, &ContractState::new(admin))?;
+    STATE.save(deps.storage, &ContractState::new(admin, callback_address))?;
     // Initialize the callback counter.
     CALLBACK_COUNTER.save(deps.storage, &CallbackCounter::default())?;
 
@@ -257,6 +263,7 @@ mod tests {
         let msg = InstantiateMsg {
             admin: None,
             channel_open_init_options: None,
+            send_callbacks_to: None,
         };
 
         // Ensure the contract is instantiated successfully
@@ -294,6 +301,7 @@ mod tests {
             InstantiateMsg {
                 admin: None,
                 channel_open_init_options: None,
+                send_callbacks_to: None,
             },
         )
         .unwrap();
@@ -353,6 +361,7 @@ mod tests {
             InstantiateMsg {
                 admin: None,
                 channel_open_init_options: None,
+                send_callbacks_to: None,
             },
         )
         .unwrap();

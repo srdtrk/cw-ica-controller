@@ -30,21 +30,25 @@ mod contract {
         pub admin: Addr,
         /// The Interchain Account (ICA) info needed to send packets.
         /// This is set during the handshake.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default)]
         pub ica_info: Option<IcaInfo>,
         /// If true, the IBC application will accept `MsgChannelOpenInit` messages.
         #[serde(default)]
         pub allow_channel_open_init: bool,
+        /// The address of the callback contract.
+        #[serde(default)]
+        pub callback_address: Option<Addr>,
     }
 
     impl ContractState {
         /// Creates a new ContractState
-        pub fn new(admin: Addr) -> Self {
+        pub fn new(admin: Addr, callback_address: Option<Addr>) -> Self {
             Self {
                 admin,
                 ica_info: None,
                 // We always allow the first `MsgChannelOpenInit` message.
                 allow_channel_open_init: true,
+                callback_address,
             }
         }
 
@@ -208,11 +212,12 @@ mod channel {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_migration_from_v0_1_2() {
+    mod v0_1_2 {
+        use super::*;
+
         /// This is the contract state at version 0.1.2.
         #[cw_serde]
-        pub struct ContractStateV0_1_2 {
+        pub struct ContractState {
             /// The address of the admin of the IBC application.
             pub admin: Addr,
             /// The Interchain Account (ICA) info needed to send packets.
@@ -220,10 +225,52 @@ mod tests {
             #[serde(skip_serializing_if = "Option::is_none")]
             pub ica_info: Option<contract::IcaInfo>,
         }
+    }
 
-        let mock_state = ContractStateV0_1_2 {
+    mod v0_1_3 {
+        use super::*;
+
+        /// This is the contract state at version 0.1.3.
+        #[cw_serde]
+        pub struct ContractState {
+            /// The address of the admin of the IBC application.
+            pub admin: Addr,
+            /// The Interchain Account (ICA) info needed to send packets.
+            /// This is set during the handshake.
+            #[serde(skip_serializing_if = "Option::is_none")]
+            pub ica_info: Option<contract::IcaInfo>,
+            /// If true, the IBC application will accept `MsgChannelOpenInit` messages.
+            #[serde(default)]
+            pub allow_channel_open_init: bool,
+        }
+    }
+
+    #[test]
+    fn test_migration_from_v0_1_2_to_v0_1_3() {
+        let mock_state = v0_1_2::ContractState {
             admin: Addr::unchecked("admin"),
             ica_info: None,
+        };
+
+        let serialized = cosmwasm_std::to_binary(&mock_state).unwrap();
+
+        let deserialized: v0_1_3::ContractState = cosmwasm_std::from_binary(&serialized).unwrap();
+
+        let exp_state = v0_1_3::ContractState {
+            admin: Addr::unchecked("admin"),
+            ica_info: None,
+            allow_channel_open_init: false,
+        };
+
+        assert_eq!(deserialized, exp_state);
+    }
+
+    #[test]
+    fn test_migration_from_v0_1_3_to_v0_2_0() {
+        let mock_state = v0_1_3::ContractState {
+            admin: Addr::unchecked("admin"),
+            ica_info: None,
+            allow_channel_open_init: false,
         };
 
         let serialized = cosmwasm_std::to_binary(&mock_state).unwrap();
@@ -234,6 +281,7 @@ mod tests {
             admin: Addr::unchecked("admin"),
             ica_info: None,
             allow_channel_open_init: false,
+            callback_address: None,
         };
 
         assert_eq!(deserialized, exp_state);
