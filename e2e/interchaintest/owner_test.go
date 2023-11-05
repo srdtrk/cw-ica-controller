@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	sdkmath "cosmossdk.io/math"
+
 	icatypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 
@@ -42,6 +44,22 @@ func (s *OwnerTestSuite) SetupOwnerTestSuite(ctx context.Context) {
 	s.Require().NoError(err)
 
 	s.NumOfIcaContracts = 0
+
+	// Create the ICA Contract
+	channelOpenInitOptions := types.ChannelOpenInitOptions{
+		ConnectionId:             s.ChainAConnID,
+		CounterpartyConnectionId: s.ChainBConnID,
+	}
+	createMsg := types.NewOwnerCreateIcaContractMsg(nil, &channelOpenInitOptions)
+
+	err = s.OwnerContract.Execute(ctx, s.UserA.KeyName(), createMsg, "--gas", "500000")
+	s.Require().NoError(err)
+
+	s.NumOfIcaContracts++
+
+	// Wait for the channel to get set up
+	err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
+	s.Require().NoError(err)
 }
 
 func TestWithOwnerTestSuite(t *testing.T) {
@@ -55,24 +73,6 @@ func (s *OwnerTestSuite) TestCreateIcaContract() {
 	// sets up the contract and does the channel handshake for the contract test suite.
 	s.SetupOwnerTestSuite(ctx)
 	wasmd, simd := s.ChainA, s.ChainB
-	wasmdUser := s.UserA
-
-	// Create the ICA Contract
-
-	channelOpenInitOptions := types.ChannelOpenInitOptions{
-		ConnectionId:             s.ChainAConnID,
-		CounterpartyConnectionId: s.ChainBConnID,
-	}
-	createMsg := types.NewOwnerCreateIcaContractMsg(nil, &channelOpenInitOptions)
-
-	err := s.OwnerContract.Execute(ctx, wasmdUser.KeyName(), createMsg, "--gas", "500000")
-	s.Require().NoError(err)
-
-	s.NumOfIcaContracts++
-
-	// Wait for the channel to get set up
-	err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
-	s.Require().NoError(err)
 
 	icaState, err := s.OwnerContract.QueryIcaContractState(ctx, 0)
 	s.Require().NoError(err)
@@ -128,5 +128,49 @@ func (s *OwnerTestSuite) TestCreateIcaContract() {
 
 		s.Require().Equal(s.OwnerContract.Address, contractState.Admin)
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
+	})
+}
+
+func (s *OwnerTestSuite) TestOwnerPredefinedAction() {
+	ctx := context.Background()
+
+	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
+	// sets up the contract and does the channel handshake for the contract test suite.
+	s.SetupOwnerTestSuite(ctx)
+	wasmd, simd := s.ChainA, s.ChainB
+	wasmdUser, simdUser := s.UserA, s.UserB
+
+	icaState, err := s.OwnerContract.QueryIcaContractState(ctx, 0)
+	s.Require().NoError(err)
+
+	icaContract := types.NewIcaContract(types.NewContract(icaState.ContractAddr, strconv.FormatUint(s.IcaContractCodeId, 10), wasmd))
+
+	// Check contract state
+	contractState, err := icaContract.QueryContractState(ctx)
+	s.Require().NoError(err)
+
+	icaAddress := contractState.IcaInfo.IcaAddress
+
+	// Fund the ICA address:
+	s.FundAddressChainB(ctx, icaAddress)
+
+	s.Run("TestSendPredefinedActionSuccess", func() {
+		err := s.OwnerContract.ExecSendPredefinedAction(ctx, wasmdUser.KeyName(), 0, simdUser.FormattedAddress())
+		s.Require().NoError(err)
+
+		err = testutil.WaitForBlocks(ctx, 6, wasmd, simd)
+		s.Require().NoError(err)
+
+		icaBalance, err := simd.GetBalance(ctx, icaAddress, simd.Config().Denom)
+		s.Require().NoError(err)
+		s.Require().Equal(sdkmath.NewInt(1000000000-100), icaBalance)
+
+		// Check if contract callbacks were executed:
+		callbackCounter, err := icaContract.QueryCallbackCounter(ctx)
+		s.Require().NoError(err)
+
+		s.Require().Equal(uint64(1), callbackCounter.Success)
+		s.Require().Equal(uint64(0), callbackCounter.Error)
+		s.Require().Equal(uint64(0), callbackCounter.Timeout)
 	})
 }

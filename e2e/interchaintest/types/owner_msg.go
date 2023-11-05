@@ -41,3 +41,8 @@ func NewOwnerCreateIcaContractMsg(salt *string, coip *ChannelOpenInitOptions) st
 
 	return string(jsonBytes)
 }
+
+// newOwnerSendPredefinedActionMsg creates a new SendPredefinedActionMsg.
+func newOwnerSendPredefinedActionMsg(icaId uint64, toAddress string) string {
+	return fmt.Sprintf(`{"send_predefined_action":{"ica_id":%d,"to_address":"%s"}}`, icaId, toAddress)
+}

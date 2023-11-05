@@ -49,7 +49,7 @@ func StoreAndInstantiateNewIcaContract(
 	return NewIcaContract(contract), nil
 }
 
-func (c *Contract) ExecCreateChannel(
+func (c *IcaContract) ExecCreateChannel(
 	ctx context.Context, callerKeyName string, connectionId string,
 	counterpartyConnectionId string, counterpartyPortId *string,
 	txEncoding *string, extraExecTxArgs ...string,

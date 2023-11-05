@@ -41,6 +41,14 @@ func StoreAndInstantiateNewOwnerContract(
 	return NewOwnerContract(contract), nil
 }
 
+func (c *OwnerContract) ExecSendPredefinedAction(
+	ctx context.Context, callerKeyName string, icaId uint64, toAddress string,
+) error {
+	msg := newOwnerSendPredefinedActionMsg(icaId, toAddress)
+	err := c.Execute(ctx, callerKeyName, msg)
+	return err
+}
+
 // QueryContractState queries the contract's state
 func (c *OwnerContract) QueryContractState(ctx context.Context) (*OwnerContractState, error) {
 	queryResp := QueryResponse[OwnerContractState]{}
