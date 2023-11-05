@@ -120,7 +120,7 @@ mod ibc_channel_open {
     /// Handles the `OpenAck` part of the IBC handshake.
     pub fn on_acknowledgement(
         deps: DepsMut,
-        channel: IbcChannel,
+        mut channel: IbcChannel,
         counterparty_version: String,
     ) -> Result<IbcBasicResponse, ContractError> {
         let mut state = STATE.load(deps.storage)?;
@@ -154,6 +154,8 @@ mod ibc_channel_open {
         );
         STATE.save(deps.storage, &state)?;
 
+        channel.version = counterparty_version;
+
         // Save the channel state
         CHANNEL_STATE.save(
             deps.storage,
@@ -164,7 +166,6 @@ mod ibc_channel_open {
         if let Some(callback_address) = state.callback_address {
             let callback_msg = IcaControllerCallbackMsg::OnChannelOpenAckCallback {
                 channel,
-                channel_version: counterparty_version,
                 ica_address: metadata.address,
                 tx_encoding: metadata.encoding,
             }
