@@ -4,7 +4,7 @@
 //! channel and packet lifecycle events.
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, IbcChannel, IbcPacket};
+use cosmwasm_std::{to_binary, Addr, CosmosMsg, IbcChannel, IbcPacket, StdResult, WasmMsg};
 
 use crate::ibc::types::packet::acknowledgement::AcknowledgementData;
 
@@ -38,4 +38,18 @@ pub enum IcaControllerCallbackMsg {
         /// The version of the channel.
         channel_version: String,
     },
+}
+
+impl IcaControllerCallbackMsg {
+    /// into_cosmos_msg converts this message into a WasmMsg::Execute message to be sent to the
+    /// named contract.
+    pub fn into_cosmos_msg(&self, contract_addr: impl Into<String>) -> StdResult<CosmosMsg> {
+        let execute = WasmMsg::Execute {
+            contract_addr: contract_addr.into(),
+            msg: to_binary(&self)?,
+            funds: vec![],
+        };
+
+        Ok(execute.into())
+    }
 }

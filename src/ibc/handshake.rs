@@ -57,6 +57,8 @@ pub fn ibc_channel_close(
 }
 
 mod ibc_channel_open {
+    use crate::types::callbacks::IcaControllerCallbackMsg;
+
     use super::*;
 
     /// Handles the `OpenInit` part of the IBC handshake.
@@ -121,6 +123,8 @@ mod ibc_channel_open {
         channel: IbcChannel,
         counterparty_version: String,
     ) -> Result<IbcBasicResponse, ContractError> {
+        let mut state = STATE.load(deps.storage)?;
+
         // portID cannot be host chain portID
         // this is not possible since it is wasm.CONTRACT_ADDRESS
         // but we check it anyway since this is a recreation of the go code
@@ -141,24 +145,33 @@ mod ibc_channel_open {
         if metadata.address.is_empty() {
             return Err(ContractError::InvalidAddress {});
         }
-        // save the address to the contract state
-        STATE.update(
-            deps.storage,
-            |mut contract_state| -> Result<_, ContractError> {
-                contract_state.set_ica_info(
-                    metadata.address,
-                    &channel.endpoint.channel_id,
-                    metadata.encoding,
-                );
-                Ok(contract_state)
-            },
-        )?;
+
+        // update state with the ica info
+        state.set_ica_info(
+            metadata.address,
+            &channel.endpoint.channel_id,
+            metadata.encoding,
+        );
+        STATE.save(deps.storage, &state)?;
 
         // Save the channel state
-        CHANNEL_STATE.save(deps.storage, &ChannelState::new_open_channel(channel))?;
+        CHANNEL_STATE.save(
+            deps.storage,
+            &ChannelState::new_open_channel(channel.clone()),
+        )?;
 
-        // Return the response, emit events if needed. Core IBC modules will emit the events regardless.
-        Ok(IbcBasicResponse::default())
+        // make callback if needed
+        if let Some(callback_address) = state.callback_address {
+            let callback_msg = IcaControllerCallbackMsg::OnChannelOpenAckCallback {
+                channel,
+                channel_version: counterparty_version,
+            }
+            .into_cosmos_msg(callback_address)?;
+
+            Ok(IbcBasicResponse::default().add_message(callback_msg))
+        } else {
+            Ok(IbcBasicResponse::default())
+        }
     }
 }
 
