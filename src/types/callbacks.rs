@@ -6,7 +6,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{to_binary, Addr, CosmosMsg, IbcChannel, IbcPacket, StdResult, WasmMsg};
 
-use crate::ibc::types::packet::acknowledgement::AcknowledgementData;
+use crate::ibc::types::{packet::acknowledgement::AcknowledgementData, metadata::TxEncoding};
 
 /// IcaControllerCallbackMsg is the type of message that this contract can send to other contracts.
 #[cw_serde]
@@ -37,6 +37,10 @@ pub enum IcaControllerCallbackMsg {
         channel: IbcChannel,
         /// The version of the channel.
         channel_version: String,
+        /// The address of the interchain account that was created.
+        ica_address: String,
+        /// The tx encoding this ICA channel uses.
+        tx_encoding: TxEncoding,
     },
 }
 

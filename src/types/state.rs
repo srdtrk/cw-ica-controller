@@ -6,7 +6,7 @@ use cw_storage_plus::Item;
 
 use super::ContractError;
 
-pub use channel::ChannelState;
+pub use channel::{ChannelState, ChannelStatus};
 pub use contract::{CallbackCounter, ContractState};
 
 /// The item used to store the state of the IBC application.
@@ -165,14 +165,19 @@ mod channel {
     /// ChannelState is the state of the IBC channel.
     #[cw_serde]
     pub enum ChannelStatus {
+        /// Uninitialized is the default state of the channel.
         #[serde(rename = "STATE_UNINITIALIZED_UNSPECIFIED")]
         Uninitialized,
+        /// Init is the state of the channel when it is created.
         #[serde(rename = "STATE_INIT")]
         Init,
+        /// TryOpen is the state of the channel when it is trying to open.
         #[serde(rename = "STATE_TRYOPEN")]
         TryOpen,
+        /// Open is the state of the channel when it is open.
         #[serde(rename = "STATE_OPEN")]
         Open,
+        /// Closed is the state of the channel when it is closed.
         #[serde(rename = "STATE_CLOSED")]
         Closed,
     }

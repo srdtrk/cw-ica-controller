@@ -148,9 +148,9 @@ mod ibc_channel_open {
 
         // update state with the ica info
         state.set_ica_info(
-            metadata.address,
+            &metadata.address,
             &channel.endpoint.channel_id,
-            metadata.encoding,
+            metadata.encoding.clone(),
         );
         STATE.save(deps.storage, &state)?;
 
@@ -165,6 +165,8 @@ mod ibc_channel_open {
             let callback_msg = IcaControllerCallbackMsg::OnChannelOpenAckCallback {
                 channel,
                 channel_version: counterparty_version,
+                ica_address: metadata.address,
+                tx_encoding: metadata.encoding,
             }
             .into_cosmos_msg(callback_address)?;
 
