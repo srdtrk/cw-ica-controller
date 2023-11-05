@@ -402,4 +402,50 @@ mod tests {
         let res = execute(deps.as_mut(), env, info, msg);
         assert_eq!(res.unwrap_err().to_string(), "unauthorized".to_string());
     }
+
+    // In this test, we aim to verify that the semver validation is performed correctly.
+    // And that the contract version in cw2 is updated correctly.
+    #[test]
+    fn test_migrate() {
+        let mut deps = mock_dependencies();
+
+        let info = mock_info("creator", &[]);
+
+        // Instantiate the contract
+        let _res = instantiate(
+            deps.as_mut(),
+            mock_env(),
+            info.clone(),
+            InstantiateMsg {
+                admin: None,
+                channel_open_init_options: None,
+                send_callbacks_to: None,
+            },
+        )
+        .unwrap();
+
+        // We need to set the contract version manually to a lower version than the current version
+        cw2::set_contract_version(&mut deps.storage, CONTRACT_NAME, "0.0.1").unwrap();
+
+        // Ensure that the contract version is updated correctly
+        let contract_version = cw2::get_contract_version(&deps.storage).unwrap();
+        assert_eq!(contract_version.contract, CONTRACT_NAME);
+        assert_eq!(contract_version.version, "0.0.1");
+
+        // Perform the migration
+        let _res = migrate(deps.as_mut(), mock_env(), MigrateMsg {}).unwrap();
+
+        let contract_version = cw2::get_contract_version(&deps.storage).unwrap();
+        assert_eq!(contract_version.contract, CONTRACT_NAME);
+        assert_eq!(contract_version.version, CONTRACT_VERSION);
+
+        // Ensure that the contract version cannot be downgraded
+        cw2::set_contract_version(&mut deps.storage, CONTRACT_NAME, "100.0.0").unwrap();
+
+        let res = migrate(deps.as_mut(), mock_env(), MigrateMsg {});
+        assert_eq!(
+            res.unwrap_err().to_string(),
+            "invalid migration version: expected > 100.0.0, got 0.2.0".to_string()
+        );
+    }
 }
