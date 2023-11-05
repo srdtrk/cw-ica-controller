@@ -72,6 +72,17 @@ pub enum ExecuteMsg {
         /// The recipient's address, on the counterparty chain, to send the tokens to from ICA host.
         to_address: String,
     },
+    /// UpdateAdmin updates the admin address.
+    UpdateAdmin {
+        /// The new admin address.
+        admin: String,
+    },
+    /// UpdateCallbackAddress updates the contract callback address.
+    UpdateCallbackAddress {
+        /// The new callback address.
+        /// If not specified, then no callbacks are sent.
+        callback_address: Option<String>,
+    },
 }
 
 /// The messages to query the ICA controller contract.

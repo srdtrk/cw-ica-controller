@@ -79,6 +79,10 @@ pub fn execute(
         ExecuteMsg::SendPredefinedAction { to_address } => {
             execute::send_predefined_action(deps, env, info, to_address)
         }
+        ExecuteMsg::UpdateAdmin { admin } => execute::update_admin(deps, info, admin),
+        ExecuteMsg::UpdateCallbackAddress { callback_address } => {
+            execute::update_callback_address(deps, info, callback_address)
+        }
     }
 }
 
@@ -200,6 +204,40 @@ mod execute {
 
         Ok(Response::default().add_message(send_packet_msg))
     }
+
+    /// Updates the admin address.
+    pub fn update_admin(
+        deps: DepsMut,
+        info: MessageInfo,
+        admin: String,
+    ) -> Result<Response, ContractError> {
+        let mut contract_state = STATE.load(deps.storage)?;
+        contract_state.verify_admin(info.sender)?;
+
+        contract_state.admin = deps.api.addr_validate(&admin)?;
+        STATE.save(deps.storage, &contract_state)?;
+
+        Ok(Response::default())
+    }
+
+    /// Updates the callback address.
+    pub fn update_callback_address(
+        deps: DepsMut,
+        info: MessageInfo,
+        callback_address: Option<String>,
+    ) -> Result<Response, ContractError> {
+        let mut contract_state = STATE.load(deps.storage)?;
+        contract_state.verify_admin(info.sender)?;
+
+        contract_state.callback_address = if let Some(callback_address) = callback_address {
+            Some(deps.api.addr_validate(&callback_address)?)
+        } else {
+            None
+        };
+        STATE.save(deps.storage, &contract_state)?;
+
+        Ok(Response::default())
+    }
 }
 
 mod query {
@@ -252,7 +290,7 @@ mod tests {
 
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{coins, SubMsg};
+    use cosmwasm_std::{coins, Api, SubMsg};
 
     #[test]
     fn test_instantiate() {
@@ -397,6 +435,93 @@ mod tests {
         let info = mock_info("non-admin", &[]);
         let msg = ExecuteMsg::SendPredefinedAction {
             to_address: "to_address".to_string(),
+        };
+
+        let res = execute(deps.as_mut(), env, info, msg);
+        assert_eq!(res.unwrap_err().to_string(), "unauthorized".to_string());
+    }
+
+    #[test]
+    fn test_update_admin() {
+        let mut deps = mock_dependencies();
+
+        let env = mock_env();
+        let info = mock_info("creator", &[]);
+
+        // Instantiate the contract
+        let _res = instantiate(
+            deps.as_mut(),
+            env.clone(),
+            info.clone(),
+            InstantiateMsg {
+                admin: None,
+                channel_open_init_options: None,
+                send_callbacks_to: None,
+            },
+        )
+        .unwrap();
+
+        // Ensure the contract admin can update the admin
+        let new_admin = "new_admin".to_string();
+        let msg = ExecuteMsg::UpdateAdmin {
+            admin: new_admin.clone(),
+        };
+        let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+        assert_eq!(0, res.messages.len());
+
+        let state = STATE.load(&deps.storage).unwrap();
+        assert_eq!(state.admin, deps.api.addr_validate(&new_admin).unwrap());
+
+        // Ensure a non-admin cannot update the admin
+        let info = mock_info("non-admin", &[]);
+        let msg = ExecuteMsg::UpdateAdmin {
+            admin: "new_admin".to_string(),
+        };
+
+        let res = execute(deps.as_mut(), env, info, msg);
+        assert_eq!(res.unwrap_err().to_string(), "unauthorized".to_string());
+    }
+
+    #[test]
+    fn test_update_callback_address() {
+        let mut deps = mock_dependencies();
+
+        let env = mock_env();
+        let info = mock_info("creator", &[]);
+
+        // Instantiate the contract
+        let _res = instantiate(
+            deps.as_mut(),
+            env.clone(),
+            info.clone(),
+            InstantiateMsg {
+                admin: None,
+                channel_open_init_options: None,
+                send_callbacks_to: None,
+            },
+        )
+        .unwrap();
+
+        // Ensure the contract admin can update the callback address
+        let new_callback_address = "new_callback_address".to_string();
+        let msg = ExecuteMsg::UpdateCallbackAddress {
+            callback_address: Some(new_callback_address.clone()),
+        };
+        let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+        assert_eq!(0, res.messages.len());
+
+        let state = STATE.load(&deps.storage).unwrap();
+        assert_eq!(
+            state.callback_address,
+            Some(deps.api.addr_validate(&new_callback_address).unwrap())
+        );
+
+        // Ensure a non-admin cannot update the callback address
+        let info = mock_info("non-admin", &[]);
+        let msg = ExecuteMsg::UpdateCallbackAddress {
+            callback_address: Some("new_callback_address".to_string()),
         };
 
         let res = execute(deps.as_mut(), env, info, msg);
