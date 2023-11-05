@@ -11,6 +11,8 @@ pub const STATE: Item<ContractState> = Item::new("state");
 pub const ICA_STATES: Map<u64, IcaContractState> = Map::new("ica_states");
 /// The item used to store the count of the cw-ica-controller contracts.
 pub const ICA_COUNT: Item<u64> = Item::new("ica_count");
+/// The item used to map contract addresses to ICA IDs.
+pub const CONTRACT_ADDR_TO_ICA_ID: Map<Addr, u64> = Map::new("contract_addr_to_ica_id");
 
 mod contract {
     use crate::ContractError;
@@ -61,7 +63,7 @@ mod ica {
     /// IcaState is the state of the ICA.
     #[cw_serde]
     pub struct IcaState {
-        pub ica_id: u32,
+        pub ica_id: u64,
         pub ica_addr: String,
         pub tx_encoding: TxEncoding,
         pub channel_state: ChannelState,
@@ -80,7 +82,7 @@ mod ica {
     impl IcaState {
         /// Creates a new [`IcaState`].
         pub fn new(
-            ica_id: u32,
+            ica_id: u64,
             ica_addr: String,
             tx_encoding: TxEncoding,
             channel_state: ChannelState,

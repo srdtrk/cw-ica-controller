@@ -48,6 +48,9 @@ pub fn execute(
         ExecuteMsg::SendPredefinedAction { ica_id, to_address } => {
             execute::send_predefined_action(deps, info, ica_id, to_address)
         }
+        ExecuteMsg::IcaControllerCallbackMsg(callback_msg) => {
+            execute::ica_callback_handler(deps, info, callback_msg)
+        }
     }
 }
 
@@ -66,7 +69,9 @@ mod execute {
     use cosmwasm_std::{instantiate2_address, Addr};
     use cw_ica_controller::helpers::CwIcaControllerContract;
     use cw_ica_controller::ibc::types::packet::IcaPacketData;
+    use cw_ica_controller::types::callbacks::IcaControllerCallbackMsg;
     use cw_ica_controller::types::msg::ExecuteMsg as IcaControllerExecuteMsg;
+    use cw_ica_controller::types::state::{ChannelState, ChannelStatus};
     use cw_ica_controller::{
         helpers::CwIcaControllerCode, ibc::types::metadata::TxEncoding,
         types::msg::options::ChannelOpenInitOptions,
@@ -76,7 +81,7 @@ mod execute {
     use cosmos_sdk_proto::Any;
 
     use crate::cosmos_msg::ExampleCosmosMessages;
-    use crate::state::{self, ICA_COUNT, ICA_STATES};
+    use crate::state::{self, CONTRACT_ADDR_TO_ICA_ID, ICA_COUNT, ICA_STATES};
 
     use super::*;
 
@@ -97,15 +102,12 @@ mod execute {
         let instantiate_msg = cw_ica_controller::types::msg::InstantiateMsg {
             admin: Some(env.contract.address.to_string()),
             channel_open_init_options,
+            send_callbacks_to: Some(env.contract.address.to_string()),
         };
 
         let ica_count = ICA_COUNT.load(deps.storage).unwrap_or(0);
 
-        let salt = salt.unwrap_or(format!(
-            // "test",
-            "{}",
-            env.block.time.seconds()
-        ));
+        let salt = salt.unwrap_or(env.block.time.seconds().to_string());
         let label = format!("icacontroller-{}-{}", env.contract.address, ica_count);
 
         let cosmos_msg = ica_code.instantiate2(
@@ -126,9 +128,11 @@ mod execute {
             salt.as_bytes(),
         )?)?;
 
-        let initial_state = state::IcaContractState::new(contract_addr);
+        let initial_state = state::IcaContractState::new(contract_addr.clone());
 
         ICA_STATES.save(deps.storage, ica_count, &initial_state)?;
+
+        CONTRACT_ADDR_TO_ICA_ID.save(deps.storage, contract_addr, &ica_count)?;
 
         ICA_COUNT.save(deps.storage, &(ica_count + 1))?;
 
@@ -190,6 +194,39 @@ mod execute {
         let msg = cw_ica_contract.call(ica_controller_msg)?;
 
         Ok(Response::default().add_message(msg))
+    }
+
+    /// Handles ICA controller callback messages.
+    pub fn ica_callback_handler(
+        deps: DepsMut,
+        info: MessageInfo,
+        callback_msg: IcaControllerCallbackMsg,
+    ) -> Result<Response, ContractError> {
+        let ica_id = CONTRACT_ADDR_TO_ICA_ID.load(deps.storage, info.sender)?;
+        let mut ica_state = ICA_STATES.load(deps.storage, ica_id)?;
+
+        match callback_msg {
+            IcaControllerCallbackMsg::OnChannelOpenAckCallback {
+                channel,
+                ica_address,
+                tx_encoding,
+            } => {
+                ica_state.ica_state = Some(state::IcaState {
+                    ica_id,
+                    channel_state: ChannelState {
+                        channel,
+                        channel_status: ChannelStatus::Open,
+                    },
+                    ica_addr: ica_address,
+                    tx_encoding,
+                });
+
+                ICA_STATES.save(deps.storage, ica_id, &ica_state)?;
+            }
+            _ => (),
+        }
+
+        Ok(Response::default())
     }
 }
 

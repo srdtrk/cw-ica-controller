@@ -1,4 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use cw_ica_controller::types::callbacks::IcaControllerCallbackMsg;
 use cw_ica_controller::types::msg::options::ChannelOpenInitOptions;
 
 #[cw_serde]
@@ -23,6 +24,7 @@ pub enum ExecuteMsg {
         /// The recipient's address, on the counterparty chain, to send the tokens to from ICA host.
         to_address: String,
     },
+    IcaControllerCallbackMsg(IcaControllerCallbackMsg),
 }
 
 #[cw_serde]
