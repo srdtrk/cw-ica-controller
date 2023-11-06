@@ -76,6 +76,7 @@ func (s *OwnerTestSuite) TestCreateIcaContract() {
 
 	icaState, err := s.OwnerContract.QueryIcaContractState(ctx, 0)
 	s.Require().NoError(err)
+	s.Require().NotNil(icaState.IcaState)
 
 	icaContract := types.NewIcaContract(types.NewContract(icaState.ContractAddr, strconv.FormatUint(s.IcaContractCodeId, 10), wasmd))
 
