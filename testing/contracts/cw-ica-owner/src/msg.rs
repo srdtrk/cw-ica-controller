@@ -24,7 +24,7 @@ pub enum ExecuteMsg {
         /// The recipient's address, on the counterparty chain, to send the tokens to from ICA host.
         to_address: String,
     },
-    IcaControllerCallbackMsg(IcaControllerCallbackMsg),
+    ReceiveIcaCallback(IcaControllerCallbackMsg),
 }
 
 #[cw_serde]

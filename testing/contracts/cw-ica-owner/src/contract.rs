@@ -48,7 +48,7 @@ pub fn execute(
         ExecuteMsg::SendPredefinedAction { ica_id, to_address } => {
             execute::send_predefined_action(deps, info, ica_id, to_address)
         }
-        ExecuteMsg::IcaControllerCallbackMsg(callback_msg) => {
+        ExecuteMsg::ReceiveIcaCallback(callback_msg) => {
             execute::ica_callback_handler(deps, info, callback_msg)
         }
     }
