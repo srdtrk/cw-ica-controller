@@ -93,11 +93,6 @@ func NewCreateChannelMsg(
 	return string(jsonBytes)
 }
 
-// newSendPredefinedActionMsg creates a new SendPredefinedActionMsg.
-func newSendPredefinedActionMsg(to_address string) string {
-	return fmt.Sprintf(`{"send_predefined_action":{"to_address":"%s"}}`, to_address)
-}
-
 // newSendCustomIcaMessagesMsg creates a new SendCustomIcaMessagesMsg.
 func newSendCustomIcaMessagesMsg(cdc codec.BinaryCodec, msgs []proto.Message, encoding string, memo *string, timeout *uint64) string {
 	type SendCustomIcaMessagesMsg struct {

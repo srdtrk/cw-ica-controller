@@ -70,12 +70,6 @@ func (c *IcaContract) ExecCustomIcaMessages(
 	return err
 }
 
-// ExecPredefinedAction executes the contract's predefined action message as the caller
-func (c *IcaContract) ExecPredefinedAction(ctx context.Context, callerKeyName string, toAddress string) error {
-	err := c.Execute(ctx, callerKeyName, newSendPredefinedActionMsg(toAddress))
-	return err
-}
-
 // QueryContractState queries the contract's state
 func (c *IcaContract) QueryContractState(ctx context.Context) (*IcaContractState, error) {
 	queryResp := QueryResponse[IcaContractState]{}

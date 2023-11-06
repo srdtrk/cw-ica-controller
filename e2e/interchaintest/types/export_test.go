@@ -16,11 +16,6 @@ func NewSendCustomIcaMessagesMsg(cdc codec.BinaryCodec, msgs []proto.Message, en
 	return newSendCustomIcaMessagesMsg(cdc, msgs, encoding, memo, timeout)
 }
 
-// NewSendPredefinedActionMsg is a wrapper for newSendPredefinedActionMsg for internal testing
-func NewSendPredefinedActionMsg(to_address string) string {
-	return newSendPredefinedActionMsg(to_address)
-}
-
 // NewGetChannelQueryMsg is a wrapper for newGetChannelQueryMsg for internal testing
 func NewGetChannelQueryMsg() map[string]interface{} {
 	return newGetCallbackCounterQueryMsg()
