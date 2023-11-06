@@ -64,14 +64,6 @@ pub enum ExecuteMsg {
         #[serde(skip_serializing_if = "Option::is_none")]
         timeout_seconds: Option<u64>,
     },
-    /// SendPredefinedAction sends a predefined action from the ICA controller to the ICA host.
-    /// This demonstration is useful for contracts that have predefined actions such as DAOs.
-    ///
-    /// In this example, the predefined action is a `MsgSend` message which sends 100 "stake" tokens.
-    SendPredefinedAction {
-        /// The recipient's address, on the counterparty chain, to send the tokens to from ICA host.
-        to_address: String,
-    },
     /// UpdateAdmin updates the admin address.
     UpdateAdmin {
         /// The new admin address.

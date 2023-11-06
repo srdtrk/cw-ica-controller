@@ -76,9 +76,6 @@ pub fn execute(
             packet_memo,
             timeout_seconds,
         ),
-        ExecuteMsg::SendPredefinedAction { to_address } => {
-            execute::send_predefined_action(deps, env, info, to_address)
-        }
         ExecuteMsg::UpdateAdmin { admin } => execute::update_admin(deps, info, admin),
         ExecuteMsg::UpdateCallbackAddress { callback_address } => {
             execute::update_callback_address(deps, info, callback_address)
@@ -109,15 +106,7 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 }
 
 mod execute {
-    use cosmwasm_std::coins;
-
-    use crate::{
-        ibc::types::{metadata::TxEncoding, packet::IcaPacketData},
-        types::{cosmos_msg::ExampleCosmosMessages, msg::options::ChannelOpenInitOptions},
-    };
-
-    use cosmos_sdk_proto::cosmos::{bank::v1beta1::MsgSend, base::v1beta1::Coin};
-    use cosmos_sdk_proto::Any;
+    use crate::{ibc::types::packet::IcaPacketData, types::msg::options::ChannelOpenInitOptions};
 
     use super::*;
 
@@ -160,47 +149,6 @@ mod execute {
 
         let ica_packet = IcaPacketData::new(messages.to_vec(), packet_memo);
         let send_packet_msg = ica_packet.to_ibc_msg(&env, ica_info.channel_id, timeout_seconds)?;
-
-        Ok(Response::default().add_message(send_packet_msg))
-    }
-
-    /// Sends a predefined action to the ICA host.
-    pub fn send_predefined_action(
-        deps: DepsMut,
-        env: Env,
-        info: MessageInfo,
-        to_address: String,
-    ) -> Result<Response, ContractError> {
-        let contract_state = STATE.load(deps.storage)?;
-        contract_state.verify_admin(info.sender)?;
-        let ica_info = contract_state.get_ica_info()?;
-
-        let ica_packet = match ica_info.encoding {
-            TxEncoding::Protobuf => {
-                let predefined_proto_message = MsgSend {
-                    from_address: ica_info.ica_address,
-                    to_address,
-                    amount: vec![Coin {
-                        denom: "stake".to_string(),
-                        amount: "100".to_string(),
-                    }],
-                };
-                IcaPacketData::from_proto_anys(
-                    vec![Any::from_msg(&predefined_proto_message)?],
-                    None,
-                )
-            }
-            TxEncoding::Proto3Json => {
-                let predefined_json_message = ExampleCosmosMessages::MsgSend {
-                    from_address: ica_info.ica_address,
-                    to_address,
-                    amount: coins(100, "stake"),
-                }
-                .to_string();
-                IcaPacketData::from_json_strings(vec![predefined_json_message], None)
-            }
-        };
-        let send_packet_msg = ica_packet.to_ibc_msg(&env, &ica_info.channel_id, None)?;
 
         Ok(Response::default().add_message(send_packet_msg))
     }
@@ -286,11 +234,10 @@ mod migrate {
 #[cfg(test)]
 mod tests {
     use crate::ibc::types::{metadata::TxEncoding, packet::IcaPacketData};
-    use crate::types::cosmos_msg::ExampleCosmosMessages;
 
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{coins, Api, SubMsg};
+    use cosmwasm_std::{Api, SubMsg};
 
     #[test]
     fn test_instantiate() {
@@ -378,63 +325,6 @@ mod tests {
             messages: Binary(vec![]),
             packet_memo: None,
             timeout_seconds: None,
-        };
-
-        let res = execute(deps.as_mut(), env, info, msg);
-        assert_eq!(res.unwrap_err().to_string(), "unauthorized".to_string());
-    }
-
-    #[test]
-    fn test_execute_send_predefined_action() {
-        let mut deps = mock_dependencies();
-
-        let env = mock_env();
-        let info = mock_info("creator", &[]);
-
-        // Instantiate the contract
-        let _res = instantiate(
-            deps.as_mut(),
-            env.clone(),
-            info.clone(),
-            InstantiateMsg {
-                admin: None,
-                channel_open_init_options: None,
-                send_callbacks_to: None,
-            },
-        )
-        .unwrap();
-
-        // for this unit test, we have to set ica info manually or else the contract will error
-        STATE
-            .update(&mut deps.storage, |mut state| -> StdResult<ContractState> {
-                state.set_ica_info("ica_address", "channel-0", TxEncoding::Proto3Json);
-                Ok(state)
-            })
-            .unwrap();
-
-        // Ensure the contract admin can send predefined messages
-        let msg = ExecuteMsg::SendPredefinedAction {
-            to_address: "to_address".to_string(),
-        };
-        let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
-
-        let expected_msg = ExampleCosmosMessages::MsgSend {
-            from_address: "ica_address".to_string(),
-            to_address: "to_address".to_string(),
-            amount: coins(100, "stake"),
-        }
-        .to_string();
-
-        let expected_packet = IcaPacketData::from_json_strings(vec![expected_msg], None);
-        let expected_msg = expected_packet.to_ibc_msg(&env, "channel-0", None).unwrap();
-
-        assert_eq!(1, res.messages.len());
-        assert_eq!(res.messages[0], SubMsg::new(expected_msg));
-
-        // Ensure a non-admin cannot send predefined messages
-        let info = mock_info("non-admin", &[]);
-        let msg = ExecuteMsg::SendPredefinedAction {
-            to_address: "to_address".to_string(),
         };
 
         let res = execute(deps.as_mut(), env, info, msg);
