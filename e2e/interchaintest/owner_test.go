@@ -66,7 +66,7 @@ func TestWithOwnerTestSuite(t *testing.T) {
 	suite.Run(t, new(OwnerTestSuite))
 }
 
-func (s *OwnerTestSuite) TestCreateIcaContract() {
+func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
