@@ -25,23 +25,22 @@ pub fn ibc_packet_ack(
 ) -> Result<IbcBasicResponse, ContractError> {
     // This lets the ICA controller know whether or not the sent transactions succeeded.
     match from_binary(&ack.acknowledgement.data)? {
-        AcknowledgementData::Result(res) => ibc_packet_ack::success(deps, ack.original_packet, res),
-        AcknowledgementData::Error(err) => ibc_packet_ack::error(deps, ack.original_packet, err),
+        AcknowledgementData::Result(res) => {
+            ibc_packet_ack::success(deps, ack.original_packet, ack.relayer, res)
+        }
+        AcknowledgementData::Error(err) => {
+            ibc_packet_ack::error(deps, ack.original_packet, ack.relayer, err)
+        }
     }
 }
 
-/// Handles the `PacketTimeout` for the IBC module.
+/// Implements the IBC module's `OnTimeoutPacket` handler.
 #[entry_point]
 pub fn ibc_packet_timeout(
     deps: DepsMut,
     _env: Env,
-    _msg: IbcPacketTimeoutMsg,
+    msg: IbcPacketTimeoutMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
-    // Increment the callback counter.
-    CALLBACK_COUNTER.update(deps.storage, |mut cc| -> Result<_, ContractError> {
-        cc.timeout();
-        Ok(cc)
-    })?;
     // Due to the semantics of ordered channels, the underlying channel end is closed.
     CHANNEL_STATE.update(
         deps.storage,
@@ -51,7 +50,7 @@ pub fn ibc_packet_timeout(
         },
     )?;
 
-    Ok(IbcBasicResponse::default())
+    ibc_packet_timeout::callback(deps, msg.packet, msg.relayer)
 }
 
 /// Handles the `PacketReceive` for the IBC module.
@@ -67,9 +66,12 @@ pub fn ibc_packet_receive(
 }
 
 mod ibc_packet_ack {
-    use cosmwasm_std::{Binary, IbcPacket};
+    use cosmwasm_std::{Addr, Binary, IbcPacket};
 
-    use crate::types::state::CALLBACK_COUNTER;
+    use crate::types::{
+        callbacks::IcaControllerCallbackMsg,
+        state::{CALLBACK_COUNTER, STATE},
+    };
 
     use super::*;
 
@@ -78,14 +80,32 @@ mod ibc_packet_ack {
     pub fn success(
         deps: DepsMut,
         packet: IbcPacket,
+        relayer: Addr,
         res: Binary,
     ) -> Result<IbcBasicResponse, ContractError> {
-        // Handle the success case.
+        let state = STATE.load(deps.storage)?;
+
         CALLBACK_COUNTER.update(deps.storage, |mut counter| -> Result<_, ContractError> {
             counter.success();
             Ok(counter)
         })?;
-        Ok(IbcBasicResponse::default().add_event(events::packet_ack::success(&packet, &res)))
+
+        let success_event = events::packet_ack::success(&packet, &res);
+
+        if let Some(contract_addr) = state.callback_address {
+            let callback_msg = IcaControllerCallbackMsg::OnAcknowledgementPacketCallback {
+                ica_acknowledgement: AcknowledgementData::Result(res),
+                original_packet: packet,
+                relayer,
+            }
+            .into_cosmos_msg(contract_addr)?;
+
+            Ok(IbcBasicResponse::default()
+                .add_message(callback_msg)
+                .add_event(success_event))
+        } else {
+            Ok(IbcBasicResponse::default().add_event(success_event))
+        }
     }
 
     /// Handles the unsuccessful acknowledgement of an ica packet. This means that the
@@ -93,13 +113,66 @@ mod ibc_packet_ack {
     pub fn error(
         deps: DepsMut,
         packet: IbcPacket,
+        relayer: Addr,
         err: String,
     ) -> Result<IbcBasicResponse, ContractError> {
-        // Handle the error.
+        let state = STATE.load(deps.storage)?;
+
         CALLBACK_COUNTER.update(deps.storage, |mut counter| -> Result<_, ContractError> {
             counter.error();
             Ok(counter)
         })?;
-        Ok(IbcBasicResponse::default().add_event(events::packet_ack::error(&packet, &err)))
+
+        let error_event = events::packet_ack::error(&packet, &err);
+
+        if let Some(contract_addr) = state.callback_address {
+            let callback_msg = IcaControllerCallbackMsg::OnAcknowledgementPacketCallback {
+                ica_acknowledgement: AcknowledgementData::Error(err),
+                original_packet: packet,
+                relayer,
+            }
+            .into_cosmos_msg(contract_addr)?;
+
+            Ok(IbcBasicResponse::default()
+                .add_message(callback_msg)
+                .add_event(error_event))
+        } else {
+            Ok(IbcBasicResponse::default().add_event(error_event))
+        }
+    }
+}
+
+mod ibc_packet_timeout {
+    use cosmwasm_std::{Addr, IbcPacket};
+
+    use crate::types::{callbacks::IcaControllerCallbackMsg, state::STATE};
+
+    use super::*;
+
+    /// Handles the timeout callbacks.
+    pub fn callback(
+        deps: DepsMut,
+        packet: IbcPacket,
+        relayer: Addr,
+    ) -> Result<IbcBasicResponse, ContractError> {
+        let state = STATE.load(deps.storage)?;
+
+        // Increment the callback counter.
+        CALLBACK_COUNTER.update(deps.storage, |mut cc| -> Result<_, ContractError> {
+            cc.timeout();
+            Ok(cc)
+        })?;
+
+        if let Some(contract_addr) = state.callback_address {
+            let callback_msg = IcaControllerCallbackMsg::OnTimeoutPacketCallback {
+                original_packet: packet,
+                relayer,
+            }
+            .into_cosmos_msg(contract_addr)?;
+
+            Ok(IbcBasicResponse::default().add_message(callback_msg))
+        } else {
+            Ok(IbcBasicResponse::default())
+        }
     }
 }

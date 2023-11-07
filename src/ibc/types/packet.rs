@@ -3,12 +3,10 @@
 //! This module contains the packet data to be send to the ica host and acknowledgement data types.
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{to_binary, Env, IbcMsg, IbcTimeout};
+use cosmwasm_std::{to_binary, Env, IbcMsg, IbcTimeout, StdResult};
 
 pub use cosmos_sdk_proto::ibc::applications::interchain_accounts::v1::CosmosTx;
 use cosmos_sdk_proto::traits::Message;
-
-use crate::types::ContractError;
 
 /// DEFAULT_TIMEOUT_SECONDS is the default timeout for [`IcaPacketData`]
 pub const DEFAULT_TIMEOUT_SECONDS: u64 = 600;
@@ -75,14 +73,11 @@ impl IcaPacketData {
     /// ```
     ///
     /// In this example, the proposer must be the ICA controller's address.
-    pub fn from_json_strings(
-        messages: Vec<String>,
-        memo: Option<String>,
-    ) -> Result<Self, ContractError> {
+    pub fn from_json_strings(messages: Vec<String>, memo: Option<String>) -> Self {
         let combined_messages = messages.join(", ");
         let json_txs = format!(r#"{{"messages": [{}]}}"#, combined_messages);
         let data = json_txs.into_bytes();
-        Ok(Self::new(data, memo))
+        Self::new(data, memo)
     }
 
     /// Creates a new IcaPacketData from a list of [`cosmos_sdk_proto::Any`] messages
@@ -98,7 +93,7 @@ impl IcaPacketData {
         env: &Env,
         channel_id: impl Into<String>,
         timeout_seconds: Option<u64>,
-    ) -> Result<IbcMsg, ContractError> {
+    ) -> StdResult<IbcMsg> {
         let timeout_timestamp = env
             .block
             .time
@@ -145,7 +140,7 @@ mod tests {
         }
 
         let packet_from_string = IcaPacketData::from_json_strings(
-            vec![r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#.to_string()], None).unwrap();
+            vec![r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#.to_string()], None);
 
         let packet_data = packet_from_string.data;
         let cosmos_tx: TestCosmosTx = from_binary(&Binary(packet_data)).unwrap();

@@ -16,6 +16,10 @@ pub struct InstantiateMsg {
     /// If not specified, the IBC channel is not initialized, and the relayer must.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub channel_open_init_options: Option<options::ChannelOpenInitOptions>,
+    /// The contract address that the channel and packet lifecycle callbacks are sent to.
+    /// If not specified, then no callbacks are sent.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub send_callbacks_to: Option<String>,
 }
 
 /// The messages to execute the ICA controller contract.
@@ -60,13 +64,16 @@ pub enum ExecuteMsg {
         #[serde(skip_serializing_if = "Option::is_none")]
         timeout_seconds: Option<u64>,
     },
-    /// SendPredefinedAction sends a predefined action from the ICA controller to the ICA host.
-    /// This demonstration is useful for contracts that have predefined actions such as DAOs.
-    ///
-    /// In this example, the predefined action is a `MsgSend` message which sends 100 "stake" tokens.
-    SendPredefinedAction {
-        /// The recipient's address, on the counterparty chain, to send the tokens to from ICA host.
-        to_address: String,
+    /// UpdateAdmin updates the admin address.
+    UpdateAdmin {
+        /// The new admin address.
+        admin: String,
+    },
+    /// UpdateCallbackAddress updates the contract callback address.
+    UpdateCallbackAddress {
+        /// The new callback address.
+        /// If not specified, then no callbacks are sent.
+        callback_address: Option<String>,
     },
 }
 

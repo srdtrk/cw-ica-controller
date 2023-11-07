@@ -15,6 +15,7 @@ import (
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 
 	icatypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/types"
@@ -30,11 +31,11 @@ import (
 type ContractTestSuite struct {
 	mysuite.TestSuite
 
-	Contract   *types.Contract
+	Contract   *types.IcaContract
 	IcaAddress string
 }
 
-// SetupContractAndChannel starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
+// SetupContractTestSuite starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 // sets up the contract and does the channel handshake for the contract test suite.
 func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding string) {
 	s.SetupSuite(ctx, chainSpecs)
@@ -48,7 +49,7 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding
 	contractAddr, err := s.ChainA.InstantiateContract(ctx, s.UserA.KeyName(), codeId, instantiateMsg, true, "--gas", "500000")
 	s.Require().NoError(err)
 
-	s.Contract = types.NewContract(contractAddr, codeId, s.ChainA)
+	s.Contract = types.NewIcaContract(types.NewContract(contractAddr, codeId, s.ChainA))
 
 	// Wait for the channel to get set up
 	err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
@@ -58,6 +59,7 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding
 	s.Require().NoError(err)
 
 	s.IcaAddress = contractState.IcaInfo.IcaAddress
+	s.Contract.SetIcaAddress(s.IcaAddress)
 }
 
 func TestWithContractTestSuite(t *testing.T) {
@@ -135,7 +137,7 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 
 	var err error
 	// Upload and Instantiate the contract on wasmd:
-	s.Contract, err = types.StoreAndInstantiateNewContract(ctx, wasmd, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
+	s.Contract, err = types.StoreAndInstantiateNewIcaContract(ctx, wasmd, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
 
 	version := fmt.Sprintf(`{"version":"%s","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"%s","tx_type":"%s"}`, icatypes.Version, s.ChainAConnID, s.ChainBConnID, icatypes.EncodingProtobuf, icatypes.TxTypeSDKMultiMsg)
@@ -235,7 +237,7 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 		contractAddr, err := wasmd.InstantiateContract(ctx, wasmdUser.KeyName(), codeId, instantiateMsg, true, "--gas", "500000")
 		s.Require().NoError(err)
 
-		s.Contract = types.NewContract(contractAddr, codeId, wasmd)
+		s.Contract = types.NewIcaContract(types.NewContract(contractAddr, codeId, wasmd))
 	})
 
 	s.Run("TestChannelHandshakeSuccessAfterFail", func() {
@@ -312,30 +314,10 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 	// sets up the contract and does the channel handshake for the contract test suite.
 	s.SetupContractTestSuite(ctx, encoding)
 	wasmd, simd := s.ChainA, s.ChainB
-	wasmdUser, simdUser := s.UserA, s.UserB
+	wasmdUser := s.UserA
 
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, s.IcaAddress)
-
-	s.Run(fmt.Sprintf("TestSendPredefinedActionSuccess-%s", encoding), func() {
-		err := s.Contract.ExecPredefinedAction(ctx, wasmdUser.KeyName(), simdUser.FormattedAddress())
-		s.Require().NoError(err)
-
-		err = testutil.WaitForBlocks(ctx, 6, wasmd, simd)
-		s.Require().NoError(err)
-
-		icaBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
-		s.Require().NoError(err)
-		s.Require().Equal(sdkmath.NewInt(1000000000-100), icaBalance)
-
-		// Check if contract callbacks were executed:
-		callbackCounter, err := s.Contract.QueryCallbackCounter(ctx)
-		s.Require().NoError(err)
-
-		s.Require().Equal(uint64(1), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
-		s.Require().Equal(uint64(0), callbackCounter.Timeout)
-	})
 
 	s.Run(fmt.Sprintf("TestSendCustomIcaMessagesSuccess-%s", encoding), func() {
 		// Send custom ICA messages through the contract:
@@ -370,7 +352,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		callbackCounter, err := s.Contract.QueryCallbackCounter(ctx)
 		s.Require().NoError(err)
 
-		s.Require().Equal(uint64(2), callbackCounter.Success)
+		s.Require().Equal(uint64(1), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 
 		// Check if the proposal was created:
@@ -397,7 +379,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		// Check if contract callbacks were executed:
 		callbackCounter, err := s.Contract.QueryCallbackCounter(ctx)
 		s.Require().NoError(err)
-		s.Require().Equal(uint64(2), callbackCounter.Success)
+		s.Require().Equal(uint64(1), callbackCounter.Success)
 		s.Require().Equal(uint64(1), callbackCounter.Error)
 		s.Require().Equal(uint64(0), callbackCounter.Timeout)
 	})
@@ -410,7 +392,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 	// sets up the contract and does the channel handshake for the contract test suite.
 	s.SetupContractTestSuite(ctx, icatypes.EncodingProto3JSON)
 	wasmd, simd := s.ChainA, s.ChainB
-	wasmdUser, simdUser := s.UserA, s.UserB
+	wasmdUser, _ := s.UserA, s.UserB
 
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, s.IcaAddress)
@@ -530,8 +512,16 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		s.Require().Equal(uint64(1), callbackCounter.Timeout)
 	})
 
-	s.Run("TestPredefinedActionAfterReopen", func() {
-		err := s.Contract.ExecPredefinedAction(ctx, wasmdUser.KeyName(), simdUser.FormattedAddress())
+	s.Run("TestSendCustomIcaMessagesAfterReopen", func() {
+		// Send custom ICA message through the contract:
+		sendMsg := &banktypes.MsgSend{
+			FromAddress: s.IcaAddress,
+			ToAddress:   s.UserB.FormattedAddress(),
+			Amount:      sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(100))),
+		}
+
+		// Execute the contract:
+		err = s.Contract.ExecCustomIcaMessages(ctx, wasmdUser.KeyName(), []proto.Message{sendMsg}, icatypes.EncodingProto3JSON, nil, nil)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 10, wasmd, simd)

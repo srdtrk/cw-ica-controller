@@ -12,8 +12,8 @@ import (
 	icatypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/types"
 )
 
-// NewInstantiateMsg creates a new InstantiateMsg.
-func NewInstantiateMsg(admin *string) string {
+// newInstantiateMsg creates a new InstantiateMsg.
+func newInstantiateMsg(admin *string) string {
 	if admin == nil {
 		return `{}`
 	} else {
@@ -93,13 +93,8 @@ func NewCreateChannelMsg(
 	return string(jsonBytes)
 }
 
-// NewSendPredefinedActionMsg creates a new SendPredefinedActionMsg.
-func NewSendPredefinedActionMsg(to_address string) string {
-	return fmt.Sprintf(`{"send_predefined_action":{"to_address":"%s"}}`, to_address)
-}
-
-// NewSendCustomIcaMessagesMsg creates a new SendCustomIcaMessagesMsg.
-func NewSendCustomIcaMessagesMsg(cdc codec.BinaryCodec, msgs []proto.Message, encoding string, memo *string, timeout *uint64) string {
+// newSendCustomIcaMessagesMsg creates a new SendCustomIcaMessagesMsg.
+func newSendCustomIcaMessagesMsg(cdc codec.BinaryCodec, msgs []proto.Message, encoding string, memo *string, timeout *uint64) string {
 	type SendCustomIcaMessagesMsg struct {
 		Messages       string  `json:"messages"`
 		PacketMemo     *string `json:"packet_memo,omitempty"`

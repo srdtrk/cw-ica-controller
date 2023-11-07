@@ -36,9 +36,6 @@ func TestExecuteMsgs(t *testing.T) {
 	t.Parallel()
 
 	// Basic tests:
-	sendPredefinedActionMsg := types.NewSendPredefinedActionMsg(testAddress)
-	require.Equal(t, `{"send_predefined_action":{"to_address":"srdtrk"}}`, sendPredefinedActionMsg)
-
 	sendCustomIcaMessagesMsg := types.NewSendCustomIcaMessagesMsg(nil, nil, "", nil, nil)
 	require.Equal(t, `{"send_custom_ica_messages":{"messages":[]}}`, sendCustomIcaMessagesMsg)
 	memo := "test"
