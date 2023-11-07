@@ -30,6 +30,8 @@ jobs:
           - TestIcaContractExecutionProto3JsonEncoding
           - TestIcaContractExecutionProtobufEncoding
           - TestIcaContractTimeoutPacket
+          - TestOwnerCreateIcaContract
+          - TestOwnerPredefinedAction
     name: ${{ matrix.test }}
     runs-on: ubuntu-latest
     steps:
@@ -52,4 +54,8 @@ jobs:
       - name: TestContract
         run: |
           cd e2e/interchaintest
-          go test -v . -run TestWithContractTestSuite -testify.m ${{ matrix.test }}
+          if [[ ${{ matrix.test }} == TestOwner* ]]; then
+            go test -v . -run TestWithOwnerTestSuite -testify.m ${{ matrix.test }}
+          else
+            go test -v . -run TestWithContractTestSuite -testify.m ${{ matrix.test }}
+          fi
