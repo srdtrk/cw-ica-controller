@@ -37,6 +37,12 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
+      - name: Build Owner Contract with Docker
+        run: |
+          docker run --rm -v "$(pwd)":/code \
+            --mount type=volume,source="devcontract_cache_burner",target=/code/contracts/burner/target \
+            --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
+            cosmwasm/rust-optimizer:0.14.0 ./testing/contracts/cw-ica-owner
       - name: Install cargo-run-script
         uses: actions-rs/cargo@v1
         with:
