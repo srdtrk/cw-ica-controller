@@ -21,17 +21,14 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    let admin = if let Some(admin) = msg.admin {
-        deps.api.addr_validate(&admin)?
-    } else {
-        info.sender
-    };
+    let admin = msg
+        .admin
+        .map_or(Ok(info.sender), |admin| deps.api.addr_validate(&admin))?;
 
-    let callback_address = if let Some(callback_address) = msg.send_callbacks_to {
-        Some(deps.api.addr_validate(&callback_address)?)
-    } else {
-        None
-    };
+    let callback_address = msg
+        .send_callbacks_to
+        .map(|addr| deps.api.addr_validate(&addr))
+        .transpose()?;
 
     // Save the admin. Ica address is determined during handshake.
     STATE.save(deps.storage, &ContractState::new(admin, callback_address))?;
@@ -177,11 +174,10 @@ mod execute {
         let mut contract_state = STATE.load(deps.storage)?;
         contract_state.verify_admin(info.sender)?;
 
-        contract_state.callback_address = if let Some(callback_address) = callback_address {
-            Some(deps.api.addr_validate(&callback_address)?)
-        } else {
-            None
-        };
+        contract_state.callback_address = callback_address
+            .map(|addr| deps.api.addr_validate(&addr))
+            .transpose()?;
+
         STATE.save(deps.storage, &contract_state)?;
 
         Ok(Response::default())
