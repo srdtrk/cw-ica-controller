@@ -4,7 +4,9 @@
 //! channel and packet lifecycle events.
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{to_json_binary, Addr, Binary, CosmosMsg, IbcChannel, IbcPacket, StdResult, WasmMsg};
+use cosmwasm_std::{
+    to_json_binary, Addr, Binary, CosmosMsg, IbcChannel, IbcPacket, StdResult, WasmMsg,
+};
 
 use crate::ibc::types::{metadata::TxEncoding, packet::acknowledgement::AcknowledgementData};
 
