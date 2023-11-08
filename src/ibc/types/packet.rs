@@ -3,7 +3,7 @@
 //! This module contains the packet data to be send to the ica host and acknowledgement data types.
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{to_binary, Env, IbcMsg, IbcTimeout, StdResult};
+use cosmwasm_std::{to_json_binary, Env, IbcMsg, IbcTimeout, StdResult};
 
 pub use cosmos_sdk_proto::ibc::applications::interchain_accounts::v1::CosmosTx;
 use cosmos_sdk_proto::traits::Message;
@@ -100,7 +100,7 @@ impl IcaPacketData {
             .plus_seconds(timeout_seconds.unwrap_or(DEFAULT_TIMEOUT_SECONDS));
         Ok(IbcMsg::SendPacket {
             channel_id: channel_id.into(),
-            data: to_binary(&self)?,
+            data: to_json_binary(&self)?,
             timeout: IbcTimeout::with_timestamp(timeout_timestamp),
         })
     }
@@ -126,7 +126,7 @@ pub mod acknowledgement {
 #[cfg(test)]
 mod tests {
     use acknowledgement::AcknowledgementData;
-    use cosmwasm_std::{coins, from_binary, Binary};
+    use cosmwasm_std::{coins, from_json, Binary};
 
     use crate::types::cosmos_msg::ExampleCosmosMessages;
 
@@ -143,7 +143,7 @@ mod tests {
             vec![r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#.to_string()], None);
 
         let packet_data = packet_from_string.data;
-        let cosmos_tx: TestCosmosTx = from_binary(&Binary(packet_data)).unwrap();
+        let cosmos_tx: TestCosmosTx = from_json(&Binary(packet_data)).unwrap();
 
         let expected = ExampleCosmosMessages::MsgSend {
             from_address: "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk".to_string(),
@@ -163,7 +163,7 @@ mod tests {
             123, 34, 114, 101, 115, 117, 108, 116, 34, 58, 34, 99, 51, 86, 106, 89, 50, 86, 122,
             99, 119, 61, 61, 34, 125,
         ]);
-        let ack: AcknowledgementData = from_binary(&cw_success_binary).unwrap();
+        let ack: AcknowledgementData = from_json(&cw_success_binary).unwrap();
         assert_eq!(
             ack,
             AcknowledgementData::Result(Binary::from_base64("c3VjY2Vzcw==").unwrap())
@@ -173,7 +173,7 @@ mod tests {
         let error_bytes =
             br#"{"error":"ABCI code: 1: error handling packet: see events for details"}"#;
         let cw_error_binary = Binary(error_bytes.to_vec());
-        let ack: AcknowledgementData = from_binary(&cw_error_binary).unwrap();
+        let ack: AcknowledgementData = from_json(&cw_error_binary).unwrap();
         assert_eq!(
             ack,
             AcknowledgementData::Error(

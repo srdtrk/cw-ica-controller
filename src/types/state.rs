@@ -257,9 +257,9 @@ mod tests {
             ica_info: None,
         };
 
-        let serialized = cosmwasm_std::to_binary(&mock_state).unwrap();
+        let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
 
-        let deserialized: v0_1_3::ContractState = cosmwasm_std::from_binary(&serialized).unwrap();
+        let deserialized: v0_1_3::ContractState = cosmwasm_std::from_json(&serialized).unwrap();
 
         let exp_state = v0_1_3::ContractState {
             admin: Addr::unchecked("admin"),
@@ -278,9 +278,9 @@ mod tests {
             allow_channel_open_init: false,
         };
 
-        let serialized = cosmwasm_std::to_binary(&mock_state).unwrap();
+        let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
 
-        let deserialized: ContractState = cosmwasm_std::from_binary(&serialized).unwrap();
+        let deserialized: ContractState = cosmwasm_std::from_json(&serialized).unwrap();
 
         let exp_state = ContractState {
             admin: Addr::unchecked("admin"),
