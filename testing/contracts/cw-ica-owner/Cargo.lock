@@ -180,7 +180,7 @@ dependencies = [
  "hex",
  "schemars",
  "serde",
- "serde-json-wasm",
+ "serde-json-wasm 0.5.1",
  "sha2 0.10.8",
  "static_assertions",
  "thiserror",
@@ -254,7 +254,7 @@ dependencies = [
  "schemars",
  "semver",
  "serde",
- "serde-json-wasm",
+ "serde-json-wasm 1.0.0",
  "thiserror",
 ]
 
@@ -271,7 +271,7 @@ dependencies = [
  "cw2",
  "schemars",
  "serde",
- "serde-json-wasm",
+ "serde-json-wasm 0.5.1",
  "thiserror",
 ]
 
@@ -897,6 +897,15 @@ name = "serde-json-wasm"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "16a62a1fad1e1828b24acac8f2b468971dade7b8c3c2e672bcadefefb1f8c137"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "serde-json-wasm"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "83c37d03f3b0f6b5f77c11af1e7c772de1c9af83e50bef7bb6069601900ba67b"
 dependencies = [
  "serde",
 ]
