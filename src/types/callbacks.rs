@@ -4,7 +4,7 @@
 //! channel and packet lifecycle events.
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{to_binary, Addr, Binary, CosmosMsg, IbcChannel, IbcPacket, StdResult, WasmMsg};
+use cosmwasm_std::{to_json_binary, Addr, Binary, CosmosMsg, IbcChannel, IbcPacket, StdResult, WasmMsg};
 
 use crate::ibc::types::{metadata::TxEncoding, packet::acknowledgement::AcknowledgementData};
 
@@ -43,9 +43,9 @@ pub enum IcaControllerCallbackMsg {
 
 impl IcaControllerCallbackMsg {
     /// serializes the message
-    pub fn into_binary(self) -> StdResult<Binary> {
+    pub fn into_json_binary(self) -> StdResult<Binary> {
         let msg = ReceiverExecuteMsg::ReceiveIcaCallback(self);
-        to_binary(&msg)
+        to_json_binary(&msg)
     }
 
     /// into_cosmos_msg converts this message into a WasmMsg::Execute message to be sent to the
@@ -56,7 +56,7 @@ impl IcaControllerCallbackMsg {
     {
         let execute = WasmMsg::Execute {
             contract_addr: contract_addr.into(),
-            msg: self.into_binary()?,
+            msg: self.into_json_binary()?,
             funds: vec![],
         };
 

@@ -4,7 +4,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{to_binary, Addr, Binary, CosmosMsg, QuerierWrapper, StdResult, WasmMsg};
+use cosmwasm_std::{to_json_binary, Addr, Binary, CosmosMsg, QuerierWrapper, StdResult, WasmMsg};
 
 use crate::types::{msg, state};
 
@@ -31,7 +31,7 @@ impl CwIcaControllerContract {
 
     /// call creates a [`WasmMsg::Execute`] message targeting this contract,
     pub fn call(&self, msg: impl Into<msg::ExecuteMsg>) -> StdResult<CosmosMsg> {
-        let msg = to_binary(&msg.into())?;
+        let msg = to_json_binary(&msg.into())?;
         Ok(WasmMsg::Execute {
             contract_addr: self.addr().into(),
             msg,
@@ -81,7 +81,7 @@ impl CwIcaControllerContract {
         msg: impl Into<msg::MigrateMsg>,
         new_code_id: u64,
     ) -> StdResult<CosmosMsg> {
-        let msg = to_binary(&msg.into())?;
+        let msg = to_json_binary(&msg.into())?;
         Ok(WasmMsg::Migrate {
             contract_addr: self.addr().into(),
             new_code_id,
@@ -109,7 +109,7 @@ impl CwIcaControllerCode {
         label: impl Into<String>,
         admin: Option<impl Into<String>>,
     ) -> StdResult<CosmosMsg> {
-        let msg = to_binary(&msg.into())?;
+        let msg = to_json_binary(&msg.into())?;
         Ok(WasmMsg::Instantiate {
             code_id: self.code_id(),
             msg,
@@ -128,7 +128,7 @@ impl CwIcaControllerCode {
         admin: Option<impl Into<String>>,
         salt: impl Into<Binary>,
     ) -> StdResult<CosmosMsg> {
-        let msg = to_binary(&msg.into())?;
+        let msg = to_json_binary(&msg.into())?;
         Ok(WasmMsg::Instantiate2 {
             code_id: self.code_id(),
             msg,

@@ -5,7 +5,7 @@
 
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_binary, DepsMut, Env, IbcBasicResponse, IbcPacketAckMsg, IbcPacketReceiveMsg,
+    from_json, DepsMut, Env, IbcBasicResponse, IbcPacketAckMsg, IbcPacketReceiveMsg,
     IbcPacketTimeoutMsg, IbcReceiveResponse, Never,
 };
 
@@ -24,7 +24,7 @@ pub fn ibc_packet_ack(
     ack: IbcPacketAckMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
     // This lets the ICA controller know whether or not the sent transactions succeeded.
-    match from_binary(&ack.acknowledgement.data)? {
+    match from_json(&ack.acknowledgement.data)? {
         AcknowledgementData::Result(res) => {
             ibc_packet_ack::success(deps, ack.original_packet, ack.relayer, res)
         }
