@@ -33,8 +33,9 @@ overflow-checks = true
 [features]
 # for more explicit tests, cargo test --features=backtraces
 backtraces = ["cosmwasm-std/backtraces"]
-# use library feature to disable all instantiate/execute/query exports
-library = []
+# disable export feature to disable all instantiate/execute/query exports
+default = ["export"]
+export = []
 
 [package.metadata.scripts]
 optimize = """docker run --rm -v "$(pwd)":/code \
