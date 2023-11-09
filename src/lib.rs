@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 #![deny(missing_docs)]
 
-#[cfg(not(feature = "library"))]
+#[cfg(feature = "export")]
 pub mod contract;
 pub mod helpers;
 pub mod ibc;
