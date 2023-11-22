@@ -98,7 +98,7 @@ pub struct MigrateMsg {}
 
 /// Option types for other messages.
 pub mod options {
-    use super::*;
+    use super::cw_serde;
     use crate::ibc::types::{keys::HOST_PORT_ID, metadata::TxEncoding};
 
     /// The message used to provide the MsgChannelOpenInit with the required data.
@@ -117,6 +117,7 @@ pub mod options {
 
     impl ChannelOpenInitOptions {
         /// Returns the counterparty port id.
+        #[must_use]
         pub fn counterparty_port_id(&self) -> String {
             self.counterparty_port_id
                 .clone()
@@ -124,6 +125,7 @@ pub mod options {
         }
 
         /// Returns the tx encoding.
+        #[must_use]
         pub fn tx_encoding(&self) -> TxEncoding {
             self.tx_encoding.clone().unwrap_or(TxEncoding::Protobuf)
         }

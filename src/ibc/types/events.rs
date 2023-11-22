@@ -20,11 +20,12 @@ use cosmwasm_std::{Event, IbcPacket};
 pub mod packet_ack {
     use cosmwasm_std::Binary;
 
-    use super::*;
+    use super::{attributes, Event, IbcPacket};
 
     const EVENT_TYPE: &str = "acknowledge_packet";
 
     /// returns an event for a successful packet acknowledgement.
+    #[must_use]
     pub fn success(packet: &IbcPacket, resp: &Binary) -> Event {
         Event::new(EVENT_TYPE)
             .add_attributes(attributes::from_packet(packet))
@@ -32,6 +33,7 @@ pub mod packet_ack {
     }
 
     /// returns an event for an unsuccessful packet acknowledgement.
+    #[must_use]
     pub fn error(packet: &IbcPacket, err: &str) -> Event {
         Event::new(EVENT_TYPE)
             .add_attributes(attributes::from_packet(packet))
@@ -40,7 +42,7 @@ pub mod packet_ack {
 }
 
 mod attributes {
-    use super::*;
+    use super::IbcPacket;
     use cosmwasm_std::Attribute;
 
     pub const ACK_BASE64: &str = "packet_ack_base64";

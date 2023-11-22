@@ -1,5 +1,8 @@
 //! This module contains the entry points for the IBC handshake.
 
+// Clippy pedantic is disabled for `entry_point` functions since they require a certain signature.
+#![allow(clippy::pedantic)]
+
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse, IbcChannel, IbcChannelCloseMsg,

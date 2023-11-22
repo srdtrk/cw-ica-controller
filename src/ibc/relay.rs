@@ -3,6 +3,9 @@
 //! - The IBC packet timeout.
 //! - The IBC packet receive.
 
+// Clippy pedantic is disabled for `entry_point` functions since they require a certain signature.
+#![allow(clippy::pedantic)]
+
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     from_json, DepsMut, Env, IbcBasicResponse, IbcPacketAckMsg, IbcPacketReceiveMsg,
@@ -14,7 +17,7 @@ use crate::types::{
     ContractError,
 };
 
-use super::types::{events, packet::acknowledgement::AcknowledgementData};
+use super::types::{events, packet::acknowledgement::Data as AcknowledgementData};
 
 /// Implements the IBC module's `OnAcknowledgementPacket` handler.
 #[entry_point]

@@ -8,15 +8,16 @@ use cosmwasm_std::{to_json_binary, Env, IbcMsg, IbcTimeout, StdResult};
 pub use cosmos_sdk_proto::ibc::applications::interchain_accounts::v1::CosmosTx;
 use cosmos_sdk_proto::traits::Message;
 
-/// DEFAULT_TIMEOUT_SECONDS is the default timeout for [`IcaPacketData`]
+/// `DEFAULT_TIMEOUT_SECONDS` is the default timeout for [`IcaPacketData`]
 pub const DEFAULT_TIMEOUT_SECONDS: u64 = 600;
 
-/// IcaPacketData is comprised of a raw transaction, type of transaction and optional memo field.
+/// `IcaPacketData` is comprised of a raw transaction, type of transaction and optional memo field.
 /// Currently, the host only supports [protobuf](super::metadata::TxEncoding::Protobuf) or
 /// [proto3json](super::metadata::TxEncoding::Proto3Json) serialized Cosmos transactions.
 ///
 /// If protobuf is used, then the raw transaction must encoded using
 /// [`CosmosTx`](cosmos_sdk_proto::ibc::applications::interchain_accounts::v1::CosmosTx).
+#[allow(clippy::module_name_repetitions)]
 #[cw_serde]
 pub struct IcaPacketData {
     /// Type defines a classification of message issued from a controller
@@ -39,7 +40,8 @@ pub struct IcaPacketData {
 }
 
 impl IcaPacketData {
-    /// Creates a new IcaPacketData
+    /// Creates a new [`IcaPacketData`]
+    #[must_use]
     pub fn new(data: Vec<u8>, memo: Option<String>) -> Self {
         Self {
             r#type: 1,
@@ -48,10 +50,10 @@ impl IcaPacketData {
         }
     }
 
-    /// Creates a new IcaPacketData from a list of JSON strings
+    /// Creates a new [`IcaPacketData`] from a list of JSON strings
     ///
     /// The messages must be serialized as JSON strings in the format expected by the ICA host.
-    /// The following is an example of a serialized [`IcaCosmosTx`](ica_cosmos_tx::IcaCosmosTx) with one legacy gov proposal message:
+    /// The following is an example with one legacy gov proposal message:
     ///
     /// ## Format
     ///
@@ -73,21 +75,27 @@ impl IcaPacketData {
     /// ```
     ///
     /// In this example, the proposer must be the ICA controller's address.
-    pub fn from_json_strings(messages: Vec<String>, memo: Option<String>) -> Self {
+    #[must_use]
+    pub fn from_json_strings(messages: &[String], memo: Option<String>) -> Self {
         let combined_messages = messages.join(", ");
-        let json_txs = format!(r#"{{"messages": [{}]}}"#, combined_messages);
+        let json_txs = format!(r#"{{"messages": [{combined_messages}]}}"#);
         let data = json_txs.into_bytes();
         Self::new(data, memo)
     }
 
-    /// Creates a new IcaPacketData from a list of [`cosmos_sdk_proto::Any`] messages
+    /// Creates a new [`IcaPacketData`] from a list of [`cosmos_sdk_proto::Any`] messages
+    #[must_use]
     pub fn from_proto_anys(messages: Vec<cosmos_sdk_proto::Any>, memo: Option<String>) -> Self {
         let cosmos_tx = CosmosTx { messages };
         let data = cosmos_tx.encode_to_vec();
         Self::new(data, memo)
     }
 
-    /// Creates an IBC SendPacket message from the IcaPacketData
+    /// Creates an [`IbcMsg::SendPacket`] message from the [`IcaPacketData`]
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the [`IcaPacketData`] cannot be serialized to JSON.
     pub fn to_ibc_msg(
         &self,
         env: &Env,
@@ -106,15 +114,15 @@ impl IcaPacketData {
     }
 }
 
-/// contains the [`AcknowledgementData`] struct which is the acknowledgement to an ica packet
+/// contains the [`Data`] struct which is the acknowledgement to an ica packet
 pub mod acknowledgement {
     use cosmwasm_std::Binary;
 
-    use super::*;
+    use super::cw_serde;
 
-    /// AcknowledgementData is the response to an ibc packet. It either contains a result or an error.
+    /// `Data` is the response to an ibc packet. It either contains a result or an error.
     #[cw_serde]
-    pub enum AcknowledgementData {
+    pub enum Data {
         /// Result is the result of a successful transaction.
         Result(Binary),
         /// Error is the error message of a failed transaction.
@@ -125,7 +133,7 @@ pub mod acknowledgement {
 
 #[cfg(test)]
 mod tests {
-    use acknowledgement::AcknowledgementData;
+    use acknowledgement::Data as AcknowledgementData;
     use cosmwasm_std::{coins, from_json, Binary};
 
     use crate::types::cosmos_msg::ExampleCosmosMessages;
@@ -140,7 +148,7 @@ mod tests {
         }
 
         let packet_from_string = IcaPacketData::from_json_strings(
-            vec![r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#.to_string()], None);
+            &vec![r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#.to_string()], None);
 
         let packet_data = packet_from_string.data;
         let cosmos_tx: TestCosmosTx = from_json(&Binary(packet_data)).unwrap();

@@ -6,8 +6,10 @@ use cw_storage_plus::Item;
 
 use super::ContractError;
 
-pub use channel::{ChannelState, ChannelStatus};
-pub use contract::{CallbackCounter, ContractState};
+#[allow(clippy::module_name_repetitions)]
+pub use channel::{State as ChannelState, Status as ChannelStatus};
+#[allow(clippy::module_name_repetitions)]
+pub use contract::{CallbackCounter, State as ContractState};
 
 /// The item used to store the state of the IBC application.
 pub const STATE: Item<ContractState> = Item::new("state");
@@ -21,11 +23,11 @@ pub const CALLBACK_COUNTER: Item<CallbackCounter> = Item::new("callback_counter"
 mod contract {
     use crate::ibc::types::metadata::TxEncoding;
 
-    use super::*;
+    use super::{cw_serde, Addr, ContractError};
 
-    /// ContractState is the state of the IBC application.
+    /// State is the state of the contract.
     #[cw_serde]
-    pub struct ContractState {
+    pub struct State {
         /// The address of the admin of the IBC application.
         pub admin: Addr,
         /// The Interchain Account (ICA) info needed to send packets.
@@ -40,8 +42,9 @@ mod contract {
         pub callback_address: Option<Addr>,
     }
 
-    impl ContractState {
-        /// Creates a new ContractState
+    impl State {
+        /// Creates a new [`State`]
+        #[must_use]
         pub fn new(admin: Addr, callback_address: Option<Addr>) -> Self {
             Self {
                 admin,
@@ -53,8 +56,12 @@ mod contract {
         }
 
         /// Checks if the address is the admin
-        pub fn verify_admin(&self, sender: impl Into<String>) -> Result<(), ContractError> {
-            if self.admin == sender.into() {
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if the address is not the admin.
+        pub fn verify_admin(&self, address: impl Into<String>) -> Result<(), ContractError> {
+            if self.admin == address.into() {
                 Ok(())
             } else {
                 Err(ContractError::Unauthorized {})
@@ -62,6 +69,10 @@ mod contract {
         }
 
         /// Checks if channel open init is allowed
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if channel open init is not allowed.
         pub fn verify_open_init_allowed(&self) -> Result<(), ContractError> {
             if self.allow_channel_open_init {
                 Ok(())
@@ -71,6 +82,10 @@ mod contract {
         }
 
         /// Gets the ICA info
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if the ICA info is not set.
         pub fn get_ica_info(&self) -> Result<IcaInfo, ContractError> {
             if let Some(ica_info) = &self.ica_info {
                 Ok(ica_info.clone())
@@ -127,7 +142,7 @@ mod contract {
     }
 
     impl IcaInfo {
-        /// Creates a new IcaInfo
+        /// Creates a new [`IcaInfo`]
         pub fn new(
             ica_address: impl Into<String>,
             channel_id: impl Into<String>,
@@ -160,11 +175,11 @@ mod contract {
 }
 
 mod channel {
-    use super::*;
+    use super::{cw_serde, IbcChannel};
 
-    /// ChannelState is the state of the IBC channel.
+    /// Status is the status of an IBC channel.
     #[cw_serde]
-    pub enum ChannelStatus {
+    pub enum Status {
         /// Uninitialized is the default state of the channel.
         #[serde(rename = "STATE_UNINITIALIZED_UNSPECIFIED")]
         Uninitialized,
@@ -182,33 +197,35 @@ mod channel {
         Closed,
     }
 
-    /// ContractChannelState is the state of the IBC application's channel.
+    /// State is the state of the IBC application's channel.
     /// This application only supports one channel.
     #[cw_serde]
-    pub struct ChannelState {
+    pub struct State {
         /// The IBC channel, as defined by cosmwasm.
         pub channel: IbcChannel,
         /// The status of the channel.
-        pub channel_status: ChannelStatus,
+        pub channel_status: Status,
     }
 
-    impl ChannelState {
-        /// Creates a new ChannelState
+    impl State {
+        /// Creates a new [`ChannelState`]
+        #[must_use]
         pub fn new_open_channel(channel: IbcChannel) -> Self {
             Self {
                 channel,
-                channel_status: ChannelStatus::Open,
+                channel_status: Status::Open,
             }
         }
 
         /// Checks if the channel is open
+        #[must_use]
         pub fn is_open(&self) -> bool {
-            self.channel_status == ChannelStatus::Open
+            self.channel_status == Status::Open
         }
 
         /// Closes the channel
         pub fn close(&mut self) {
-            self.channel_status = ChannelStatus::Closed;
+            self.channel_status = Status::Closed;
         }
     }
 }
