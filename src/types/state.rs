@@ -45,7 +45,7 @@ mod contract {
     impl State {
         /// Creates a new [`State`]
         #[must_use]
-        pub fn new(admin: Addr, callback_address: Option<Addr>) -> Self {
+        pub const fn new(admin: Addr, callback_address: Option<Addr>) -> Self {
             Self {
                 admin,
                 ica_info: None,
@@ -73,7 +73,7 @@ mod contract {
         /// # Errors
         ///
         /// Returns an error if channel open init is not allowed.
-        pub fn verify_open_init_allowed(&self) -> Result<(), ContractError> {
+        pub const fn verify_open_init_allowed(&self) -> Result<(), ContractError> {
             if self.allow_channel_open_init {
                 Ok(())
             } else {
@@ -87,11 +87,7 @@ mod contract {
         ///
         /// Returns an error if the ICA info is not set.
         pub fn get_ica_info(&self) -> Result<IcaInfo, ContractError> {
-            if let Some(ica_info) = &self.ica_info {
-                Ok(ica_info.clone())
-            } else {
-                Err(ContractError::IcaInfoNotSet {})
-            }
+            self.ica_info.as_ref().map_or(Err(ContractError::IcaInfoNotSet {}), |s| Ok(s.clone()))
         }
 
         /// Disables channel open init
@@ -210,7 +206,7 @@ mod channel {
     impl State {
         /// Creates a new [`ChannelState`]
         #[must_use]
-        pub fn new_open_channel(channel: IbcChannel) -> Self {
+        pub const fn new_open_channel(channel: IbcChannel) -> Self {
             Self {
                 channel,
                 channel_status: Status::Open,
@@ -276,7 +272,7 @@ mod tests {
 
         let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
 
-        let deserialized: v0_1_3::ContractState = cosmwasm_std::from_json(&serialized).unwrap();
+        let deserialized: v0_1_3::ContractState = cosmwasm_std::from_json(serialized).unwrap();
 
         let exp_state = v0_1_3::ContractState {
             admin: Addr::unchecked("admin"),
@@ -297,7 +293,7 @@ mod tests {
 
         let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
 
-        let deserialized: ContractState = cosmwasm_std::from_json(&serialized).unwrap();
+        let deserialized: ContractState = cosmwasm_std::from_json(serialized).unwrap();
 
         let exp_state = ContractState {
             admin: Addr::unchecked("admin"),

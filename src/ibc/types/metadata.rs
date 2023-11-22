@@ -49,7 +49,7 @@ pub enum TxEncoding {
 impl IcaMetadata {
     /// Creates a new [`IcaMetadata`]
     #[must_use]
-    pub fn new(
+    pub const fn new(
         version: String,
         controller_connection_id: String,
         host_connection_id: String,

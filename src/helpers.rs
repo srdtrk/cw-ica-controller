@@ -21,7 +21,7 @@ pub struct CwIcaControllerCode(pub u64);
 impl CwIcaControllerContract {
     /// new creates a new [`CwIcaControllerContract`]
     #[must_use]
-    pub fn new(addr: Addr) -> Self {
+    pub const fn new(addr: Addr) -> Self {
         Self(addr)
     }
 
@@ -117,13 +117,13 @@ impl CwIcaControllerContract {
 impl CwIcaControllerCode {
     /// new creates a new [`CwIcaControllerCode`]
     #[must_use]
-    pub fn new(code_id: u64) -> Self {
+    pub const fn new(code_id: u64) -> Self {
         Self(code_id)
     }
 
     /// `code_id` returns the code id of this code
     #[must_use]
-    pub fn code_id(&self) -> u64 {
+    pub const fn code_id(&self) -> u64 {
         self.0
     }
 

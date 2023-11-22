@@ -121,7 +121,7 @@ pub mod options {
         pub fn counterparty_port_id(&self) -> String {
             self.counterparty_port_id
                 .clone()
-                .unwrap_or(HOST_PORT_ID.to_string())
+                .unwrap_or_else(|| HOST_PORT_ID.to_string())
         }
 
         /// Returns the tx encoding.

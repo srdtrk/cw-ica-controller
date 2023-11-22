@@ -148,10 +148,10 @@ mod tests {
         }
 
         let packet_from_string = IcaPacketData::from_json_strings(
-            &vec![r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#.to_string()], None);
+            &[r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#.to_string()], None);
 
         let packet_data = packet_from_string.data;
-        let cosmos_tx: TestCosmosTx = from_json(&Binary(packet_data)).unwrap();
+        let cosmos_tx: TestCosmosTx = from_json(Binary(packet_data)).unwrap();
 
         let expected = ExampleCosmosMessages::MsgSend {
             from_address: "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk".to_string(),
@@ -171,7 +171,7 @@ mod tests {
             123, 34, 114, 101, 115, 117, 108, 116, 34, 58, 34, 99, 51, 86, 106, 89, 50, 86, 122,
             99, 119, 61, 61, 34, 125,
         ]);
-        let ack: AcknowledgementData = from_json(&cw_success_binary).unwrap();
+        let ack: AcknowledgementData = from_json(cw_success_binary).unwrap();
         assert_eq!(
             ack,
             AcknowledgementData::Result(Binary::from_base64("c3VjY2Vzcw==").unwrap())
@@ -181,7 +181,7 @@ mod tests {
         let error_bytes =
             br#"{"error":"ABCI code: 1: error handling packet: see events for details"}"#;
         let cw_error_binary = Binary(error_bytes.to_vec());
-        let ack: AcknowledgementData = from_json(&cw_error_binary).unwrap();
+        let ack: AcknowledgementData = from_json(cw_error_binary).unwrap();
         assert_eq!(
             ack,
             AcknowledgementData::Error(

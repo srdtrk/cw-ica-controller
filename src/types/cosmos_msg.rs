@@ -109,7 +109,7 @@ impl ToString for ExampleCosmosMessages {
 }
 
 mod msg_transfer {
-    #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
     pub struct Height {
         pub revision_number: u64,
         pub revision_height: u64,

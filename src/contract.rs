@@ -312,7 +312,7 @@ mod tests {
         let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
 
         let expected_packet =
-            IcaPacketData::from_json_strings(&vec![custom_msg_str.to_string()], None);
+            IcaPacketData::from_json_strings(&[custom_msg_str.to_string()], None);
         let expected_msg = expected_packet.to_ibc_msg(&env, "channel-0", None).unwrap();
 
         assert_eq!(1, res.messages.len());
@@ -429,7 +429,7 @@ mod tests {
         let _res = instantiate(
             deps.as_mut(),
             mock_env(),
-            info.clone(),
+            info,
             InstantiateMsg {
                 admin: None,
                 channel_open_init_options: None,
