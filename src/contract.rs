@@ -77,6 +77,7 @@ pub fn execute(
         ExecuteMsg::UpdateCallbackAddress { callback_address } => {
             execute::update_callback_address(deps, info, callback_address)
         }
+        ExecuteMsg::SendStargateIcaMessage { .. } => todo!(),
     }
 }
 

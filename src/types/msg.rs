@@ -3,7 +3,7 @@
 //! This module defines the messages the ICA controller contract receives.
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Binary;
+use cosmwasm_std::{Binary, CosmosMsg};
 
 /// The message to instantiate the ICA controller contract.
 #[cw_serde]
@@ -64,6 +64,8 @@ pub enum ExecuteMsg {
         #[serde(skip_serializing_if = "Option::is_none")]
         timeout_seconds: Option<u64>,
     },
+    /// SendStargateIcaMessage converts the provided stargate messages to ICA txs and sends them to the ICA host.
+    SendStargateIcaMessage { messages: Vec<CosmosMsg> },
     /// UpdateAdmin updates the admin address.
     UpdateAdmin {
         /// The new admin address.
