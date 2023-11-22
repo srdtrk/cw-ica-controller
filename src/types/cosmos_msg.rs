@@ -3,7 +3,7 @@
 
 use cosmwasm_std::Coin;
 
-/// ExampleCosmosMessages is a list of Cosmos messages that can be sent to the ICA host if the channel handshake is
+/// `ExampleCosmosMessages` is a list of Cosmos messages that can be sent to the ICA host if the channel handshake is
 /// completed with the [`proto3json`](crate::ibc::types::metadata::TxEncoding::Proto3Json) encoding format.
 ///
 /// This enum corresponds to the [Any](https://github.com/cosmos/cosmos-sdk/blob/v0.47.3/codec/types/any.go#L11-L52)
@@ -13,7 +13,7 @@ use cosmwasm_std::Coin;
 ///
 /// In general, this ICA controller should be used with custom messages and **not with the messages defined here**.
 /// The messages defined here are to demonstrate how an ICA controller can be used with registered
-/// ExampleCosmosMessages (in case the contract is a DAO with **predefined actions**)
+/// `ExampleCosmosMessages` (in case the contract is a DAO with **predefined actions**)
 ///
 /// This enum does not derive [Deserialize](serde::Deserialize), see issue
 /// [#1443](https://github.com/CosmWasm/cosmwasm/issues/1443)
@@ -109,7 +109,7 @@ impl ToString for ExampleCosmosMessages {
 }
 
 mod msg_transfer {
-    #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
     pub struct Height {
         pub revision_number: u64,
         pub revision_height: u64,

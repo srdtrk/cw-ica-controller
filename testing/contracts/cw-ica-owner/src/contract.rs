@@ -181,7 +181,7 @@ mod execute {
                     amount: cosmwasm_std::coins(100, "stake"),
                 }
                 .to_string();
-                IcaPacketData::from_json_strings(vec![predefined_json_message], None)
+                IcaPacketData::from_json_strings(&[predefined_json_message], None)
             }
         };
 

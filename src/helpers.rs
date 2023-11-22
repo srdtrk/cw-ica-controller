@@ -8,28 +8,34 @@ use cosmwasm_std::{to_json_binary, Addr, Binary, CosmosMsg, QuerierWrapper, StdR
 
 use crate::types::{msg, state};
 
-/// CwIcaControllerContract is a wrapper around Addr that provides helpers
+/// `CwIcaControllerContract` is a wrapper around Addr that provides helpers
 /// for working with this contract.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct CwIcaControllerContract(pub Addr);
 
-/// CwIcaControllerCodeId is a wrapper around u64 that provides helpers for
+/// `CwIcaControllerCodeId` is a wrapper around u64 that provides helpers for
 /// initializing this contract.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct CwIcaControllerCode(pub u64);
 
 impl CwIcaControllerContract {
     /// new creates a new [`CwIcaControllerContract`]
-    pub fn new(addr: Addr) -> Self {
+    #[must_use]
+    pub const fn new(addr: Addr) -> Self {
         Self(addr)
     }
 
     /// addr returns the address of the contract
+    #[must_use]
     pub fn addr(&self) -> Addr {
         self.0.clone()
     }
 
     /// call creates a [`WasmMsg::Execute`] message targeting this contract,
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error if the given message cannot be serialized
     pub fn call(&self, msg: impl Into<msg::ExecuteMsg>) -> StdResult<CosmosMsg> {
         let msg = to_json_binary(&msg.into())?;
         Ok(WasmMsg::Execute {
@@ -40,17 +46,29 @@ impl CwIcaControllerContract {
         .into())
     }
 
-    /// query_channel queries the [`state::ChannelState`] of this contract
+    /// `query_channel` queries the [`state::ChannelState`] of this contract
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error if the query fails
     pub fn query_channel(&self, querier: QuerierWrapper) -> StdResult<state::ChannelState> {
         querier.query_wasm_smart(self.addr(), &msg::QueryMsg::GetChannel {})
     }
 
-    /// query_state queries the [`state::ContractState`] of this contract
+    /// `query_state` queries the [`state::ContractState`] of this contract
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error if the query fails
     pub fn query_state(&self, querier: QuerierWrapper) -> StdResult<state::ContractState> {
         querier.query_wasm_smart(self.addr(), &msg::QueryMsg::GetContractState {})
     }
 
-    /// query_callback_counter queries the [`state::CallbackCounter`] of this contract
+    /// `query_callback_counter` queries the [`state::CallbackCounter`] of this contract
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error if the query fails
     pub fn query_callback_counter(
         &self,
         querier: QuerierWrapper,
@@ -58,24 +76,29 @@ impl CwIcaControllerContract {
         querier.query_wasm_smart(self.addr(), &msg::QueryMsg::GetCallbackCounter {})
     }
 
-    /// update_admin creates a [`WasmMsg::UpdateAdmin`] message targeting this contract
-    pub fn update_admin(&self, admin: impl Into<String>) -> StdResult<CosmosMsg> {
-        Ok(WasmMsg::UpdateAdmin {
+    /// `update_admin` creates a [`WasmMsg::UpdateAdmin`] message targeting this contract
+    pub fn update_admin(&self, admin: impl Into<String>) -> CosmosMsg {
+        WasmMsg::UpdateAdmin {
             contract_addr: self.addr().into(),
             admin: admin.into(),
         }
-        .into())
+        .into()
     }
 
-    /// clear_admin creates a [`WasmMsg::ClearAdmin`] message targeting this contract
-    pub fn clear_admin(&self) -> StdResult<CosmosMsg> {
-        Ok(WasmMsg::ClearAdmin {
+    /// `clear_admin` creates a [`WasmMsg::ClearAdmin`] message targeting this contract
+    #[must_use]
+    pub fn clear_admin(&self) -> CosmosMsg {
+        WasmMsg::ClearAdmin {
             contract_addr: self.addr().into(),
         }
-        .into())
+        .into()
     }
 
-    /// migrate creates a [`WasmMsg::Migrate`] message targeting this contract
+    /// `migrate` creates a [`WasmMsg::Migrate`] message targeting this contract
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error if the given message cannot be serialized
     pub fn migrate(
         &self,
         msg: impl Into<msg::MigrateMsg>,
@@ -93,16 +116,22 @@ impl CwIcaControllerContract {
 
 impl CwIcaControllerCode {
     /// new creates a new [`CwIcaControllerCode`]
-    pub fn new(code_id: u64) -> Self {
+    #[must_use]
+    pub const fn new(code_id: u64) -> Self {
         Self(code_id)
     }
 
-    /// code_id returns the code id of this code
-    pub fn code_id(&self) -> u64 {
+    /// `code_id` returns the code id of this code
+    #[must_use]
+    pub const fn code_id(&self) -> u64 {
         self.0
     }
 
-    /// instantiate creates a [`WasmMsg::Instantiate`] message targeting this code
+    /// `instantiate` creates a [`WasmMsg::Instantiate`] message targeting this code
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error if the given message cannot be serialized
     pub fn instantiate(
         &self,
         msg: impl Into<msg::InstantiateMsg>,
@@ -115,12 +144,16 @@ impl CwIcaControllerCode {
             msg,
             funds: vec![],
             label: label.into(),
-            admin: admin.map(|s| s.into()),
+            admin: admin.map(Into::into),
         }
         .into())
     }
 
-    /// instantiate2 creates a [`WasmMsg::Instantiate2`] message targeting this code
+    /// `instantiate2` creates a [`WasmMsg::Instantiate2`] message targeting this code
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error if the given message cannot be serialized
     pub fn instantiate2(
         &self,
         msg: impl Into<msg::InstantiateMsg>,
@@ -134,7 +167,7 @@ impl CwIcaControllerCode {
             msg,
             funds: vec![],
             label: label.into(),
-            admin: admin.map(|s| s.into()),
+            admin: admin.map(Into::into),
             salt: salt.into(),
         }
         .into())

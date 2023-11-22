@@ -16,7 +16,7 @@ var chainSpecs = []*interchaintest.ChainSpec{
 			Images: []ibc.DockerImage{
 				{
 					Repository: "cosmwasm/wasmd", // FOR LOCAL IMAGE USE: Docker Image Name
-					Version:    "v0.41.0",        // FOR LOCAL IMAGE USE: Docker Image Tag
+					Version:    "v0.45.0",        // FOR LOCAL IMAGE USE: Docker Image Tag
 				},
 			},
 			Bin:           "wasmd",

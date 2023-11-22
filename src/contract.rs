@@ -1,5 +1,8 @@
 //! This module handles the execution logic of the contract.
 
+// Clippy pedantic is disabled for `entry_point` functions since they require a certain signature.
+#![allow(clippy::pedantic)]
+
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
@@ -308,8 +311,7 @@ mod tests {
         };
         let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
 
-        let expected_packet =
-            IcaPacketData::from_json_strings(vec![custom_msg_str.to_string()], None);
+        let expected_packet = IcaPacketData::from_json_strings(&[custom_msg_str.to_string()], None);
         let expected_msg = expected_packet.to_ibc_msg(&env, "channel-0", None).unwrap();
 
         assert_eq!(1, res.messages.len());
@@ -426,7 +428,7 @@ mod tests {
         let _res = instantiate(
             deps.as_mut(),
             mock_env(),
-            info.clone(),
+            info,
             InstantiateMsg {
                 admin: None,
                 channel_open_init_options: None,
@@ -456,7 +458,10 @@ mod tests {
         let res = migrate(deps.as_mut(), mock_env(), MigrateMsg {});
         assert_eq!(
             res.unwrap_err().to_string(),
-            "invalid migration version: expected > 100.0.0, got 0.2.0".to_string()
+            format!(
+                "invalid migration version: expected > 100.0.0, got {}",
+                CONTRACT_VERSION
+            )
         );
     }
 }
