@@ -157,7 +157,7 @@ mod execute {
             return Err(ContractError::IcaInfoNotSet {});
         };
 
-        let cw_ica_contract = CwIcaControllerContract::new(Addr::unchecked(&ica_state.contract_addr));
+        let cw_ica_contract = CwIcaControllerContract::new(Addr::unchecked(&ica_info.ica_addr));
 
         let ica_packet = match ica_info.tx_encoding {
             TxEncoding::Protobuf => {
@@ -181,7 +181,7 @@ mod execute {
                     amount: cosmwasm_std::coins(100, "stake"),
                 }
                 .to_string();
-                IcaPacketData::from_json_strings(vec![predefined_json_message], None)
+                IcaPacketData::from_json_strings(&[predefined_json_message], None)
             }
         };
 
