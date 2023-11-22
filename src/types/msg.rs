@@ -65,7 +65,11 @@ pub enum ExecuteMsg {
         timeout_seconds: Option<u64>,
     },
     /// SendStargateIcaMessage converts the provided stargate messages to ICA txs and sends them to the ICA host.
-    SendStargateIcaMessage { messages: Vec<CosmosMsg> },
+    /// Currently, only supported if the TxEncoding is TxEncoding::Protobuf.
+    SendStargateIcaMessage {
+        /// The stargate messages to convert and send to the ICA host.
+        messages: Vec<CosmosMsg>
+    },
     /// UpdateAdmin updates the admin address.
     UpdateAdmin {
         /// The new admin address.
