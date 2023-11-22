@@ -459,7 +459,7 @@ mod tests {
         let res = migrate(deps.as_mut(), mock_env(), MigrateMsg {});
         assert_eq!(
             res.unwrap_err().to_string(),
-            "invalid migration version: expected > 100.0.0, got 0.2.0".to_string()
+            format!("invalid migration version: expected > 100.0.0, got {}", CONTRACT_VERSION)
         );
     }
 }
