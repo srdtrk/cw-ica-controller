@@ -87,7 +87,9 @@ mod contract {
         ///
         /// Returns an error if the ICA info is not set.
         pub fn get_ica_info(&self) -> Result<IcaInfo, ContractError> {
-            self.ica_info.as_ref().map_or(Err(ContractError::IcaInfoNotSet {}), |s| Ok(s.clone()))
+            self.ica_info
+                .as_ref()
+                .map_or(Err(ContractError::IcaInfoNotSet {}), |s| Ok(s.clone()))
         }
 
         /// Disables channel open init

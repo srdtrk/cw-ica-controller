@@ -311,8 +311,7 @@ mod tests {
         };
         let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
 
-        let expected_packet =
-            IcaPacketData::from_json_strings(&[custom_msg_str.to_string()], None);
+        let expected_packet = IcaPacketData::from_json_strings(&[custom_msg_str.to_string()], None);
         let expected_msg = expected_packet.to_ibc_msg(&env, "channel-0", None).unwrap();
 
         assert_eq!(1, res.messages.len());
@@ -459,7 +458,10 @@ mod tests {
         let res = migrate(deps.as_mut(), mock_env(), MigrateMsg {});
         assert_eq!(
             res.unwrap_err().to_string(),
-            format!("invalid migration version: expected > 100.0.0, got {}", CONTRACT_VERSION)
+            format!(
+                "invalid migration version: expected > 100.0.0, got {}",
+                CONTRACT_VERSION
+            )
         );
     }
 }

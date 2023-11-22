@@ -71,7 +71,8 @@ pub mod channel {
         counterparty_port_id: Option<impl Into<String>>,
         version: impl Into<String>,
     ) -> MsgChannelOpenInit {
-        let counterparty_port_id = counterparty_port_id.map_or(keys::HOST_PORT_ID.into(), Into::into);
+        let counterparty_port_id =
+            counterparty_port_id.map_or(keys::HOST_PORT_ID.into(), Into::into);
 
         MsgChannelOpenInit {
             port_id: port_id.into(),
