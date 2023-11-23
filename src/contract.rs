@@ -24,9 +24,8 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    let admin = msg
-        .admin
-        .map_or(Ok(info.sender), |admin| deps.api.addr_validate(&admin))?;
+    let owner = msg.owner.unwrap_or_else(|| info.sender.to_string());
+    cw_ownable::initialize_owner(deps.storage, deps.api, Some(&owner))?;
 
     let callback_address = msg
         .send_callbacks_to
@@ -34,7 +33,7 @@ pub fn instantiate(
         .transpose()?;
 
     // Save the admin. Ica address is determined during handshake.
-    STATE.save(deps.storage, &ContractState::new(admin, callback_address))?;
+    STATE.save(deps.storage, &ContractState::new(callback_address))?;
     // Initialize the callback counter.
     CALLBACK_COUNTER.save(deps.storage, &CallbackCounter::default())?;
 
@@ -76,10 +75,10 @@ pub fn execute(
             packet_memo,
             timeout_seconds,
         ),
-        ExecuteMsg::UpdateAdmin { admin } => execute::update_admin(deps, info, admin),
         ExecuteMsg::UpdateCallbackAddress { callback_address } => {
             execute::update_callback_address(deps, info, callback_address)
         }
+        ExecuteMsg::UpdateOwnership(action) => execute::update_ownership(deps, env, info, action)
     }
 }
 
@@ -90,6 +89,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetContractState {} => to_json_binary(&query::state(deps)?),
         QueryMsg::GetChannel {} => to_json_binary(&query::channel(deps)?),
         QueryMsg::GetCallbackCounter {} => to_json_binary(&query::callback_counter(deps)?),
+        QueryMsg::Ownership {} => to_json_binary(&cw_ownable::get_ownership(deps.storage)?),
     }
 }
 
@@ -117,9 +117,9 @@ mod execute {
         info: MessageInfo,
         options: ChannelOpenInitOptions,
     ) -> Result<Response, ContractError> {
-        let mut contract_state = STATE.load(deps.storage)?;
-        contract_state.verify_admin(info.sender)?;
+        cw_ownable::assert_owner(deps.storage, &info.sender)?;
 
+        let mut contract_state = STATE.load(deps.storage)?;
         contract_state.enable_channel_open_init();
         STATE.save(deps.storage, &contract_state)?;
 
@@ -143,8 +143,9 @@ mod execute {
         packet_memo: Option<String>,
         timeout_seconds: Option<u64>,
     ) -> Result<Response, ContractError> {
+        cw_ownable::assert_owner(deps.storage, &info.sender)?;
+
         let contract_state = STATE.load(deps.storage)?;
-        contract_state.verify_admin(info.sender)?;
         let ica_info = contract_state.get_ica_info()?;
 
         let ica_packet = IcaPacketData::new(messages.to_vec(), packet_memo);
@@ -153,17 +154,18 @@ mod execute {
         Ok(Response::default().add_message(send_packet_msg))
     }
 
-    /// Updates the admin address.
-    pub fn update_admin(
+    /// Update the ownership of the contract.
+    pub fn update_ownership(
         deps: DepsMut,
+        env: Env,
         info: MessageInfo,
-        admin: String,
+        action: cw_ownable::Action,
     ) -> Result<Response, ContractError> {
-        let mut contract_state = STATE.load(deps.storage)?;
-        contract_state.verify_admin(info.sender)?;
+        if action == cw_ownable::Action::RenounceOwnership {
+            return Err(ContractError::OwnershipCannotBeRenounced);
+        };
 
-        contract_state.admin = deps.api.addr_validate(&admin)?;
-        STATE.save(deps.storage, &contract_state)?;
+        cw_ownable::update_ownership(deps, &env.block, &info.sender, action)?;
 
         Ok(Response::default())
     }
@@ -174,8 +176,9 @@ mod execute {
         info: MessageInfo,
         callback_address: Option<String>,
     ) -> Result<Response, ContractError> {
+        cw_ownable::assert_owner(deps.storage, &info.sender)?;
+
         let mut contract_state = STATE.load(deps.storage)?;
-        contract_state.verify_admin(info.sender)?;
 
         contract_state.callback_address = callback_address
             .map(|addr| deps.api.addr_validate(&addr))
@@ -245,7 +248,7 @@ mod tests {
         let info = mock_info("creator", &[]);
 
         let msg = InstantiateMsg {
-            admin: None,
+            owner: None,
             channel_open_init_options: None,
             send_callbacks_to: None,
         };
@@ -255,8 +258,8 @@ mod tests {
         assert_eq!(0, res.messages.len());
 
         // Ensure the admin is saved correctly
-        let state = STATE.load(&deps.storage).unwrap();
-        assert_eq!(state.admin, info.sender);
+        let owner = cw_ownable::get_ownership(&deps.storage).unwrap().owner.unwrap();
+        assert_eq!(owner, info.sender);
 
         // Ensure the callback counter is initialized correctly
         let counter = CALLBACK_COUNTER.load(&deps.storage).unwrap();
@@ -283,7 +286,7 @@ mod tests {
             env.clone(),
             info.clone(),
             InstantiateMsg {
-                admin: None,
+                owner: None,
                 channel_open_init_options: None,
                 send_callbacks_to: None,
             },
@@ -330,48 +333,6 @@ mod tests {
     }
 
     #[test]
-    fn test_update_admin() {
-        let mut deps = mock_dependencies();
-
-        let env = mock_env();
-        let info = mock_info("creator", &[]);
-
-        // Instantiate the contract
-        let _res = instantiate(
-            deps.as_mut(),
-            env.clone(),
-            info.clone(),
-            InstantiateMsg {
-                admin: None,
-                channel_open_init_options: None,
-                send_callbacks_to: None,
-            },
-        )
-        .unwrap();
-
-        // Ensure the contract admin can update the admin
-        let new_admin = "new_admin".to_string();
-        let msg = ExecuteMsg::UpdateAdmin {
-            admin: new_admin.clone(),
-        };
-        let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
-
-        assert_eq!(0, res.messages.len());
-
-        let state = STATE.load(&deps.storage).unwrap();
-        assert_eq!(state.admin, deps.api.addr_validate(&new_admin).unwrap());
-
-        // Ensure a non-admin cannot update the admin
-        let info = mock_info("non-admin", &[]);
-        let msg = ExecuteMsg::UpdateAdmin {
-            admin: "new_admin".to_string(),
-        };
-
-        let res = execute(deps.as_mut(), env, info, msg);
-        assert_eq!(res.unwrap_err().to_string(), "unauthorized".to_string());
-    }
-
-    #[test]
     fn test_update_callback_address() {
         let mut deps = mock_dependencies();
 
@@ -384,7 +345,7 @@ mod tests {
             env.clone(),
             info.clone(),
             InstantiateMsg {
-                admin: None,
+                owner: None,
                 channel_open_init_options: None,
                 send_callbacks_to: None,
             },
@@ -430,7 +391,7 @@ mod tests {
             mock_env(),
             info,
             InstantiateMsg {
-                admin: None,
+                owner: None,
                 channel_open_init_options: None,
                 send_callbacks_to: None,
             },

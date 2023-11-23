@@ -28,48 +28,54 @@ pub enum ContractError {
     #[error("semver parse error: {0}")]
     SemverError(#[from] semver::Error),
 
+    #[error("{0}")]
+    OwnershipError(#[from] cw_ownable::OwnershipError),
+
+    #[error("this contract must have an owner")]
+    OwnershipCannotBeRenounced,
+
     #[error("unauthorized")]
-    Unauthorized {},
+    Unauthorized,
 
     #[error("invalid migration version: expected {expected}, got {actual}")]
     InvalidMigrationVersion { expected: String, actual: String },
 
     #[error("invalid channel ordering")]
-    InvalidChannelOrdering {},
+    InvalidChannelOrdering,
 
     #[error("invalid host port")]
-    InvalidHostPort {},
+    InvalidHostPort,
 
     #[error("invalid controller port")]
-    InvalidControllerPort {},
+    InvalidControllerPort,
 
     #[error("invalid interchain accounts version: expected {expected}, got {actual}")]
     InvalidVersion { expected: String, actual: String },
 
     #[error("MsgChannelOpenInit is not allowed")]
-    ChannelOpenInitNotAllowed {},
+    ChannelOpenInitNotAllowed,
 
     #[error("codec is not supported: unsupported codec format {0}")]
     UnsupportedCodec(String),
 
-    #[error("invalid account address")]
-    InvalidAddress {},
+    #[error("invalid interchain account address")]
+    InvalidIcaAddress,
 
     #[error("unsupported transaction type {0}")]
     UnsupportedTxType(String),
 
     #[error("invalid connection")]
-    InvalidConnection {},
+    InvalidConnection,
 
     #[error("unknown data type: {0}")]
     UnknownDataType(String),
 
     #[error("active channel already set for this contract")]
-    ActiveChannelAlreadySet {},
+    ActiveChannelAlreadySet,
 
     #[error("invalid channel in contract state")]
-    InvalidChannelInContractState {},
+    InvalidChannelInContractState,
 
-    #[error("ica information is not set")]
-    IcaInfoNotSet {},
+    #[error("interchain account information is not set")]
+    IcaInfoNotSet,
 }

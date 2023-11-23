@@ -78,11 +78,11 @@ mod ibc_channel_open {
 
         // Validate the channel ordering
         if channel.order != IbcOrder::Ordered {
-            return Err(ContractError::InvalidChannelOrdering {});
+            return Err(ContractError::InvalidChannelOrdering);
         }
         // Validate the host port
         if channel.counterparty_endpoint.port_id != HOST_PORT_ID {
-            return Err(ContractError::InvalidHostPort {});
+            return Err(ContractError::InvalidHostPort);
         }
 
         // serde::Deserialize the metadata
@@ -132,7 +132,7 @@ mod ibc_channel_open {
         // this is not possible since it is wasm.CONTRACT_ADDRESS
         // but we check it anyway since this is a recreation of the go code
         if channel.endpoint.port_id == HOST_PORT_ID {
-            return Err(ContractError::InvalidControllerPort {});
+            return Err(ContractError::InvalidControllerPort);
         }
 
         // serde::Deserialize the metadata
@@ -146,7 +146,7 @@ mod ibc_channel_open {
 
         // Check if the address is empty
         if metadata.address.is_empty() {
-            return Err(ContractError::InvalidAddress {});
+            return Err(ContractError::InvalidIcaAddress);
         }
 
         // update state with the ica info
@@ -188,7 +188,7 @@ mod ibc_channel_close {
         // Validate that this is the stored channel
         let mut channel_state = CHANNEL_STATE.load(deps.storage)?;
         if channel_state.channel != channel {
-            return Err(ContractError::InvalidChannelInContractState {});
+            return Err(ContractError::InvalidChannelInContractState);
         }
 
         // Update the channel state

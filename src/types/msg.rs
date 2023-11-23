@@ -11,7 +11,7 @@ pub struct InstantiateMsg {
     /// The address of the admin of the ICA application.
     /// If not specified, the sender is the admin.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub admin: Option<String>,
+    pub owner: Option<String>,
     /// The options to initialize the IBC channel upon contract instantiation.
     /// If not specified, the IBC channel is not initialized, and the relayer must.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -23,6 +23,7 @@ pub struct InstantiateMsg {
 }
 
 /// The messages to execute the ICA controller contract.
+#[cw_ownable::cw_ownable_execute]
 #[cw_serde]
 pub enum ExecuteMsg {
     /// CreateChannel makes the contract submit a stargate MsgChannelOpenInit to the chain.
@@ -64,11 +65,6 @@ pub enum ExecuteMsg {
         #[serde(skip_serializing_if = "Option::is_none")]
         timeout_seconds: Option<u64>,
     },
-    /// UpdateAdmin updates the admin address.
-    UpdateAdmin {
-        /// The new admin address.
-        admin: String,
-    },
     /// UpdateCallbackAddress updates the contract callback address.
     UpdateCallbackAddress {
         /// The new callback address.
@@ -78,6 +74,7 @@ pub enum ExecuteMsg {
 }
 
 /// The messages to query the ICA controller contract.
+#[cw_ownable::cw_ownable_query]
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {

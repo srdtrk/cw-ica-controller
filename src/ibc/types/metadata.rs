@@ -118,11 +118,11 @@ impl IcaMetadata {
             });
         }
         if self.controller_connection_id != channel.connection_id {
-            return Err(ContractError::InvalidConnection {});
+            return Err(ContractError::InvalidConnection);
         }
         // We cannot check the counterparty connection_id because it is not exposed to the contract
         // if self.host_connection_id != channel.counterparty_endpoint.connection_id {
-        //     return Err(ContractError::InvalidConnection {});
+        //     return Err(ContractError::InvalidConnection);
         // }
         if !self.address.is_empty() {
             validate_ica_address(&self.address)?;
@@ -170,7 +170,7 @@ impl ToString for TxEncoding {
 fn validate_ica_address(address: &str) -> Result<(), ContractError> {
     const DEFAULT_MAX_LENGTH: usize = 128;
     if address.len() > DEFAULT_MAX_LENGTH || !address.chars().all(char::is_alphanumeric) {
-        return Err(ContractError::InvalidAddress {});
+        return Err(ContractError::InvalidIcaAddress);
     }
     Ok(())
 }
