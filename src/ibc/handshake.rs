@@ -1,8 +1,5 @@
 //! This module contains the entry points for the IBC handshake.
 
-// Clippy pedantic is disabled for `entry_point` functions since they require a certain signature.
-#![allow(clippy::pedantic)]
-
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse, IbcChannel, IbcChannelCloseMsg,
@@ -18,6 +15,7 @@ use crate::types::{
 /// Handles the `OpenInit` and `OpenTry` parts of the IBC handshake.
 /// In this application, we only handle `OpenInit` messages since we are the ICA controller
 #[entry_point]
+#[allow(clippy::pedantic)]
 pub fn ibc_channel_open(
     deps: DepsMut,
     _env: Env,
@@ -32,6 +30,7 @@ pub fn ibc_channel_open(
 /// Handles the `OpenAck` and `OpenConfirm` parts of the IBC handshake.
 /// In this application, we only handle `OpenAck` messages since we are the ICA controller
 #[entry_point]
+#[allow(clippy::pedantic)]
 pub fn ibc_channel_connect(
     deps: DepsMut,
     _env: Env,
@@ -48,6 +47,7 @@ pub fn ibc_channel_connect(
 
 /// Handles the `ChanCloseInit` and `ChanCloseConfirm` for the IBC module.
 #[entry_point]
+#[allow(clippy::pedantic)]
 pub fn ibc_channel_close(
     deps: DepsMut,
     _env: Env,
@@ -62,9 +62,14 @@ pub fn ibc_channel_close(
 mod ibc_channel_open {
     use crate::types::callbacks::IcaControllerCallbackMsg;
 
-    use super::*;
+    use super::{
+        ChannelState, ContractError, DepsMut, Ibc3ChannelOpenResponse, IbcBasicResponse,
+        IbcChannel, IbcChannelOpenResponse, IbcOrder, IcaMetadata, CHANNEL_STATE, HOST_PORT_ID,
+        STATE,
+    };
 
     /// Handles the `OpenInit` part of the IBC handshake.
+    #[allow(clippy::needless_pass_by_value)]
     pub fn init(
         deps: DepsMut,
         channel: IbcChannel,
@@ -121,6 +126,7 @@ mod ibc_channel_open {
     }
 
     /// Handles the `OpenAck` part of the IBC handshake.
+    #[allow(clippy::needless_pass_by_value)]
     pub fn on_acknowledgement(
         deps: DepsMut,
         mut channel: IbcChannel,
@@ -182,8 +188,10 @@ mod ibc_channel_open {
 }
 
 mod ibc_channel_close {
-    use super::*;
+    use super::{ContractError, DepsMut, IbcBasicResponse, IbcChannel, CHANNEL_STATE};
+
     /// Handles the `ChanCloseConfirm` for the IBC module.
+    #[allow(clippy::needless_pass_by_value)]
     pub fn confirm(deps: DepsMut, channel: IbcChannel) -> Result<IbcBasicResponse, ContractError> {
         // Validate that this is the stored channel
         let mut channel_state = CHANNEL_STATE.load(deps.storage)?;

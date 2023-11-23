@@ -23,10 +23,12 @@ pub const CALLBACK_COUNTER: Item<CallbackCounter> = Item::new("callback_counter"
 mod contract {
     use crate::ibc::types::metadata::TxEncoding;
 
+    use cosmwasm_schema::schemars::JsonSchema;
+
     use super::{cw_serde, Addr, ContractError};
 
     /// State is the state of the contract.
-    #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, JsonSchema)]
     #[allow(clippy::derive_partial_eq_without_eq)]
     pub struct State {
         /// The Interchain Account (ICA) info needed to send packets.

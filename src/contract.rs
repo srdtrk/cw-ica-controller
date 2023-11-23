@@ -1,8 +1,5 @@
 //! This module handles the execution logic of the contract.
 
-// Clippy pedantic is disabled for `entry_point` functions since they require a certain signature.
-#![allow(clippy::pedantic)]
-
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
@@ -16,6 +13,7 @@ use crate::types::ContractError;
 
 /// Instantiates the contract.
 #[entry_point]
+#[allow(clippy::pedantic)]
 pub fn instantiate(
     deps: DepsMut,
     env: Env,
@@ -55,6 +53,7 @@ pub fn instantiate(
 
 /// Handles the execution of the contract.
 #[entry_point]
+#[allow(clippy::pedantic)]
 pub fn execute(
     deps: DepsMut,
     env: Env,
@@ -84,6 +83,7 @@ pub fn execute(
 
 /// Handles the query of the contract.
 #[entry_point]
+#[allow(clippy::pedantic)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetContractState {} => to_json_binary(&query::state(deps)?),
@@ -95,6 +95,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 /// Migrate contract if version is lower than current version
 #[entry_point]
+#[allow(clippy::pedantic)]
 pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     migrate::validate_semver(deps.as_ref())?;
 
@@ -108,9 +109,13 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 mod execute {
     use crate::{ibc::types::packet::IcaPacketData, types::msg::options::ChannelOpenInitOptions};
 
-    use super::*;
+    use super::{
+        new_ica_channel_open_init_cosmos_msg, Binary, ContractError, DepsMut, Env, MessageInfo,
+        Response, STATE,
+    };
 
-    /// Submits a stargate MsgChannelOpenInit to the chain.
+    /// Submits a stargate `MsgChannelOpenInit` to the chain.
+    #[allow(clippy::needless_pass_by_value)]
     pub fn create_channel(
         deps: DepsMut,
         env: Env,
@@ -135,6 +140,7 @@ mod execute {
     }
 
     // Sends custom messages to the ICA host.
+    #[allow(clippy::needless_pass_by_value)]
     pub fn send_custom_ica_messages(
         deps: DepsMut,
         env: Env,
@@ -155,6 +161,7 @@ mod execute {
     }
 
     /// Update the ownership of the contract.
+    #[allow(clippy::needless_pass_by_value)]
     pub fn update_ownership(
         deps: DepsMut,
         env: Env,
@@ -171,6 +178,7 @@ mod execute {
     }
 
     /// Updates the callback address.
+    #[allow(clippy::needless_pass_by_value)]
     pub fn update_callback_address(
         deps: DepsMut,
         info: MessageInfo,
@@ -191,7 +199,10 @@ mod execute {
 }
 
 mod query {
-    use super::*;
+    use super::{
+        CallbackCounter, ChannelState, ContractState, Deps, StdResult, CALLBACK_COUNTER,
+        CHANNEL_STATE, STATE,
+    };
 
     /// Returns the saved contract state.
     pub fn state(deps: Deps) -> StdResult<ContractState> {
@@ -210,7 +221,7 @@ mod query {
 }
 
 mod migrate {
-    use super::*;
+    use super::{ContractError, Deps, CONTRACT_NAME, CONTRACT_VERSION};
 
     pub fn validate_semver(deps: Deps) -> Result<(), ContractError> {
         let prev_cw2_version = cw2::get_contract_version(deps.storage)?;
@@ -225,7 +236,7 @@ mod migrate {
         let prev_version: semver::Version = prev_cw2_version.version.parse()?;
         if prev_version >= version {
             return Err(ContractError::InvalidMigrationVersion {
-                expected: format!("> {}", prev_version),
+                expected: format!("> {prev_version}"),
                 actual: CONTRACT_VERSION.to_string(),
             });
         }
@@ -306,7 +317,7 @@ mod tests {
 
         // Ensure the contract admin can send custom messages
         let custom_msg_str = r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#;
-        let messages_str = format!(r#"{{"messages": [{}]}}"#, custom_msg_str);
+        let messages_str = format!(r#"{{"messages": [{custom_msg_str}]}}"#);
         let base64_json_messages = base64::encode(messages_str.as_bytes());
         let messages = Binary::from_base64(&base64_json_messages).unwrap();
 
@@ -428,10 +439,7 @@ mod tests {
         let res = migrate(deps.as_mut(), mock_env(), MigrateMsg {});
         assert_eq!(
             res.unwrap_err().to_string(),
-            format!(
-                "invalid migration version: expected > 100.0.0, got {}",
-                CONTRACT_VERSION
-            )
+            format!("invalid migration version: expected > 100.0.0, got {CONTRACT_VERSION}")
         );
     }
 }
