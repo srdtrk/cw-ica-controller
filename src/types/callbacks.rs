@@ -8,7 +8,9 @@ use cosmwasm_std::{
     to_json_binary, Addr, Binary, CosmosMsg, IbcChannel, IbcPacket, StdResult, WasmMsg,
 };
 
-use crate::ibc::types::{metadata::TxEncoding, packet::acknowledgement::AcknowledgementData};
+use crate::ibc::types::{
+    metadata::TxEncoding, packet::acknowledgement::Data as AcknowledgementData,
+};
 
 /// IcaControllerCallbackMsg is the type of message that this contract can send to other contracts.
 #[cw_serde]
@@ -45,13 +47,21 @@ pub enum IcaControllerCallbackMsg {
 
 impl IcaControllerCallbackMsg {
     /// serializes the message
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error if the message cannot be serialized.
     pub fn into_json_binary(self) -> StdResult<Binary> {
         let msg = ReceiverExecuteMsg::ReceiveIcaCallback(self);
         to_json_binary(&msg)
     }
 
-    /// into_cosmos_msg converts this message into a WasmMsg::Execute message to be sent to the
-    /// named contract.
+    /// `into_cosmos_msg` converts this message into a [`CosmosMsg`] message to be sent to
+    /// the named contract.
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error if the message cannot be serialized.
     pub fn into_cosmos_msg<C>(self, contract_addr: impl Into<String>) -> StdResult<CosmosMsg<C>>
     where
         C: Clone + std::fmt::Debug + PartialEq,

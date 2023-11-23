@@ -18,7 +18,7 @@ use cosmwasm_std::Binary;
 
 /// Contains the stargate channel lifecycle helper methods.
 pub mod channel {
-    use super::*;
+    use super::{Binary, Message};
 
     use cosmos_sdk_proto::ibc::core::channel::v1::{
         Channel, Counterparty, MsgChannelOpenInit, Order, State,
@@ -28,7 +28,7 @@ pub mod channel {
 
     use super::super::{keys, metadata};
 
-    /// Creates a new MsgChannelOpenInit for an ica channel with the given contract address.
+    /// Creates a new [`MsgChannelOpenInit`] for an ica channel with the given contract address.
     /// Also generates the handshake version.
     /// If the counterparty port id is not provided, [`keys::HOST_PORT_ID`] is used.
     /// If the tx encoding is not provided, [`metadata::TxEncoding::Protobuf`] is used.
@@ -62,7 +62,7 @@ pub mod channel {
         }
     }
 
-    /// Creates a new MsgChannelOpenInit for an ica channel.
+    /// Creates a new [`MsgChannelOpenInit`] for an ica channel.
     /// If the counterparty port id is not provided, [`keys::HOST_PORT_ID`] is used.
     fn new_ica_channel_open_init_msg(
         signer: impl Into<String>,
@@ -71,11 +71,8 @@ pub mod channel {
         counterparty_port_id: Option<impl Into<String>>,
         version: impl Into<String>,
     ) -> MsgChannelOpenInit {
-        let counterparty_port_id = if let Some(port_id) = counterparty_port_id {
-            port_id.into()
-        } else {
-            keys::HOST_PORT_ID.into()
-        };
+        let counterparty_port_id =
+            counterparty_port_id.map_or(keys::HOST_PORT_ID.into(), Into::into);
 
         MsgChannelOpenInit {
             port_id: port_id.into(),
@@ -95,12 +92,16 @@ pub mod channel {
 }
 /// Contains the stargate query methods.
 pub mod query {
-    use super::*;
+    use super::{Binary, ContractError, Message};
 
     use cosmos_sdk_proto::ibc::core::connection::v1::QueryConnectionRequest;
     use cosmwasm_std::{Empty, QuerierWrapper, QueryRequest};
 
     /// Queries the counterparty connection id using stargate queries.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the query fails.
     pub fn counterparty_connection_id(
         querier: &QuerierWrapper,
         connection_id: impl Into<String>,
@@ -119,25 +120,26 @@ pub mod query {
 
     /// Contains the types used in query responses.
     mod response {
-        /// QueryConnectionResponse is the response type for the Query/Connection RPC
+        /// `QueryConnectionResponse` is the response type for the Query/Connection RPC
         /// method. Besides the connection end, it includes a proof and the height from
         /// which the proof was retrieved.
+        #[allow(clippy::module_name_repetitions)]
         #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
         pub struct QueryConnectionResponse {
             /// connection associated with the request identifier
             pub connection: ConnectionEnd,
         }
 
-        /// ConnectionEnd defines a stateful object on a chain connected to another
+        /// `ConnectionEnd` defines a stateful object on a chain connected to another
         /// separate one.
-        /// NOTE: there must only be 2 defined ConnectionEnds to establish
+        /// NOTE: there must only be 2 defined `ConnectionEnds` to establish
         /// a connection between two chains.
         #[derive(Clone, PartialEq, Debug, serde::Deserialize, serde::Serialize)]
         pub struct ConnectionEnd {
             /// client associated with this connection.
             pub client_id: String,
             /// IBC version which can be utilised to determine encodings or protocols for
-            /// channels or packets utilising this connection.
+            /// channels or packets utilizing this connection.
             pub versions: Vec<Version>,
             /// current state of the connection end.
             pub state: String,
@@ -149,7 +151,7 @@ pub mod query {
             pub delay_period: String,
         }
 
-        /// Counterparty defines the counterparty chain associated with a connection end.
+        /// `Counterparty` defines the counterparty chain associated with a connection end.
         #[derive(Clone, PartialEq, Debug, serde::Deserialize, serde::Serialize)]
         pub struct Counterparty {
             /// identifies the client on the counterparty chain associated with a given
@@ -162,7 +164,7 @@ pub mod query {
             pub prefix: MerklePrefix,
         }
 
-        /// MerklePrefix is merkle path prefixed to the key.
+        /// `MerklePrefix` is merkle path prefixed to the key.
         #[allow(clippy::derive_partial_eq_without_eq)]
         #[derive(Clone, PartialEq, Debug, serde::Deserialize, serde::Serialize)]
         pub struct MerklePrefix {
@@ -171,8 +173,9 @@ pub mod query {
             pub key_prefix: String,
         }
 
-        /// Version defines the versioning scheme used to negotiate the IBC verison in
+        /// `Version` defines the versioning scheme used to negotiate the IBC verison in
         /// the connection handshake.
+        #[allow(clippy::derive_partial_eq_without_eq)]
         #[derive(Clone, PartialEq, Debug, serde::Deserialize, serde::Serialize)]
         pub struct Version {
             /// unique version identifier

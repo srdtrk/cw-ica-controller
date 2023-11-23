@@ -13,7 +13,8 @@ use crate::types::{state::CHANNEL_STATE, ContractError};
 
 use super::keys::ICA_VERSION;
 
-/// IcaMetadata is the metadata of the IBC application communicated during the handshake.
+/// `IcaMetadata` is the metadata of the IBC application communicated during the handshake.
+#[allow(clippy::module_name_repetitions)]
 #[cw_serde]
 pub struct IcaMetadata {
     /// The version of the IBC application.
@@ -34,20 +35,21 @@ pub struct IcaMetadata {
     pub tx_type: String,
 }
 
-/// Encoding is the encoding of the transactions sent to the ICA host.
+/// `TxEncoding` is the encoding of the transactions sent to the ICA host.
 #[cw_serde]
 pub enum TxEncoding {
-    /// Protobuf is the protobuf serialization of the CosmosSDK's Any.
+    /// `Protobuf` is the protobuf serialization of the CosmosSDK's Any.
     #[serde(rename = "proto3")]
     Protobuf,
-    /// Proto3Json is the json serialization of the CosmosSDK's Any.
+    /// `Proto3Json` is the json serialization of the CosmosSDK's Any.
     #[serde(rename = "proto3json")]
     Proto3Json,
 }
 
 impl IcaMetadata {
-    /// Creates a new IcaMetadata
-    pub fn new(
+    /// Creates a new [`IcaMetadata`]
+    #[must_use]
+    pub const fn new(
         version: String,
         controller_connection_id: String,
         host_connection_id: String,
@@ -65,13 +67,14 @@ impl IcaMetadata {
         }
     }
 
-    /// Creates a new IcaMetadata from an IbcChannel
+    /// Creates a new [`IcaMetadata`] from an [`IbcChannel`]
     ///
     /// This is a fallback option if the ICA controller is not provided with the
     /// handshake version metadata by the relayer. It first tries to load the
-    /// previous version of the IcaMetadata from the store, and if it fails,
+    /// previous version of the [`IcaMetadata`] from the store, and if it fails,
     /// it uses a stargate query to get the counterparty connection id.
     /// Stargate queries are not universally supported, so this is a fallback option.
+    #[must_use]
     pub fn from_channel(deps: Deps, channel: &IbcChannel) -> Self {
         // If the the counterparty chain is using the fee middleware, and the this chain is not,
         // and the previous handshake was initiated with an empty version string, then the
@@ -84,10 +87,11 @@ impl IcaMetadata {
             }
         }
 
-        use super::stargate::query;
-        let counterparty_connection_id =
-            query::counterparty_connection_id(&deps.querier, channel.connection_id.clone())
-                .unwrap_or_default();
+        let counterparty_connection_id = super::stargate::query::counterparty_connection_id(
+            &deps.querier,
+            channel.connection_id.clone(),
+        )
+        .unwrap_or_default();
         Self {
             version: ICA_VERSION.to_string(),
             controller_connection_id: channel.connection_id.clone(),
@@ -95,13 +99,17 @@ impl IcaMetadata {
             // use a stargate query to get it. Stargate queries are not universally
             // supported, so this is a fallback option.
             host_connection_id: counterparty_connection_id,
-            address: "".to_string(),
+            address: String::new(),
             encoding: TxEncoding::Proto3Json,
             tx_type: "sdk_multi_msg".to_string(),
         }
     }
 
-    /// Validates the IcaMetadata
+    /// Validates the [`IcaMetadata`]
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the metadata is invalid.
     pub fn validate(&self, channel: &IbcChannel) -> Result<(), ContractError> {
         if self.version != ICA_VERSION {
             return Err(ContractError::InvalidVersion {
@@ -125,7 +133,7 @@ impl IcaMetadata {
         Ok(())
     }
 
-    /// Checks if the previous version of the IcaMetadata is equal to the current one
+    /// Checks if the previous version of the [`IcaMetadata`] is equal to the current one
     pub fn is_previous_version_equal(&self, previous_version: impl Into<String>) -> bool {
         let maybe_previous_metadata: Result<Self, _> =
             serde_json_wasm::from_str(&previous_version.into());
@@ -155,9 +163,13 @@ impl ToString for TxEncoding {
 }
 
 /// Validates an ICA address
+///
+/// # Errors
+///
+/// Returns an error if the address is too long or contains invalid characters.
 fn validate_ica_address(address: &str) -> Result<(), ContractError> {
     const DEFAULT_MAX_LENGTH: usize = 128;
-    if address.len() > DEFAULT_MAX_LENGTH || !address.chars().all(|c| c.is_alphanumeric()) {
+    if address.len() > DEFAULT_MAX_LENGTH || !address.chars().all(char::is_alphanumeric) {
         return Err(ContractError::InvalidAddress {});
     }
     Ok(())
@@ -200,7 +212,7 @@ mod tests {
             ICA_VERSION.to_string(),
             "connection-0".to_string(),
             "connection-1".to_string(),
-            "".to_string(),
+            String::new(),
             TxEncoding::Proto3Json,
             "sdk_multi_msg".to_string(),
         )
