@@ -78,7 +78,7 @@ pub fn execute(
         ExecuteMsg::UpdateCallbackAddress { callback_address } => {
             execute::update_callback_address(deps, info, callback_address)
         }
-        ExecuteMsg::UpdateOwnership(action) => execute::update_ownership(deps, env, info, action)
+        ExecuteMsg::UpdateOwnership(action) => execute::update_ownership(deps, env, info, action),
     }
 }
 
@@ -258,7 +258,10 @@ mod tests {
         assert_eq!(0, res.messages.len());
 
         // Ensure the admin is saved correctly
-        let owner = cw_ownable::get_ownership(&deps.storage).unwrap().owner.unwrap();
+        let owner = cw_ownable::get_ownership(&deps.storage)
+            .unwrap()
+            .owner
+            .unwrap();
         assert_eq!(owner, info.sender);
 
         // Ensure the callback counter is initialized correctly
@@ -329,7 +332,10 @@ mod tests {
         };
 
         let res = execute(deps.as_mut(), env, info, msg);
-        assert_eq!(res.unwrap_err().to_string(), "unauthorized".to_string());
+        assert_eq!(
+            res.unwrap_err().to_string(),
+            "Caller is not the contract's current owner".to_string()
+        );
     }
 
     #[test]
@@ -374,7 +380,10 @@ mod tests {
         };
 
         let res = execute(deps.as_mut(), env, info, msg);
-        assert_eq!(res.unwrap_err().to_string(), "unauthorized".to_string());
+        assert_eq!(
+            res.unwrap_err().to_string(),
+            "Caller is not the contract's current owner".to_string()
+        );
     }
 
     // In this test, we aim to verify that the semver validation is performed correctly.

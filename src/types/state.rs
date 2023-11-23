@@ -26,7 +26,8 @@ mod contract {
     use super::{cw_serde, Addr, ContractError};
 
     /// State is the state of the contract.
-    #[cw_serde]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
+    #[allow(clippy::derive_partial_eq_without_eq)]
     pub struct State {
         /// The Interchain Account (ICA) info needed to send packets.
         /// This is set during the handshake.
@@ -254,7 +255,7 @@ mod tests {
 
         /// This is the contract state at version 0.2.0.
         #[cw_serde]
-            pub struct ContractState {
+        pub struct ContractState {
             /// The address of the admin of the IBC application.
             pub admin: Addr,
             /// The Interchain Account (ICA) info needed to send packets.
@@ -307,6 +308,28 @@ mod tests {
             ica_info: None,
             allow_channel_open_init: false,
             callback_address: None,
+        };
+
+        assert_eq!(deserialized, exp_state);
+    }
+
+    #[test]
+    fn test_migration_from_v0_2_0_to_v0_3_0() {
+        let mock_state = v0_2_0::ContractState {
+            admin: Addr::unchecked("admin"),
+            ica_info: None,
+            allow_channel_open_init: false,
+            callback_address: Some(Addr::unchecked("callback")),
+        };
+
+        let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
+
+        let deserialized: ContractState = cosmwasm_std::from_json(serialized).unwrap();
+
+        let exp_state = ContractState {
+            ica_info: None,
+            allow_channel_open_init: false,
+            callback_address: Some(Addr::unchecked("callback")),
         };
 
         assert_eq!(deserialized, exp_state);
