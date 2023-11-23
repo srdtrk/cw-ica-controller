@@ -80,7 +80,11 @@ pub fn execute(
         ExecuteMsg::UpdateCallbackAddress { callback_address } => {
             execute::update_callback_address(deps, info, callback_address)
         }
-        ExecuteMsg::SendStargateIcaMessage { .. } => todo!(),
+        ExecuteMsg::SendCosmosMsgsAsIcaTx {
+            messages,
+            packet_memo,
+            timeout_seconds,
+        } => execute::send_stargate_ica_tx(deps, env, info, messages, packet_memo, timeout_seconds),
     }
 }
 
@@ -107,6 +111,8 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 }
 
 mod execute {
+    use cosmwasm_std::CosmosMsg;
+
     use crate::{ibc::types::packet::IcaPacketData, types::msg::options::ChannelOpenInitOptions};
 
     use super::*;
@@ -146,9 +152,33 @@ mod execute {
     ) -> Result<Response, ContractError> {
         let contract_state = STATE.load(deps.storage)?;
         contract_state.verify_admin(info.sender)?;
-        let ica_info = contract_state.get_ica_info()?;
 
+        let ica_info = contract_state.get_ica_info()?;
         let ica_packet = IcaPacketData::new(messages.to_vec(), packet_memo);
+        let send_packet_msg = ica_packet.to_ibc_msg(&env, ica_info.channel_id, timeout_seconds)?;
+
+        Ok(Response::default().add_message(send_packet_msg))
+    }
+
+    /// Sends a stargate ICA tx to the ICA host.
+    pub fn send_stargate_ica_tx(
+        deps: DepsMut,
+        env: Env,
+        info: MessageInfo,
+        messages: Vec<CosmosMsg>,
+        packet_memo: Option<String>,
+        timeout_seconds: Option<u64>,
+    ) -> Result<Response, ContractError> {
+        let contract_state = STATE.load(deps.storage)?;
+        contract_state.verify_admin(info.sender)?;
+
+        let ica_info = contract_state.get_ica_info()?;
+        let ica_packet = IcaPacketData::from_cosmos_msgs(
+            messages,
+            &ica_info.encoding,
+            packet_memo,
+            &ica_info.ica_address,
+        )?;
         let send_packet_msg = ica_packet.to_ibc_msg(&env, ica_info.channel_id, timeout_seconds)?;
 
         Ok(Response::default().add_message(send_packet_msg))

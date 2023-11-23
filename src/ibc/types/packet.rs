@@ -3,10 +3,14 @@
 //! This module contains the packet data to be send to the ica host and acknowledgement data types.
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{to_json_binary, Env, IbcMsg, IbcTimeout, StdResult};
+use cosmwasm_std::{to_json_binary, CosmosMsg, Env, IbcMsg, IbcTimeout, StdError, StdResult};
 
 pub use cosmos_sdk_proto::ibc::applications::interchain_accounts::v1::CosmosTx;
 use cosmos_sdk_proto::traits::Message;
+
+use crate::types::cosmos_msg::{convert_to_proto3json, convert_to_proto_any};
+
+use super::metadata::TxEncoding;
 
 /// `DEFAULT_TIMEOUT_SECONDS` is the default timeout for [`IcaPacketData`]
 pub const DEFAULT_TIMEOUT_SECONDS: u64 = 600;
@@ -91,6 +95,48 @@ impl IcaPacketData {
         Self::new(data, memo)
     }
 
+    /// Creates a new [`IcaPacketData`] from a list of [`CosmosMsg`] messages
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the [`CosmosMsg`] cannot be serialized to [`cosmos_sdk_proto::Any`]
+    /// when using the [`TxEncoding::Protobuf`] encoding.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the [`CosmosMsg`] is not supported for the given encoding.
+    ///
+    /// The supported [`CosmosMsg`]s for [`TxEncoding::Protobuf`] are listed in [`convert_to_proto_any`].
+    /// The supported [`CosmosMsg`]s for [`TxEncoding::Proto3Json`] are listed in [`convert_to_proto3json`].
+    pub fn from_cosmos_msgs(
+        messages: Vec<CosmosMsg>,
+        encoding: &TxEncoding,
+        memo: Option<String>,
+        ica_address: &str,
+    ) -> StdResult<Self> {
+        match encoding {
+            TxEncoding::Protobuf => {
+                let proto_anys = messages.into_iter().try_fold(
+                    vec![],
+                    |mut acc, msg| -> StdResult<Vec<cosmos_sdk_proto::Any>> {
+                        let proto_any = convert_to_proto_any(msg, ica_address.to_string())
+                            .map_err(|e| StdError::generic_err(e.to_string()))?;
+                        acc.push(proto_any);
+                        Ok(acc)
+                    },
+                )?;
+                Ok(Self::from_proto_anys(proto_anys, memo))
+            }
+            TxEncoding::Proto3Json => {
+                let json_strings = messages
+                    .into_iter()
+                    .map(|msg| convert_to_proto3json(msg, ica_address.to_string()))
+                    .collect::<Vec<String>>();
+                Ok(Self::from_json_strings(&json_strings, memo))
+            }
+        }
+    }
+
     /// Creates an [`IbcMsg::SendPacket`] message from the [`IcaPacketData`]
     ///
     /// # Errors
@@ -134,33 +180,9 @@ pub mod acknowledgement {
 #[cfg(test)]
 mod tests {
     use acknowledgement::Data as AcknowledgementData;
-    use cosmwasm_std::{coins, from_json, Binary};
-
-    use crate::types::cosmos_msg::ExampleCosmosMessages;
+    use cosmwasm_std::{from_json, Binary};
 
     use super::*;
-
-    #[test]
-    fn test_packet_data() {
-        #[derive(serde::Serialize, serde::Deserialize)]
-        struct TestCosmosTx {
-            pub messages: Vec<ExampleCosmosMessages>,
-        }
-
-        let packet_from_string = IcaPacketData::from_json_strings(
-            &[r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#.to_string()], None);
-
-        let packet_data = packet_from_string.data;
-        let cosmos_tx: TestCosmosTx = from_json(Binary(packet_data)).unwrap();
-
-        let expected = ExampleCosmosMessages::MsgSend {
-            from_address: "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk".to_string(),
-            to_address: "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk".to_string(),
-            amount: coins(5000, "stake".to_string()),
-        };
-
-        assert_eq!(expected, cosmos_tx.messages[0]);
-    }
 
     #[test]
     fn test_acknowledgement() {

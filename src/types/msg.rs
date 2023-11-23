@@ -60,22 +60,29 @@ pub enum ExecuteMsg {
         #[serde(skip_serializing_if = "Option::is_none")]
         packet_memo: Option<String>,
         /// Optional timeout in seconds to include with the ibc packet.
-        /// If not specified, the [default timeout](crate::ibc_module::types::packet::DEFAULT_TIMEOUT_SECONDS) is used.
+        /// If not specified, the [default timeout](crate::ibc::types::packet::DEFAULT_TIMEOUT_SECONDS) is used.
         #[serde(skip_serializing_if = "Option::is_none")]
         timeout_seconds: Option<u64>,
     },
-    /// SendStargateIcaMessage converts the provided stargate messages to ICA txs and sends them to the ICA host.
-    /// Currently, only supported if the TxEncoding is TxEncoding::Protobuf.
-    SendStargateIcaMessage {
+    /// `SendCosmosMsgsAsIcaTx` converts the provided array of [`CosmosMsg`] to an ICA tx and sends them to the ICA host.
+    /// [`CosmosMsg::Stargate`] is only supported if the [`TxEncoding`](crate::ibc::types::metadata::TxEncoding) is [`TxEncoding::Protobuf`](crate::ibc::types::metadata::TxEncoding).
+    SendCosmosMsgsAsIcaTx {
         /// The stargate messages to convert and send to the ICA host.
-        messages: Vec<CosmosMsg>
+        messages: Vec<CosmosMsg>,
+        /// Optional memo to include in the ibc packet.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        packet_memo: Option<String>,
+        /// Optional timeout in seconds to include with the ibc packet.
+        /// If not specified, the [default timeout](crate::ibc::types::packet::DEFAULT_TIMEOUT_SECONDS) is used.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        timeout_seconds: Option<u64>,
     },
-    /// UpdateAdmin updates the admin address.
+    /// `UpdateAdmin` updates the admin address.
     UpdateAdmin {
         /// The new admin address.
         admin: String,
     },
-    /// UpdateCallbackAddress updates the contract callback address.
+    /// `UpdateCallbackAddress` updates the contract callback address.
     UpdateCallbackAddress {
         /// The new callback address.
         /// If not specified, then no callbacks are sent.
