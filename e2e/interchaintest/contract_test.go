@@ -374,6 +374,10 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		s.Require().Equal(simd.Config().Denom, proposal.TotalDeposit[0].Denom)
 		s.Require().Equal(fmt.Sprint(10000000+5000), proposal.TotalDeposit[0].Amount)
 		// We do not check title and description of the proposal because this is a legacy proposal.
+
+    s.Run(fmt.Sprintf("TestSendCosmosMsgs-%s", encoding), func() {
+      // TODO
+    })
 	})
 
 	s.Run(fmt.Sprintf("TestSendCustomIcaMessagesError-%s", encoding), func() {
