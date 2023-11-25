@@ -117,3 +117,19 @@ func (c *IcaContract) QueryCallbackCounter(ctx context.Context) (*IcaContractCal
 
 	return &callbackCounter, nil
 }
+
+// QueryOwnership queries the owner of the contract
+func (c *IcaContract) QueryOwnership(ctx context.Context) (*OwnershipQueryResponse, error) {
+	queryResp := QueryResponse[OwnershipQueryResponse]{}
+	err := c.chain.QueryContract(ctx, c.Address, newOwnershipQueryMsg(), &queryResp)
+	if err != nil {
+		return nil, err
+	}
+
+	ownershipResp, err := queryResp.GetResp()
+	if err != nil {
+		return nil, err
+	}
+
+	return &ownershipResp, nil
+}
