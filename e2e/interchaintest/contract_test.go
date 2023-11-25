@@ -58,8 +58,15 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding
 	contractState, err := s.Contract.QueryContractState(ctx)
 	s.Require().NoError(err)
 
+	ownershipResponse, err := s.Contract.QueryOwnership(ctx)
+	s.Require().NoError(err)
+
 	s.IcaAddress = contractState.IcaInfo.IcaAddress
 	s.Contract.SetIcaAddress(s.IcaAddress)
+
+	s.Require().Equal(s.UserA.FormattedAddress(), ownershipResponse.Owner)
+	s.Require().Nil(ownershipResponse.PendingOwner)
+	s.Require().Nil(ownershipResponse.PendingExpiry)
 }
 
 func TestWithContractTestSuite(t *testing.T) {
@@ -73,7 +80,6 @@ func (s *ContractTestSuite) TestIcaContractChannelHandshake() {
 	// sets up the contract and does the channel handshake for the contract test suite.
 	s.SetupContractTestSuite(ctx, icatypes.EncodingProto3JSON)
 	wasmd, simd := s.ChainA, s.ChainB
-	wasmdUser := s.UserA
 
 	s.Run("TestChannelHandshakeSuccess", func() {
 		// Test if the handshake was successful
@@ -122,8 +128,8 @@ func (s *ContractTestSuite) TestIcaContractChannelHandshake() {
 		contractState, err := s.Contract.QueryContractState(ctx)
 		s.Require().NoError(err)
 
-		s.Require().Equal(wasmdUser.FormattedAddress(), contractState.Admin)
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
+		s.Require().Equal(false, contractState.AllowChannelOpenInit)
 	})
 }
 
@@ -140,6 +146,10 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 	s.Contract, err = types.StoreAndInstantiateNewIcaContract(ctx, wasmd, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
 
+	contractState, err := s.Contract.QueryContractState(ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(true, contractState.AllowChannelOpenInit)
+
 	version := fmt.Sprintf(`{"version":"%s","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"%s","tx_type":"%s"}`, icatypes.Version, s.ChainAConnID, s.ChainBConnID, icatypes.EncodingProtobuf, icatypes.TxTypeSDKMultiMsg)
 	err = s.Relayer.CreateChannel(ctx, s.ExecRep, s.PathName, ibc.CreateChannelOptions{
 		SourcePortName: s.Contract.Port(),
@@ -154,9 +164,12 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 	err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
 	s.Require().NoError(err)
 
-	contractState, err := s.Contract.QueryContractState(ctx)
+	contractState, err = s.Contract.QueryContractState(ctx)
 	s.Require().NoError(err)
+	s.Require().Equal(false, contractState.AllowChannelOpenInit)
+
 	s.IcaAddress = contractState.IcaInfo.IcaAddress
+	s.Contract.SetIcaAddress(s.IcaAddress)
 
 	s.Run("TestChannelHandshakeSuccess", func() {
 		// Test if the handshake was successful
@@ -205,8 +218,8 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 		contractState, err := s.Contract.QueryContractState(ctx)
 		s.Require().NoError(err)
 
-		s.Require().Equal(wasmdUser.FormattedAddress(), contractState.Admin)
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
+		s.Require().Equal(false, contractState.AllowChannelOpenInit)
 	})
 }
 
@@ -294,8 +307,8 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 		contractState, err := s.Contract.QueryContractState(ctx)
 		s.Require().NoError(err)
 
-		s.Require().Equal(wasmdUser.FormattedAddress(), contractState.Admin)
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
+		s.Require().Equal(false, contractState.AllowChannelOpenInit)
 	})
 }
 
