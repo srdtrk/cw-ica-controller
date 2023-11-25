@@ -27,10 +27,10 @@ This contract provides two ways to create an interchain account:
 /// The message to instantiate the ICA controller contract.
 #[cw_serde]
 pub struct InstantiateMsg {
-    /// The address of the admin of the ICA application.
-    /// If not specified, the sender is the admin.
+    /// The address of the owner of the ICA application.
+    /// If not specified, the sender is the owner.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub admin: Option<String>,
+    pub owner: Option<String>,
     /// The options to initialize the IBC channel upon contract instantiation.
     /// If not specified, the IBC channel is not initialized, and the relayer must.
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -8,8 +8,8 @@ use cosmwasm_std::Binary;
 /// The message to instantiate the ICA controller contract.
 #[cw_serde]
 pub struct InstantiateMsg {
-    /// The address of the admin of the ICA application.
-    /// If not specified, the sender is the admin.
+    /// The address of the owner of the ICA application.
+    /// If not specified, the sender is the owner.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub owner: Option<String>,
     /// The options to initialize the IBC channel upon contract instantiation.
