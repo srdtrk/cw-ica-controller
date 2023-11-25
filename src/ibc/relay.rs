@@ -3,9 +3,6 @@
 //! - The IBC packet timeout.
 //! - The IBC packet receive.
 
-// Clippy pedantic is disabled for `entry_point` functions since they require a certain signature.
-#![allow(clippy::pedantic)]
-
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     from_json, DepsMut, Env, IbcBasicResponse, IbcPacketAckMsg, IbcPacketReceiveMsg,
@@ -21,6 +18,7 @@ use super::types::{events, packet::acknowledgement::Data as AcknowledgementData}
 
 /// Implements the IBC module's `OnAcknowledgementPacket` handler.
 #[entry_point]
+#[allow(clippy::pedantic)]
 pub fn ibc_packet_ack(
     deps: DepsMut,
     _env: Env,
@@ -39,6 +37,7 @@ pub fn ibc_packet_ack(
 
 /// Implements the IBC module's `OnTimeoutPacket` handler.
 #[entry_point]
+#[allow(clippy::pedantic)]
 pub fn ibc_packet_timeout(
     deps: DepsMut,
     _env: Env,
@@ -58,6 +57,7 @@ pub fn ibc_packet_timeout(
 
 /// Handles the `PacketReceive` for the IBC module.
 #[entry_point]
+#[allow(clippy::pedantic)]
 pub fn ibc_packet_receive(
     _deps: DepsMut,
     _env: Env,
@@ -76,10 +76,11 @@ mod ibc_packet_ack {
         state::{CALLBACK_COUNTER, STATE},
     };
 
-    use super::*;
+    use super::{events, AcknowledgementData, ContractError, DepsMut, IbcBasicResponse};
 
     /// Handles the successful acknowledgement of an ica packet. This means that the
     /// transaction was successfully executed on the host chain.
+    #[allow(clippy::needless_pass_by_value)]
     pub fn success(
         deps: DepsMut,
         packet: IbcPacket,
@@ -113,6 +114,7 @@ mod ibc_packet_ack {
 
     /// Handles the unsuccessful acknowledgement of an ica packet. This means that the
     /// transaction failed to execute on the host chain.
+    #[allow(clippy::needless_pass_by_value)]
     pub fn error(
         deps: DepsMut,
         packet: IbcPacket,
@@ -150,9 +152,10 @@ mod ibc_packet_timeout {
 
     use crate::types::{callbacks::IcaControllerCallbackMsg, state::STATE};
 
-    use super::*;
+    use super::{ContractError, DepsMut, IbcBasicResponse, CALLBACK_COUNTER};
 
     /// Handles the timeout callbacks.
+    #[allow(clippy::needless_pass_by_value)]
     pub fn callback(
         deps: DepsMut,
         packet: IbcPacket,

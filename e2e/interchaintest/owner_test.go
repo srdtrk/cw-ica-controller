@@ -126,9 +126,14 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 		// Check contract state
 		contractState, err := icaContract.QueryContractState(ctx)
 		s.Require().NoError(err)
-
-		s.Require().Equal(s.OwnerContract.Address, contractState.Admin)
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
+		s.Require().Equal(false, contractState.AllowChannelOpenInit)
+
+		ownerResponse, err := icaContract.QueryOwnership(ctx)
+		s.Require().NoError(err)
+		s.Require().Equal(s.OwnerContract.Address, ownerResponse.Owner)
+		s.Require().Nil(ownerResponse.PendingOwner)
+		s.Require().Nil(ownerResponse.PendingExpiry)
 	})
 }
 

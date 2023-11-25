@@ -100,7 +100,7 @@ mod execute {
         let ica_code = CwIcaControllerCode::new(state.ica_controller_code_id);
 
         let instantiate_msg = cw_ica_controller::types::msg::InstantiateMsg {
-            admin: Some(env.contract.address.to_string()),
+            owner: Some(env.contract.address.to_string()),
             channel_open_init_options,
             send_callbacks_to: Some(env.contract.address.to_string()),
         };
