@@ -146,6 +146,10 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 	s.Contract, err = types.StoreAndInstantiateNewIcaContract(ctx, wasmd, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
 
+	contractState, err := s.Contract.QueryContractState(ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(true, contractState.AllowChannelOpenInit)
+
 	version := fmt.Sprintf(`{"version":"%s","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"%s","tx_type":"%s"}`, icatypes.Version, s.ChainAConnID, s.ChainBConnID, icatypes.EncodingProtobuf, icatypes.TxTypeSDKMultiMsg)
 	err = s.Relayer.CreateChannel(ctx, s.ExecRep, s.PathName, ibc.CreateChannelOptions{
 		SourcePortName: s.Contract.Port(),
@@ -160,9 +164,9 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 	err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
 	s.Require().NoError(err)
 
-	contractState, err := s.Contract.QueryContractState(ctx)
+	contractState, err = s.Contract.QueryContractState(ctx)
 	s.Require().NoError(err)
-	s.Require().Equal(true, contractState.AllowChannelOpenInit)
+	s.Require().Equal(false, contractState.AllowChannelOpenInit)
 
 	s.IcaAddress = contractState.IcaInfo.IcaAddress
 	s.Contract.SetIcaAddress(s.IcaAddress)
