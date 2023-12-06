@@ -25,11 +25,12 @@ incremental = false
 overflow-checks = true
 
 [features]
+# disable export feature to disable all instantiate/execute/query exports
+default = ["export", "staking"]
 # for more explicit tests, cargo test --features=backtraces
 backtraces = ["cosmwasm-std/backtraces"]
-# disable export feature to disable all instantiate/execute/query exports
-default = ["export"]
 export = []
+staking = ["cosmwasm-std/staking"]
 
 [package.metadata.scripts]
 optimize = """docker run --rm -v "$(pwd)":/code \
