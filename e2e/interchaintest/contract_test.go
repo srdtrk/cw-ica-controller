@@ -375,9 +375,41 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		s.Require().Equal(fmt.Sprint(10000000+5000), proposal.TotalDeposit[0].Amount)
 		// We do not check title and description of the proposal because this is a legacy proposal.
 
-    s.Run(fmt.Sprintf("TestSendCosmosMsgs-%s", encoding), func() {
-      // TODO
-    })
+    if encoding == icatypes.EncodingProtobuf {
+      validators, err := simd.GetNode().Client.Validators(ctx, nil, nil, nil)
+      s.Require().NoError(err)
+
+      validator := validators.Validators[0].Address.String()
+      s.T().Logf("validator: %s", validator)
+
+  		s.Run(fmt.Sprintf("TestSendCosmosMsgs-%s", encoding), func() {
+        // Stake some tokens through CosmosMsgs:
+        stakeCosmosMsg := types.ContractCosmosMsg {
+          Staking: &types.StakingCosmosMsg{
+            Delegate: &types.StakingDelegateCosmosMsg{
+              Validator: validator,
+              Amount: types.Coin{
+                Denom: simd.Config().Denom,
+                Amount: "10000000",
+              },
+            },
+          },
+        }
+
+        // Execute the contract:
+        err = s.Contract.ExecSendCosmosMsgs(ctx, wasmdUser.KeyName(), []types.ContractCosmosMsg{stakeCosmosMsg}, nil, nil)
+        s.Require().NoError(err)
+
+        // // Vote on the proposal through CosmosMsgs:
+        // voteCosmosMsg := types.ContractCosmosMsg {
+        //   Gov: &types.GovCosmosMsg{
+        //     Vote: &types.GovVoteCosmosMsg{
+        //       ProposalID: "1",
+        //     },
+        //   },
+        // }
+  		})
+    }
 	})
 
 	s.Run(fmt.Sprintf("TestSendCustomIcaMessagesError-%s", encoding), func() {

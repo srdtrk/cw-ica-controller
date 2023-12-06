@@ -6,6 +6,8 @@ type ContractCosmosMsg struct {
 	Stargate *StargateCosmosMsg `json:"stargate"`
 	Bank     *BankCosmosMsg     `json:"bank"`
 	IBC      *IbcCosmosMsg      `json:"ibc"`
+	Staking  *StakingCosmosMsg  `json:"staking"`
+	Gov      *GovCosmosMsg      `json:"gov"`
 }
 
 type StargateCosmosMsg struct {
@@ -23,6 +25,33 @@ type IbcCosmosMsg struct {
 	Transfer *IbcTransferCosmosMsg `json:"transfer"`
 }
 
+type GovCosmosMsg struct {
+	Vote         *GovVoteCosmosMsg         `json:"vote"`
+	VoteWeighted *GovVoteWeightedCosmosMsg `json:"vote_weighted"`
+}
+
+type StakingCosmosMsg struct {
+	Delegate   *StakingDelegateCosmosMsg   `json:"delegate"`
+	Undelegate *StakingUndelegateCosmosMsg `json:"undelegate"`
+	Redelegate *StakingRedelegateCosmosMsg `json:"redelegate"`
+}
+
+type StakingDelegateCosmosMsg struct {
+	Validator string `json:"validator"`
+	Amount    Coin   `json:"amount"`
+}
+
+type StakingUndelegateCosmosMsg struct {
+	Validator string `json:"validator"`
+	Amount    Coin   `json:"amount"`
+}
+
+type StakingRedelegateCosmosMsg struct {
+	SrcValidator string `json:"src_validator"`
+	DstValidator string `json:"dst_validator"`
+	Amount       Coin   `json:"amount"`
+}
+
 type BankSendCosmosMsg struct {
 	ToAddress string `json:"to_address"`
 	Amount    []Coin `json:"amount"`
@@ -34,6 +63,21 @@ type IbcTransferCosmosMsg struct {
 	Amount    Coin   `json:"amount"`
 	// This is optional
 	// Timeout string `json:"timeout"`
+}
+
+type GovVoteCosmosMsg struct {
+	ProposalID string `json:"proposal_id"`
+	VoteOption string `json:"vote_option"`
+}
+
+type GovVoteWeightedCosmosMsg struct {
+	ProposalID string                  `json:"proposal_id"`
+	Options    []GovVoteWeightedOption `json:"options"`
+}
+
+type GovVoteWeightedOption struct {
+	VoteOption string `json:"option"`
+	Weight     string `json:"weight"`
 }
 
 type Coin struct {
