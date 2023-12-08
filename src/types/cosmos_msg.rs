@@ -62,7 +62,6 @@ mod convert_to_any {
                 MsgVote, MsgVoteWeighted, VoteOption as ProtoVoteOption,
                 WeightedVoteOption as ProtoWeightedVoteOption,
             },
-            staking::v1beta1::MsgDelegate,
         },
         cosmwasm::wasm::v1::{
             MsgClearAdmin, MsgExecuteContract, MsgInstantiateContract, MsgInstantiateContract2,
@@ -75,7 +74,6 @@ mod convert_to_any {
     };
 
     use cosmwasm_std::{BankMsg, GovMsg, IbcMsg, VoteOption, WasmMsg};
-
     #[cfg(feature = "staking")]
     use cosmwasm_std::{DistributionMsg, StakingMsg};
 
@@ -271,7 +269,9 @@ mod convert_to_any {
 
     #[cfg(feature = "staking")]
     pub fn staking(msg: StakingMsg, from_address: String) -> Result<Any, EncodeError> {
-        use cosmos_sdk_proto::cosmos::staking::v1beta1::{MsgBeginRedelegate, MsgUndelegate};
+        use cosmos_sdk_proto::cosmos::staking::v1beta1::{
+            MsgBeginRedelegate, MsgDelegate, MsgUndelegate,
+        };
 
         match msg {
             StakingMsg::Delegate { validator, amount } => Any::from_msg(&MsgDelegate {
