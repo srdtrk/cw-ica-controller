@@ -3,11 +3,11 @@ package types
 import "encoding/base64"
 
 type ContractCosmosMsg struct {
-	Stargate *StargateCosmosMsg `json:"stargate"`
-	Bank     *BankCosmosMsg     `json:"bank"`
-	IBC      *IbcCosmosMsg      `json:"ibc"`
-	Staking  *StakingCosmosMsg  `json:"staking"`
-	Gov      *GovCosmosMsg      `json:"gov"`
+	Stargate *StargateCosmosMsg `json:"stargate,omitempty"`
+	Bank     *BankCosmosMsg     `json:"bank,omitempty"`
+	IBC      *IbcCosmosMsg      `json:"ibc,omitempty"`
+	Staking  *StakingCosmosMsg  `json:"staking,omitempty"`
+	Gov      *GovCosmosMsg      `json:"gov,omitempty"`
 }
 
 type StargateCosmosMsg struct {
@@ -31,9 +31,9 @@ type GovCosmosMsg struct {
 }
 
 type StakingCosmosMsg struct {
-	Delegate   *StakingDelegateCosmosMsg   `json:"delegate"`
-	Undelegate *StakingUndelegateCosmosMsg `json:"undelegate"`
-	Redelegate *StakingRedelegateCosmosMsg `json:"redelegate"`
+	Delegate   *StakingDelegateCosmosMsg   `json:"delegate,omitempty"`
+	Undelegate *StakingUndelegateCosmosMsg `json:"undelegate,omitempty"`
+	Redelegate *StakingRedelegateCosmosMsg `json:"redelegate,omitempty"`
 }
 
 type StakingDelegateCosmosMsg struct {

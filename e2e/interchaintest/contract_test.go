@@ -17,6 +17,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	icatypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
@@ -343,7 +344,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		s.Require().NoError(err)
 		proposalMsg := &govtypes.MsgSubmitProposal{
 			Content:        protoAny,
-			InitialDeposit: sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(5000))),
+			InitialDeposit: sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(5_000))),
 			Proposer:       s.IcaAddress,
 		}
 
@@ -351,8 +352,11 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		depositMsg := &govtypes.MsgDeposit{
 			ProposalId: 1,
 			Depositor:  s.IcaAddress,
-			Amount:     sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10000000))),
+			Amount:     sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10_000_000))),
 		}
+
+		intialBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
+		s.Require().NoError(err)
 
 		// Execute the contract:
 		err = s.Contract.ExecCustomIcaMessages(ctx, wasmdUser.KeyName(), []proto.Message{proposalMsg, depositMsg}, encoding, nil, nil)
@@ -372,44 +376,72 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		proposal, err := simd.QueryProposal(ctx, "1")
 		s.Require().NoError(err)
 		s.Require().Equal(simd.Config().Denom, proposal.TotalDeposit[0].Denom)
-		s.Require().Equal(fmt.Sprint(10000000+5000), proposal.TotalDeposit[0].Amount)
+		s.Require().Equal(fmt.Sprint(10_000_000+5_000), proposal.TotalDeposit[0].Amount)
 		// We do not check title and description of the proposal because this is a legacy proposal.
 
-    if encoding == icatypes.EncodingProtobuf {
-      validators, err := simd.GetNode().Client.Validators(ctx, nil, nil, nil)
-      s.Require().NoError(err)
+		postBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
+		s.Require().NoError(err)
+		s.Require().Equal(intialBalance.Sub(sdkmath.NewInt(10_000_000+5_000)), postBalance)
+	})
 
-      validator := validators.Validators[0].Address.String()
-      s.T().Logf("validator: %s", validator)
+	s.Run(fmt.Sprintf("TestSendCosmosMsgsSuccess-%s", encoding), func() {
+		intialBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
+		s.Require().NoError(err)
 
-  		s.Run(fmt.Sprintf("TestSendCosmosMsgs-%s", encoding), func() {
-        // Stake some tokens through CosmosMsgs:
-        stakeCosmosMsg := types.ContractCosmosMsg {
-          Staking: &types.StakingCosmosMsg{
-            Delegate: &types.StakingDelegateCosmosMsg{
-              Validator: validator,
-              Amount: types.Coin{
-                Denom: simd.Config().Denom,
-                Amount: "10000000",
-              },
-            },
-          },
-        }
+		validator, err := simd.Validators[0].KeyBech32(ctx, "validator", "val")
+		s.Require().NoError(err)
 
-        // Execute the contract:
-        err = s.Contract.ExecSendCosmosMsgs(ctx, wasmdUser.KeyName(), []types.ContractCosmosMsg{stakeCosmosMsg}, nil, nil)
-        s.Require().NoError(err)
+		// Stake some tokens through CosmosMsgs:
+		stakeCosmosMsg := types.ContractCosmosMsg{
+			Staking: &types.StakingCosmosMsg{
+				Delegate: &types.StakingDelegateCosmosMsg{
+					Validator: validator,
+					Amount: types.Coin{
+						Denom:  simd.Config().Denom,
+						Amount: "10000000",
+					},
+				},
+			},
+		}
 
-        // // Vote on the proposal through CosmosMsgs:
-        // voteCosmosMsg := types.ContractCosmosMsg {
-        //   Gov: &types.GovCosmosMsg{
-        //     Vote: &types.GovVoteCosmosMsg{
-        //       ProposalID: "1",
-        //     },
-        //   },
-        // }
-  		})
-    }
+		// Execute the contract:
+		err = s.Contract.ExecSendCosmosMsgs(ctx, wasmdUser.KeyName(), []types.ContractCosmosMsg{stakeCosmosMsg}, nil, nil)
+		s.Require().NoError(err)
+
+		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+		s.Require().NoError(err)
+
+		callbackCounter, err := s.Contract.QueryCallbackCounter(ctx)
+		s.Require().NoError(err)
+
+		s.Require().Equal(uint64(2), callbackCounter.Success)
+		s.Require().Equal(uint64(0), callbackCounter.Error)
+
+		// Check if the delegation was successful:
+		postBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
+		s.Require().NoError(err)
+		s.Require().Equal(intialBalance.Sub(sdkmath.NewInt(10_000_000)), postBalance)
+
+		delegationsQuerier := mysuite.NewGRPCQuerier[stakingtypes.QueryDelegationResponse](s.T(), simd, "/cosmos.staking.v1beta1.Query/Delegation")
+
+		gRPCRequest := stakingtypes.QueryDelegationRequest{
+			DelegatorAddr: s.IcaAddress,
+			ValidatorAddr: validator,
+		}
+		resp, err := delegationsQuerier.GRPCQuery(ctx, &gRPCRequest)
+		s.Require().NoError(err)
+
+		// response := resp.(*stakingtypes.QueryDelegationResponse)
+		s.Require().Equal(sdkmath.NewInt(10_000_000), resp.DelegationResponse.Balance.Amount)
+
+		// // Vote on the proposal through CosmosMsgs:
+		// voteCosmosMsg := types.ContractCosmosMsg {
+		//   Gov: &types.GovCosmosMsg{
+		//     Vote: &types.GovVoteCosmosMsg{
+		//       ProposalID: "1",
+		//     },
+		//   },
+		// }
 	})
 
 	s.Run(fmt.Sprintf("TestSendCustomIcaMessagesError-%s", encoding), func() {
@@ -428,7 +460,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		// Check if contract callbacks were executed:
 		callbackCounter, err := s.Contract.QueryCallbackCounter(ctx)
 		s.Require().NoError(err)
-		s.Require().Equal(uint64(1), callbackCounter.Success)
+		s.Require().Equal(uint64(2), callbackCounter.Success)
 		s.Require().Equal(uint64(1), callbackCounter.Error)
 		s.Require().Equal(uint64(0), callbackCounter.Timeout)
 	})
