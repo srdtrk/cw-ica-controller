@@ -414,7 +414,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		}
 
 		// Execute the contract:
-    err = s.Contract.ExecSendCosmosMsgs(ctx, wasmdUser.KeyName(), []types.ContractCosmosMsg{stakeCosmosMsg, voteCosmosMsg}, nil, nil)
+		err = s.Contract.ExecSendCosmosMsgs(ctx, wasmdUser.KeyName(), []types.ContractCosmosMsg{stakeCosmosMsg, voteCosmosMsg}, nil, nil)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
