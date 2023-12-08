@@ -403,9 +403,18 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 				},
 			},
 		}
+		// Vote on the proposal through CosmosMsgs:
+		voteCosmosMsg := types.ContractCosmosMsg{
+			Gov: &types.GovCosmosMsg{
+				Vote: &types.GovVoteCosmosMsg{
+					ProposalID: 1,
+					Vote:       "yes",
+				},
+			},
+		}
 
 		// Execute the contract:
-		err = s.Contract.ExecSendCosmosMsgs(ctx, wasmdUser.KeyName(), []types.ContractCosmosMsg{stakeCosmosMsg}, nil, nil)
+    err = s.Contract.ExecSendCosmosMsgs(ctx, wasmdUser.KeyName(), []types.ContractCosmosMsg{stakeCosmosMsg, voteCosmosMsg}, nil, nil)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
@@ -424,24 +433,26 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 
 		delegationsQuerier := mysuite.NewGRPCQuerier[stakingtypes.QueryDelegationResponse](s.T(), simd, "/cosmos.staking.v1beta1.Query/Delegation")
 
-		gRPCRequest := stakingtypes.QueryDelegationRequest{
+		delRequest := stakingtypes.QueryDelegationRequest{
 			DelegatorAddr: s.IcaAddress,
 			ValidatorAddr: validator,
 		}
-		resp, err := delegationsQuerier.GRPCQuery(ctx, &gRPCRequest)
+		delResp, err := delegationsQuerier.GRPCQuery(ctx, &delRequest)
 		s.Require().NoError(err)
+		s.Require().Equal(sdkmath.NewInt(10_000_000), delResp.DelegationResponse.Balance.Amount)
 
-		// response := resp.(*stakingtypes.QueryDelegationResponse)
-		s.Require().Equal(sdkmath.NewInt(10_000_000), resp.DelegationResponse.Balance.Amount)
+		// Check if the vote was successful:
+		votesQuerier := mysuite.NewGRPCQuerier[govtypes.QueryVoteResponse](s.T(), simd, "/cosmos.gov.v1beta1.Query/Vote")
 
-		// // Vote on the proposal through CosmosMsgs:
-		// voteCosmosMsg := types.ContractCosmosMsg {
-		//   Gov: &types.GovCosmosMsg{
-		//     Vote: &types.GovVoteCosmosMsg{
-		//       ProposalID: "1",
-		//     },
-		//   },
-		// }
+		voteRequest := govtypes.QueryVoteRequest{
+			ProposalId: 1,
+			Voter:      s.IcaAddress,
+		}
+		voteResp, err := votesQuerier.GRPCQuery(ctx, &voteRequest)
+		s.Require().NoError(err)
+		s.Require().Len(voteResp.Vote.Options, 1)
+		s.Require().Equal(govtypes.OptionYes, voteResp.Vote.Options[0].Option)
+		s.Require().Equal(sdkmath.LegacyNewDec(1), voteResp.Vote.Options[0].Weight)
 	})
 
 	s.Run(fmt.Sprintf("TestSendCustomIcaMessagesError-%s", encoding), func() {

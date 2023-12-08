@@ -18,16 +18,16 @@ type StargateCosmosMsg struct {
 }
 
 type BankCosmosMsg struct {
-	Send *BankSendCosmosMsg `json:"send"`
+	Send *BankSendCosmosMsg `json:"send,omitempty"`
 }
 
 type IbcCosmosMsg struct {
-	Transfer *IbcTransferCosmosMsg `json:"transfer"`
+	Transfer *IbcTransferCosmosMsg `json:"transfer,omitempty"`
 }
 
 type GovCosmosMsg struct {
-	Vote         *GovVoteCosmosMsg         `json:"vote"`
-	VoteWeighted *GovVoteWeightedCosmosMsg `json:"vote_weighted"`
+	Vote         *GovVoteCosmosMsg         `json:"vote,omitempty"`
+	VoteWeighted *GovVoteWeightedCosmosMsg `json:"vote_weighted,omitempty"`
 }
 
 type StakingCosmosMsg struct {
@@ -61,23 +61,22 @@ type IbcTransferCosmosMsg struct {
 	ChannelID string `json:"channel_id"`
 	ToAddress string `json:"to_address"`
 	Amount    Coin   `json:"amount"`
-	// This is optional
 	// Timeout string `json:"timeout"`
 }
 
 type GovVoteCosmosMsg struct {
-	ProposalID string `json:"proposal_id"`
-	VoteOption string `json:"vote_option"`
+	ProposalID uint64 `json:"proposal_id"`
+	Vote       string `json:"vote"`
 }
 
 type GovVoteWeightedCosmosMsg struct {
-	ProposalID string                  `json:"proposal_id"`
+	ProposalID uint64                  `json:"proposal_id"`
 	Options    []GovVoteWeightedOption `json:"options"`
 }
 
 type GovVoteWeightedOption struct {
-	VoteOption string `json:"option"`
-	Weight     string `json:"weight"`
+	Option string `json:"option"`
+	Weight string `json:"weight"`
 }
 
 type Coin struct {
