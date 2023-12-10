@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 
 	codec "github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 
 	icatypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/types"
 )
@@ -66,7 +67,7 @@ func NewInstantiateMsgWithChannelInitOptions(
 	return string(jsonBytes)
 }
 
-func NewCreateChannelMsg(
+func newCreateChannelMsg(
 	connectionId string, counterpartyConnectionId string,
 	counterpartyPortId *string, txEncoding *string,
 ) string {
@@ -115,6 +116,82 @@ func newSendCustomIcaMessagesMsg(cdc codec.BinaryCodec, msgs []proto.Message, en
 	msg := SendCustomIcaMessagesMsgWrapper{
 		SendCustomIcaMessagesMsg: SendCustomIcaMessagesMsg{
 			Messages:       messages,
+			PacketMemo:     memo,
+			TimeoutSeconds: timeout,
+		},
+	}
+
+	jsonBytes, err := json.Marshal(msg)
+	if err != nil {
+		panic(err)
+	}
+
+	return string(jsonBytes)
+}
+
+// newSendCosmosMsgsMsg creates a new SendCosmosMsgsMsg.
+func newSendCosmosMsgsMsg(cosmosMsgs []ContractCosmosMsg, memo *string, timeout *uint64) string {
+	type SendCosmosMsgsAsIcaTxMsg struct {
+		Messages       []ContractCosmosMsg `json:"messages"`
+		PacketMemo     *string             `json:"packet_memo,omitempty"`
+		TimeoutSeconds *uint64             `json:"timeout_seconds,omitempty"`
+	}
+
+	type SendCosmosMsgsAsIcaTxMsgWrapper struct {
+		SendCosmosMsgsAsIcaTxMsg SendCosmosMsgsAsIcaTxMsg `json:"send_cosmos_msgs"`
+	}
+
+	msg := SendCosmosMsgsAsIcaTxMsgWrapper{
+		SendCosmosMsgsAsIcaTxMsg: SendCosmosMsgsAsIcaTxMsg{
+			Messages:       cosmosMsgs,
+			PacketMemo:     memo,
+			TimeoutSeconds: timeout,
+		},
+	}
+
+	jsonBytes, err := json.Marshal(msg)
+	if err != nil {
+		panic(err)
+	}
+
+	return string(jsonBytes)
+}
+
+// newSendCosmosMsgsMsgFromProto creates a new SendCosmosMsgsMsg.
+func newSendCosmosMsgsMsgFromProto(msgs []proto.Message, memo *string, timeout *uint64) string {
+	type SendCosmosMsgsAsIcaTxMsg struct {
+		Messages       []ContractCosmosMsg `json:"messages"`
+		PacketMemo     *string             `json:"packet_memo,omitempty"`
+		TimeoutSeconds *uint64             `json:"timeout_seconds,omitempty"`
+	}
+
+	type SendCosmosMsgsAsIcaTxMsgWrapper struct {
+		SendCosmosMsgsAsIcaTxMsg SendCosmosMsgsAsIcaTxMsg `json:"send_cosmos_msgs_as_ica_tx"`
+	}
+
+	cosmosMsgs := make([]ContractCosmosMsg, len(msgs))
+
+	for i, msg := range msgs {
+		protoAny, err := codectypes.NewAnyWithValue(msg)
+		if err != nil {
+			panic(err)
+		}
+
+		cosmosMsgs[i] = ContractCosmosMsg{
+			Stargate: &StargateCosmosMsg{
+				TypeUrl: protoAny.TypeUrl,
+				Value:   base64.StdEncoding.EncodeToString(protoAny.Value),
+			},
+		}
+
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	msg := SendCosmosMsgsAsIcaTxMsgWrapper{
+		SendCosmosMsgsAsIcaTxMsg: SendCosmosMsgsAsIcaTxMsg{
+			Messages:       cosmosMsgs,
 			PacketMemo:     memo,
 			TimeoutSeconds: timeout,
 		},

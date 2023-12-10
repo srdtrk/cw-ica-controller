@@ -3,7 +3,7 @@
 //! This module defines the messages the ICA controller contract receives.
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Binary;
+use cosmwasm_std::{Binary, CosmosMsg};
 
 /// The message to instantiate the ICA controller contract.
 #[cw_serde]
@@ -61,11 +61,24 @@ pub enum ExecuteMsg {
         #[serde(skip_serializing_if = "Option::is_none")]
         packet_memo: Option<String>,
         /// Optional timeout in seconds to include with the ibc packet.
-        /// If not specified, the [default timeout](crate::ibc_module::types::packet::DEFAULT_TIMEOUT_SECONDS) is used.
+        /// If not specified, the [default timeout](crate::ibc::types::packet::DEFAULT_TIMEOUT_SECONDS) is used.
         #[serde(skip_serializing_if = "Option::is_none")]
         timeout_seconds: Option<u64>,
     },
-    /// UpdateCallbackAddress updates the contract callback address.
+    /// `SendCosmosMsgs` converts the provided array of [`CosmosMsg`] to an ICA tx and sends them to the ICA host.
+    /// [`CosmosMsg::Stargate`] is only supported if the [`TxEncoding`](crate::ibc::types::metadata::TxEncoding) is [`TxEncoding::Protobuf`](crate::ibc::types::metadata::TxEncoding).
+    SendCosmosMsgs {
+        /// The stargate messages to convert and send to the ICA host.
+        messages: Vec<CosmosMsg>,
+        /// Optional memo to include in the ibc packet.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        packet_memo: Option<String>,
+        /// Optional timeout in seconds to include with the ibc packet.
+        /// If not specified, the [default timeout](crate::ibc::types::packet::DEFAULT_TIMEOUT_SECONDS) is used.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        timeout_seconds: Option<u64>,
+    },
+    /// `UpdateCallbackAddress` updates the contract callback address.
     UpdateCallbackAddress {
         /// The new callback address.
         /// If not specified, then no callbacks are sent.

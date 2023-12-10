@@ -54,7 +54,7 @@ func (c *IcaContract) ExecCreateChannel(
 	counterpartyConnectionId string, counterpartyPortId *string,
 	txEncoding *string, extraExecTxArgs ...string,
 ) error {
-	msg := NewCreateChannelMsg(connectionId, counterpartyConnectionId, counterpartyPortId, txEncoding)
+	msg := newCreateChannelMsg(connectionId, counterpartyConnectionId, counterpartyPortId, txEncoding)
 	err := c.Execute(ctx, callerKeyName, msg, extraExecTxArgs...)
 	return err
 }
@@ -67,6 +67,28 @@ func (c *IcaContract) ExecCustomIcaMessages(
 ) error {
 	customMsg := newSendCustomIcaMessagesMsg(c.chain.Config().EncodingConfig.Codec, messages, encoding, memo, timeout)
 	err := c.Execute(ctx, callerKeyName, customMsg)
+	return err
+}
+
+// ExecSendCosmosMsgs invokes the contract's `SendCosmosMsgsAsIcaTx` message as the caller
+func (c *IcaContract) ExecSendCosmosMsgs(
+	ctx context.Context, callerKeyName string,
+	cosmosMsgs []ContractCosmosMsg, memo *string, timeout *uint64,
+) error {
+	cosmosMsg := newSendCosmosMsgsMsg(cosmosMsgs, memo, timeout)
+	err := c.Execute(ctx, callerKeyName, cosmosMsg)
+	return err
+}
+
+// ExecSendCosmosMsgs invokes the contract's `SendCosmosMsgsAsIcaTx` message as the caller
+// This version takes a slice of proto messages instead of ContractCosmosMsgs to make it easier to use
+// the Stargate Cosmos Message type
+func (c *IcaContract) ExecSendStargateMsgs(
+	ctx context.Context, callerKeyName string,
+	msgs []proto.Message, memo *string, timeout *uint64,
+) error {
+	cosmosMsg := newSendCosmosMsgsMsgFromProto(msgs, memo, timeout)
+	err := c.Execute(ctx, callerKeyName, cosmosMsg)
 	return err
 }
 
