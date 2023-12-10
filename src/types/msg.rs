@@ -65,9 +65,9 @@ pub enum ExecuteMsg {
         #[serde(skip_serializing_if = "Option::is_none")]
         timeout_seconds: Option<u64>,
     },
-    /// `SendCosmosMsgsAsIcaTx` converts the provided array of [`CosmosMsg`] to an ICA tx and sends them to the ICA host.
+    /// `SendCosmosMsgs` converts the provided array of [`CosmosMsg`] to an ICA tx and sends them to the ICA host.
     /// [`CosmosMsg::Stargate`] is only supported if the [`TxEncoding`](crate::ibc::types::metadata::TxEncoding) is [`TxEncoding::Protobuf`](crate::ibc::types::metadata::TxEncoding).
-    SendCosmosMsgsAsIcaTx {
+    SendCosmosMsgs {
         /// The stargate messages to convert and send to the ICA host.
         messages: Vec<CosmosMsg>,
         /// Optional memo to include in the ibc packet.

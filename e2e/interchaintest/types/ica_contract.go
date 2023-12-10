@@ -75,7 +75,7 @@ func (c *IcaContract) ExecSendCosmosMsgs(
 	ctx context.Context, callerKeyName string,
 	cosmosMsgs []ContractCosmosMsg, memo *string, timeout *uint64,
 ) error {
-	cosmosMsg := newSendCosmosMsgsAsIcaTxMsg(cosmosMsgs, memo, timeout)
+	cosmosMsg := newSendCosmosMsgsMsg(cosmosMsgs, memo, timeout)
 	err := c.Execute(ctx, callerKeyName, cosmosMsg)
 	return err
 }
@@ -87,7 +87,7 @@ func (c *IcaContract) ExecSendStargateMsgs(
 	ctx context.Context, callerKeyName string,
 	msgs []proto.Message, memo *string, timeout *uint64,
 ) error {
-	cosmosMsg := newSendCosmosMsgsAsIcaTxMsgFromProto(msgs, memo, timeout)
+	cosmosMsg := newSendCosmosMsgsMsgFromProto(msgs, memo, timeout)
 	err := c.Execute(ctx, callerKeyName, cosmosMsg)
 	return err
 }

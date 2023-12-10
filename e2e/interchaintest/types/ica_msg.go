@@ -129,8 +129,8 @@ func newSendCustomIcaMessagesMsg(cdc codec.BinaryCodec, msgs []proto.Message, en
 	return string(jsonBytes)
 }
 
-// newSendCosmosMsgsAsIcaTxMsg creates a new SendCosmosMsgsAsIcaTxMsg.
-func newSendCosmosMsgsAsIcaTxMsg(cosmosMsgs []ContractCosmosMsg, memo *string, timeout *uint64) string {
+// newSendCosmosMsgsMsg creates a new SendCosmosMsgsMsg.
+func newSendCosmosMsgsMsg(cosmosMsgs []ContractCosmosMsg, memo *string, timeout *uint64) string {
 	type SendCosmosMsgsAsIcaTxMsg struct {
 		Messages       []ContractCosmosMsg `json:"messages"`
 		PacketMemo     *string             `json:"packet_memo,omitempty"`
@@ -138,7 +138,7 @@ func newSendCosmosMsgsAsIcaTxMsg(cosmosMsgs []ContractCosmosMsg, memo *string, t
 	}
 
 	type SendCosmosMsgsAsIcaTxMsgWrapper struct {
-		SendCosmosMsgsAsIcaTxMsg SendCosmosMsgsAsIcaTxMsg `json:"send_cosmos_msgs_as_ica_tx"`
+		SendCosmosMsgsAsIcaTxMsg SendCosmosMsgsAsIcaTxMsg `json:"send_cosmos_msgs"`
 	}
 
 	msg := SendCosmosMsgsAsIcaTxMsgWrapper{
@@ -157,8 +157,8 @@ func newSendCosmosMsgsAsIcaTxMsg(cosmosMsgs []ContractCosmosMsg, memo *string, t
 	return string(jsonBytes)
 }
 
-// newSendCosmosMsgsAsIcaTxMsg creates a new SendCosmosMsgsAsIcaTxMsg.
-func newSendCosmosMsgsAsIcaTxMsgFromProto(msgs []proto.Message, memo *string, timeout *uint64) string {
+// newSendCosmosMsgsMsgFromProto creates a new SendCosmosMsgsMsg.
+func newSendCosmosMsgsMsgFromProto(msgs []proto.Message, memo *string, timeout *uint64) string {
 	type SendCosmosMsgsAsIcaTxMsg struct {
 		Messages       []ContractCosmosMsg `json:"messages"`
 		PacketMemo     *string             `json:"packet_memo,omitempty"`

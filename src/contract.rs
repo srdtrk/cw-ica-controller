@@ -77,11 +77,11 @@ pub fn execute(
         ExecuteMsg::UpdateCallbackAddress { callback_address } => {
             execute::update_callback_address(deps, info, callback_address)
         }
-        ExecuteMsg::SendCosmosMsgsAsIcaTx {
+        ExecuteMsg::SendCosmosMsgs {
             messages,
             packet_memo,
             timeout_seconds,
-        } => execute::send_stargate_ica_tx(deps, env, info, messages, packet_memo, timeout_seconds),
+        } => execute::send_cosmos_msgs(deps, env, info, messages, packet_memo, timeout_seconds),
         ExecuteMsg::UpdateOwnership(action) => execute::update_ownership(deps, env, info, action),
     }
 }
@@ -167,9 +167,9 @@ mod execute {
         Ok(Response::default().add_message(send_packet_msg))
     }
 
-    /// Sends a stargate ICA tx to the ICA host.
+    /// Sends an array of [`CosmosMsg`] to the ICA host.
     #[allow(clippy::needless_pass_by_value)]
-    pub fn send_stargate_ica_tx(
+    pub fn send_cosmos_msgs(
         deps: DepsMut,
         env: Env,
         info: MessageInfo,
