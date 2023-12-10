@@ -372,7 +372,7 @@ pub fn convert_to_proto3json(msg: CosmosMsg, from_address: String) -> String {
 mod convert_to_json {
     #[cfg(feature = "staking")]
     use cosmwasm_std::{DistributionMsg, StakingMsg};
-    use cosmwasm_std::{GovMsg, WasmMsg};
+    use cosmwasm_std::{GovMsg, VoteOption, WasmMsg};
 
     use super::{BankMsg, Coin, IbcMsg};
 
@@ -490,11 +490,20 @@ mod convert_to_json {
     }
 
     pub fn gov(msg: GovMsg, voter: String) -> String {
+        const fn convert_to_u64(option: &VoteOption) -> u64 {
+            match option {
+                VoteOption::Yes => 1,
+                VoteOption::Abstain => 2,
+                VoteOption::No => 3,
+                VoteOption::NoWithVeto => 4,
+            }
+        }
+
         match msg {
             GovMsg::Vote { proposal_id, vote } => CosmosMsgProto3JsonSerializer::Vote {
                 voter,
                 proposal_id,
-                option: vote as u64,
+                option: convert_to_u64(&vote),
             },
             GovMsg::VoteWeighted {
                 proposal_id,
@@ -507,7 +516,7 @@ mod convert_to_json {
                     .map(|weighted_option| -> WeightedVoteOption {
                         WeightedVoteOption {
                             weight: weighted_option.weight.to_string(),
-                            option: weighted_option.option as u64,
+                            option: convert_to_u64(&weighted_option.option),
                         }
                     })
                     .collect(),

@@ -417,7 +417,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		err = s.Contract.ExecSendCosmosMsgs(ctx, wasmdUser.KeyName(), []types.ContractCosmosMsg{stakeCosmosMsg, voteCosmosMsg}, nil, nil)
 		s.Require().NoError(err)
 
-		err = testutil.WaitForBlocks(ctx, 8, wasmd, simd)
+		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
 		callbackCounter, err := s.Contract.QueryCallbackCounter(ctx)
