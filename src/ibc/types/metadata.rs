@@ -185,6 +185,8 @@ fn validate_ica_address(address: &str) -> Result<(), ContractError> {
 mod tests {
     use cosmwasm_std::{testing::mock_dependencies, IbcEndpoint, IbcOrder};
 
+    use crate::types::msg::options::ChannelOpenInitOptions;
+
     use super::*;
 
     fn mock_channel(
@@ -226,7 +228,7 @@ mod tests {
 
     #[test]
     fn test_validate_success() {
-        let deps = mock_dependencies();
+        let mut deps = mock_dependencies();
 
         let channel = mock_channel(
             "ics27-1",
@@ -236,13 +238,25 @@ mod tests {
             "channel-1",
             "port-1",
         );
+        let stored_init_options = ChannelOpenInitOptions {
+            connection_id: "connection-0".to_string(),
+            counterparty_connection_id: "connection-1".to_string(),
+            tx_encoding: None,
+            counterparty_port_id: Some(super::super::keys::HOST_PORT_ID.to_string()),
+        };
+
+        CHANNEL_OPEN_INIT_OPTIONS
+            .save(deps.as_mut().storage, &stored_init_options)
+            .unwrap();
+
         let metadata = IcaMetadata::from_channel(deps.as_ref(), &channel).unwrap();
+
         assert!(metadata.validate(&channel).is_ok());
     }
 
     #[test]
     fn test_validate_fail() {
-        let deps = mock_dependencies();
+        let mut deps = mock_dependencies();
 
         let channel_1 = mock_channel(
             "ics27-1",
@@ -252,6 +266,18 @@ mod tests {
             "channel-1",
             "port-1",
         );
+
+        let stored_init_options = ChannelOpenInitOptions {
+            connection_id: "connection-0".to_string(),
+            counterparty_connection_id: "connection-1".to_string(),
+            tx_encoding: None,
+            counterparty_port_id: Some(super::super::keys::HOST_PORT_ID.to_string()),
+        };
+
+        CHANNEL_OPEN_INIT_OPTIONS
+            .save(deps.as_mut().storage, &stored_init_options)
+            .unwrap();
+
         let channel_2 = mock_channel(
             "ics27-1",
             "connection-1",
