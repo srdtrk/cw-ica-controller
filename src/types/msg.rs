@@ -26,11 +26,17 @@ pub struct InstantiateMsg {
 #[cw_ownable::cw_ownable_execute]
 #[cw_serde]
 pub enum ExecuteMsg {
-    /// CreateChannel makes the contract submit a stargate MsgChannelOpenInit to the chain.
+    /// `CreateChannel` makes the contract submit a stargate MsgChannelOpenInit to the chain.
     /// This is a wrapper around [`options::ChannelOpenInitOptions`] and thus requires the
-    /// same fields.
-    CreateChannel(options::ChannelOpenInitOptions),
-    /// SendCustomIcaMessages sends custom messages from the ICA controller to the ICA host.
+    /// same fields. If not specified, then the options specified in the contract instantiation
+    /// are used.
+    CreateChannel {
+        /// The options to initialize the IBC channel.
+        /// If not specified, the options specified in the contract instantiation are used.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        channel_open_init_options: Option<options::ChannelOpenInitOptions>,
+    },
+    /// `SendCustomIcaMessages` sends custom messages from the ICA controller to the ICA host.
     SendCustomIcaMessages {
         /// Base64-encoded json or proto messages to send to the ICA host.
         ///
