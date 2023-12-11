@@ -67,12 +67,20 @@ func NewInstantiateMsgWithChannelInitOptions(
 	return string(jsonBytes)
 }
 
+func newEmptyCreateChannelMsg() string {
+	return `{ "create_channel": {} }`
+}
+
 func newCreateChannelMsg(
 	connectionId string, counterpartyConnectionId string,
 	counterpartyPortId *string, txEncoding *string,
 ) string {
+	type ChannelCreateMsg struct {
+		ChannelOpenInitOptions *ChannelOpenInitOptions `json:"channel_open_init_options,omitempty"`
+	}
+
 	type ChannelCreateMsgWrapper struct {
-		CreateChannelMsg ChannelOpenInitOptions `json:"create_channel"`
+		CreateChannelMsg ChannelCreateMsg `json:"create_channel"`
 	}
 
 	channelOpenInitOptions := ChannelOpenInitOptions{
@@ -83,7 +91,9 @@ func newCreateChannelMsg(
 	}
 
 	msg := ChannelCreateMsgWrapper{
-		CreateChannelMsg: channelOpenInitOptions,
+		CreateChannelMsg: ChannelCreateMsg{
+			ChannelOpenInitOptions: &channelOpenInitOptions,
+		},
 	}
 
 	jsonBytes, err := json.Marshal(msg)
