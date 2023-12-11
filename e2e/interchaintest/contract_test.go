@@ -255,7 +255,7 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 	})
 
 	s.Run("TestChannelHandshakeSuccessAfterFail", func() {
-		err = s.Contract.ExecCreateChannel(ctx, wasmdUser.KeyName(), s.ChainAConnID, s.ChainBConnID, nil, nil, "--gas", "500000")
+		err = s.Contract.ExecCreateChannelWithOptions(ctx, wasmdUser.KeyName(), s.ChainAConnID, s.ChainBConnID, nil, nil, "--gas", "500000")
 		s.Require().NoError(err)
 
 		// Wait for the channel to get set up
@@ -555,8 +555,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 
 	s.Run("TestChannelReopening", func() {
 		// Reopen the channel:
-		txEncoding := icatypes.EncodingProto3JSON
-		err := s.Contract.ExecCreateChannel(ctx, wasmdUser.KeyName(), s.ChainAConnID, s.ChainBConnID, nil, &txEncoding, "--gas", "500000")
+		err := s.Contract.ExecCreateChannel(ctx, wasmdUser.KeyName(), "--gas", "500000")
 		s.Require().NoError(err)
 
 		// Wait for the channel to get set up

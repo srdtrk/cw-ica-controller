@@ -78,4 +78,7 @@ pub enum ContractError {
 
     #[error("interchain account information is not set")]
     IcaInfoNotSet,
+
+    #[error("no channel init options are provided to the contract")]
+    NoChannelInitOptions,
 }

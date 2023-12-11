@@ -9,7 +9,10 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Deps, IbcChannel};
 
-use crate::types::{state::CHANNEL_STATE, ContractError};
+use crate::types::{
+    state::{CHANNEL_OPEN_INIT_OPTIONS, CHANNEL_STATE},
+    ContractError,
+};
 
 use super::keys::ICA_VERSION;
 
@@ -72,10 +75,13 @@ impl IcaMetadata {
     /// This is a fallback option if the ICA controller is not provided with the
     /// handshake version metadata by the relayer. It first tries to load the
     /// previous version of the [`IcaMetadata`] from the store, and if it fails,
-    /// it uses a stargate query to get the counterparty connection id.
-    /// Stargate queries are not universally supported, so this is a fallback option.
-    #[must_use]
-    pub fn from_channel(deps: Deps, channel: &IbcChannel) -> Self {
+    /// it uses the [`CHANNEL_OPEN_INIT_OPTIONS`] to create a new [`IcaMetadata`].
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the previous version of the [`IcaMetadata`] cannot be loaded
+    /// from the store, and no [`CHANNEL_OPEN_INIT_OPTIONS`] are set in the store.
+    pub fn from_channel(deps: Deps, channel: &IbcChannel) -> Result<Self, ContractError> {
         // If the the counterparty chain is using the fee middleware, and the this chain is not,
         // and the previous handshake was initiated with an empty version string, then the
         // previous version in the contract's channel state will be wrapped by the fee middleware,
@@ -83,26 +89,26 @@ impl IcaMetadata {
         if let Ok(channel_state) = CHANNEL_STATE.load(deps.storage) {
             if let Ok(previous_metadata) = serde_json_wasm::from_str(&channel_state.channel.version)
             {
-                return previous_metadata;
+                return Ok(previous_metadata);
             }
         }
 
-        let counterparty_connection_id = super::stargate::query::counterparty_connection_id(
-            &deps.querier,
-            channel.connection_id.clone(),
-        )
-        .unwrap_or_default();
-        Self {
+        let options = CHANNEL_OPEN_INIT_OPTIONS.load(deps.storage)?;
+        if options.connection_id != channel.connection_id {
+            return Err(ContractError::InvalidConnection);
+        }
+
+        Ok(Self {
             version: ICA_VERSION.to_string(),
-            controller_connection_id: channel.connection_id.clone(),
+            encoding: options.tx_encoding(),
+            controller_connection_id: options.connection_id,
             // counterparty connection_id is not exposed to the contract, so we
             // use a stargate query to get it. Stargate queries are not universally
             // supported, so this is a fallback option.
-            host_connection_id: counterparty_connection_id,
+            host_connection_id: options.counterparty_connection_id,
             address: String::new(),
-            encoding: TxEncoding::Proto3Json,
             tx_type: "sdk_multi_msg".to_string(),
-        }
+        })
     }
 
     /// Validates the [`IcaMetadata`]
@@ -179,6 +185,8 @@ fn validate_ica_address(address: &str) -> Result<(), ContractError> {
 mod tests {
     use cosmwasm_std::{testing::mock_dependencies, IbcEndpoint, IbcOrder};
 
+    use crate::types::msg::options::ChannelOpenInitOptions;
+
     use super::*;
 
     fn mock_channel(
@@ -220,7 +228,7 @@ mod tests {
 
     #[test]
     fn test_validate_success() {
-        let deps = mock_dependencies();
+        let mut deps = mock_dependencies();
 
         let channel = mock_channel(
             "ics27-1",
@@ -230,13 +238,25 @@ mod tests {
             "channel-1",
             "port-1",
         );
-        let metadata = IcaMetadata::from_channel(deps.as_ref(), &channel);
+        let stored_init_options = ChannelOpenInitOptions {
+            connection_id: "connection-0".to_string(),
+            counterparty_connection_id: "connection-1".to_string(),
+            tx_encoding: None,
+            counterparty_port_id: Some(super::super::keys::HOST_PORT_ID.to_string()),
+        };
+
+        CHANNEL_OPEN_INIT_OPTIONS
+            .save(deps.as_mut().storage, &stored_init_options)
+            .unwrap();
+
+        let metadata = IcaMetadata::from_channel(deps.as_ref(), &channel).unwrap();
+
         assert!(metadata.validate(&channel).is_ok());
     }
 
     #[test]
     fn test_validate_fail() {
-        let deps = mock_dependencies();
+        let mut deps = mock_dependencies();
 
         let channel_1 = mock_channel(
             "ics27-1",
@@ -246,6 +266,18 @@ mod tests {
             "channel-1",
             "port-1",
         );
+
+        let stored_init_options = ChannelOpenInitOptions {
+            connection_id: "connection-0".to_string(),
+            counterparty_connection_id: "connection-1".to_string(),
+            tx_encoding: None,
+            counterparty_port_id: Some(super::super::keys::HOST_PORT_ID.to_string()),
+        };
+
+        CHANNEL_OPEN_INIT_OPTIONS
+            .save(deps.as_mut().storage, &stored_init_options)
+            .unwrap();
+
         let channel_2 = mock_channel(
             "ics27-1",
             "connection-1",
@@ -254,7 +286,7 @@ mod tests {
             "channel-1",
             "port-1",
         );
-        let metadata = IcaMetadata::from_channel(deps.as_ref(), &channel_1);
+        let metadata = IcaMetadata::from_channel(deps.as_ref(), &channel_1).unwrap();
         assert!(metadata.validate(&channel_2).is_err());
     }
 

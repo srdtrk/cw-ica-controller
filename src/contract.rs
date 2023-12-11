@@ -7,7 +7,8 @@ use crate::ibc::types::stargate::channel::new_ica_channel_open_init_cosmos_msg;
 use crate::types::keys::{CONTRACT_NAME, CONTRACT_VERSION};
 use crate::types::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::types::state::{
-    CallbackCounter, ChannelState, ContractState, CALLBACK_COUNTER, CHANNEL_STATE, STATE,
+    CallbackCounter, ChannelState, ContractState, CALLBACK_COUNTER, CHANNEL_OPEN_INIT_OPTIONS,
+    CHANNEL_STATE, STATE,
 };
 use crate::types::ContractError;
 
@@ -37,6 +38,8 @@ pub fn instantiate(
 
     // If channel open init options are provided, open the channel.
     if let Some(channel_open_init_options) = msg.channel_open_init_options {
+        CHANNEL_OPEN_INIT_OPTIONS.save(deps.storage, &channel_open_init_options)?;
+
         let ica_channel_open_init_msg = new_ica_channel_open_init_cosmos_msg(
             env.contract.address.to_string(),
             channel_open_init_options.connection_id,
@@ -61,7 +64,9 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::CreateChannel(options) => execute::create_channel(deps, env, info, options),
+        ExecuteMsg::CreateChannel {
+            channel_open_init_options,
+        } => execute::create_channel(deps, env, info, channel_open_init_options),
         ExecuteMsg::SendCustomIcaMessages {
             messages,
             packet_memo,
@@ -112,13 +117,13 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 }
 
 mod execute {
-    use cosmwasm_std::CosmosMsg;
+    use cosmwasm_std::{CosmosMsg, StdResult};
 
     use crate::{ibc::types::packet::IcaPacketData, types::msg::options::ChannelOpenInitOptions};
 
     use super::{
         new_ica_channel_open_init_cosmos_msg, Binary, ContractError, DepsMut, Env, MessageInfo,
-        Response, STATE,
+        Response, CHANNEL_OPEN_INIT_OPTIONS, STATE,
     };
 
     /// Submits a stargate `MsgChannelOpenInit` to the chain.
@@ -127,13 +132,23 @@ mod execute {
         deps: DepsMut,
         env: Env,
         info: MessageInfo,
-        options: ChannelOpenInitOptions,
+        options: Option<ChannelOpenInitOptions>,
     ) -> Result<Response, ContractError> {
         cw_ownable::assert_owner(deps.storage, &info.sender)?;
 
-        let mut contract_state = STATE.load(deps.storage)?;
-        contract_state.enable_channel_open_init();
-        STATE.save(deps.storage, &contract_state)?;
+        STATE.update(deps.storage, |mut state| -> StdResult<_> {
+            state.enable_channel_open_init();
+            Ok(state)
+        })?;
+
+        let options = if let Some(new_options) = options {
+            CHANNEL_OPEN_INIT_OPTIONS.save(deps.storage, &new_options)?;
+            new_options
+        } else {
+            CHANNEL_OPEN_INIT_OPTIONS
+                .may_load(deps.storage)?
+                .ok_or(ContractError::NoChannelInitOptions)?
+        };
 
         let ica_channel_open_init_msg = new_ica_channel_open_init_cosmos_msg(
             env.contract.address.to_string(),

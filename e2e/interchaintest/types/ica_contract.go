@@ -50,6 +50,14 @@ func StoreAndInstantiateNewIcaContract(
 }
 
 func (c *IcaContract) ExecCreateChannel(
+	ctx context.Context, callerKeyName string, extraExecTxArgs ...string,
+) error {
+	msg := newEmptyCreateChannelMsg()
+	err := c.Execute(ctx, callerKeyName, msg, extraExecTxArgs...)
+	return err
+}
+
+func (c *IcaContract) ExecCreateChannelWithOptions(
 	ctx context.Context, callerKeyName string, connectionId string,
 	counterpartyConnectionId string, counterpartyPortId *string,
 	txEncoding *string, extraExecTxArgs ...string,

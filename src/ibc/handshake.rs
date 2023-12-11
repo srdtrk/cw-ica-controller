@@ -93,7 +93,7 @@ mod ibc_channel_open {
         // serde::Deserialize the metadata
         let metadata: IcaMetadata = if channel.version.is_empty() {
             // if empty, use create new metadata.
-            IcaMetadata::from_channel(deps.as_ref(), &channel)
+            IcaMetadata::from_channel(deps.as_ref(), &channel)?
         } else {
             serde_json_wasm::from_str(&channel.version).map_err(|_| {
                 ContractError::UnknownDataType(

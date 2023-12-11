@@ -4,7 +4,7 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, IbcChannel};
 use cw_storage_plus::Item;
 
-use super::ContractError;
+use super::{msg::options::ChannelOpenInitOptions, ContractError};
 
 #[allow(clippy::module_name_repetitions)]
 pub use channel::{State as ChannelState, Status as ChannelStatus};
@@ -19,6 +19,10 @@ pub const CHANNEL_STATE: Item<ChannelState> = Item::new("ica_channel");
 
 /// The item used to store the successful and erroneous callbacks in store.
 pub const CALLBACK_COUNTER: Item<CallbackCounter> = Item::new("callback_counter");
+
+/// The item used to store the channel open init options.
+pub const CHANNEL_OPEN_INIT_OPTIONS: Item<ChannelOpenInitOptions> =
+    Item::new("channel_open_init_options");
 
 mod contract {
     use crate::ibc::types::metadata::TxEncoding;
