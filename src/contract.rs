@@ -7,7 +7,8 @@ use crate::ibc::types::stargate::channel::new_ica_channel_open_init_cosmos_msg;
 use crate::types::keys::{CONTRACT_NAME, CONTRACT_VERSION};
 use crate::types::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::types::state::{
-    CallbackCounter, ChannelState, ContractState, CALLBACK_COUNTER, CHANNEL_STATE, STATE, CHANNEL_OPEN_INIT_OPTIONS,
+    CallbackCounter, ChannelState, ContractState, CALLBACK_COUNTER, CHANNEL_OPEN_INIT_OPTIONS,
+    CHANNEL_STATE, STATE,
 };
 use crate::types::ContractError;
 
@@ -63,7 +64,9 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::CreateChannel { channel_open_init_options } => execute::create_channel(deps, env, info, channel_open_init_options),
+        ExecuteMsg::CreateChannel {
+            channel_open_init_options,
+        } => execute::create_channel(deps, env, info, channel_open_init_options),
         ExecuteMsg::SendCustomIcaMessages {
             messages,
             packet_memo,
@@ -120,7 +123,7 @@ mod execute {
 
     use super::{
         new_ica_channel_open_init_cosmos_msg, Binary, ContractError, DepsMut, Env, MessageInfo,
-        Response, STATE, CHANNEL_OPEN_INIT_OPTIONS,
+        Response, CHANNEL_OPEN_INIT_OPTIONS, STATE,
     };
 
     /// Submits a stargate `MsgChannelOpenInit` to the chain.
@@ -142,7 +145,9 @@ mod execute {
             CHANNEL_OPEN_INIT_OPTIONS.save(deps.storage, &new_options)?;
             new_options
         } else {
-            CHANNEL_OPEN_INIT_OPTIONS.may_load(deps.storage)?.ok_or(ContractError::NoChannelInitOptions)?
+            CHANNEL_OPEN_INIT_OPTIONS
+                .may_load(deps.storage)?
+                .ok_or(ContractError::NoChannelInitOptions)?
         };
 
         let ica_channel_open_init_msg = new_ica_channel_open_init_cosmos_msg(

@@ -9,7 +9,10 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Deps, IbcChannel};
 
-use crate::types::{state::{CHANNEL_STATE, CHANNEL_OPEN_INIT_OPTIONS}, ContractError};
+use crate::types::{
+    state::{CHANNEL_OPEN_INIT_OPTIONS, CHANNEL_STATE},
+    ContractError,
+};
 
 use super::keys::ICA_VERSION;
 
