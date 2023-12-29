@@ -3,11 +3,12 @@ package types
 import "encoding/base64"
 
 type ContractCosmosMsg struct {
-	Stargate *StargateCosmosMsg `json:"stargate,omitempty"`
-	Bank     *BankCosmosMsg     `json:"bank,omitempty"`
-	IBC      *IbcCosmosMsg      `json:"ibc,omitempty"`
-	Staking  *StakingCosmosMsg  `json:"staking,omitempty"`
-	Gov      *GovCosmosMsg      `json:"gov,omitempty"`
+	Stargate     *StargateCosmosMsg     `json:"stargate,omitempty"`
+	Bank         *BankCosmosMsg         `json:"bank,omitempty"`
+	IBC          *IbcCosmosMsg          `json:"ibc,omitempty"`
+	Staking      *StakingCosmosMsg      `json:"staking,omitempty"`
+	Distribution *DistributionCosmosMsg `json:"distribution,omitempty"`
+	Gov          *GovCosmosMsg          `json:"gov,omitempty"`
 }
 
 type StargateCosmosMsg struct {
@@ -34,6 +35,24 @@ type StakingCosmosMsg struct {
 	Delegate   *StakingDelegateCosmosMsg   `json:"delegate,omitempty"`
 	Undelegate *StakingUndelegateCosmosMsg `json:"undelegate,omitempty"`
 	Redelegate *StakingRedelegateCosmosMsg `json:"redelegate,omitempty"`
+}
+
+type DistributionCosmosMsg struct {
+	SetWithdrawAddress      *DistributionSetWithdrawAddressCosmosMsg      `json:"set_withdraw_address,omitempty"`
+	WithdrawDelegatorReward *DistributionWithdrawDelegatorRewardCosmosMsg `json:"withdraw_delegator_reward,omitempty"`
+	FundCommunityPool       *DistributionFundCommunityPoolCosmosMsg       `json:"fund_community_pool,omitempty"`
+}
+
+type DistributionSetWithdrawAddressCosmosMsg struct {
+	Address string `json:"address"`
+}
+
+type DistributionWithdrawDelegatorRewardCosmosMsg struct {
+	Validator string `json:"validator"`
+}
+
+type DistributionFundCommunityPoolCosmosMsg struct {
+	Amount []Coin `json:"amount"`
 }
 
 type StakingDelegateCosmosMsg struct {
