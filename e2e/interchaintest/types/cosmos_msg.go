@@ -9,6 +9,7 @@ type ContractCosmosMsg struct {
 	Staking      *StakingCosmosMsg      `json:"staking,omitempty"`
 	Distribution *DistributionCosmosMsg `json:"distribution,omitempty"`
 	Gov          *GovCosmosMsg          `json:"gov,omitempty"`
+	Wasm         *WasmCosmosMsg         `json:"wasm,omitempty"`
 }
 
 type StargateCosmosMsg struct {
@@ -41,6 +42,58 @@ type DistributionCosmosMsg struct {
 	SetWithdrawAddress      *DistributionSetWithdrawAddressCosmosMsg      `json:"set_withdraw_address,omitempty"`
 	WithdrawDelegatorReward *DistributionWithdrawDelegatorRewardCosmosMsg `json:"withdraw_delegator_reward,omitempty"`
 	FundCommunityPool       *DistributionFundCommunityPoolCosmosMsg       `json:"fund_community_pool,omitempty"`
+}
+
+type WasmCosmosMsg struct {
+	Execute      *WasmExecuteCosmosMsg      `json:"execute,omitempty"`
+	Instantiate  *WasmInstantiateCosmosMsg  `json:"instantiate,omitempty"`
+	Instantiate2 *WasmInstantiate2CosmosMsg `json:"instantiate2,omitempty"`
+	Migrate      *WasmMigrateCosmosMsg      `json:"migrate,omitempty"`
+	UpdateAdmin  *WasmUpdateAdminCosmosMsg  `json:"update_admin,omitempty"`
+	ClearAdmin   *WasmClearAdminCosmosMsg   `json:"clear_admin,omitempty"`
+}
+
+type WasmExecuteCosmosMsg struct {
+	ContractAddr string `json:"contract_addr"`
+	// base64 encoded bytes
+	Msg   string `json:"msg"`
+	Funds []Coin `json:"funds"`
+}
+
+type WasmInstantiateCosmosMsg struct {
+	Admin  string `json:"admin"`
+	CodeID uint64 `json:"code_id"`
+	// base64 encoded bytes
+	Msg   string `json:"msg"`
+	Funds []Coin `json:"funds"`
+	Label string `json:"label"`
+}
+
+type WasmInstantiate2CosmosMsg struct {
+	Admin  string `json:"admin"`
+	CodeID uint64 `json:"code_id"`
+	// base64 encoded bytes
+	Msg   string `json:"msg"`
+	Funds []Coin `json:"funds"`
+	Label string `json:"label"`
+	// base64 encoded bytes
+	Salt string `json:"salt"`
+}
+
+type WasmMigrateCosmosMsg struct {
+	ContractAddr string `json:"contract_addr"`
+	NewCodeID    uint64 `json:"new_code_id"`
+	// base64 encoded bytes
+	Msg string `json:"msg"`
+}
+
+type WasmUpdateAdminCosmosMsg struct {
+	ContractAddr string `json:"contract_addr"`
+	Admin        string `json:"admin"`
+}
+
+type WasmClearAdminCosmosMsg struct {
+	ContractAddr string `json:"contract_addr"`
 }
 
 type DistributionSetWithdrawAddressCosmosMsg struct {

@@ -80,11 +80,11 @@ func (c *IcaContract) ExecCustomIcaMessages(
 
 // ExecSendCosmosMsgs invokes the contract's `SendCosmosMsgsAsIcaTx` message as the caller
 func (c *IcaContract) ExecSendCosmosMsgs(
-	ctx context.Context, callerKeyName string,
-	cosmosMsgs []ContractCosmosMsg, memo *string, timeout *uint64,
+	ctx context.Context, callerKeyName string, cosmosMsgs []ContractCosmosMsg,
+	memo *string, timeout *uint64, extraExecTxArgs ...string,
 ) error {
 	cosmosMsg := newSendCosmosMsgsMsg(cosmosMsgs, memo, timeout)
-	err := c.Execute(ctx, callerKeyName, cosmosMsg)
+	err := c.Execute(ctx, callerKeyName, cosmosMsg, extraExecTxArgs...)
 	return err
 }
 

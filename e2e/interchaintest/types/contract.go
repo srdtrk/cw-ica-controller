@@ -29,3 +29,18 @@ func (c *Contract) Execute(ctx context.Context, callerKeyName string, execMsg st
 	_, err := c.chain.ExecuteContract(ctx, callerKeyName, c.Address, execMsg, extraExecTxArgs...)
 	return err
 }
+
+func QueryContract[T any](ctx context.Context, chain *cosmos.CosmosChain, contractAddr string, queryMsg string) (*T, error) {
+	queryResp := QueryResponse[T]{}
+	err := chain.QueryContract(ctx, contractAddr, queryMsg, &queryResp)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := queryResp.GetResp()
+	if err != nil {
+		return nil, err
+	}
+
+	return &resp, nil
+}
