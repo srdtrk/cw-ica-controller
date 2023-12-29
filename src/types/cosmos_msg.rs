@@ -307,7 +307,10 @@ mod convert_to_any {
     }
 
     #[cfg(feature = "staking")]
-    pub fn distribution(msg: DistributionMsg, delegator_address: String) -> Result<Any, EncodeError> {
+    pub fn distribution(
+        msg: DistributionMsg,
+        delegator_address: String,
+    ) -> Result<Any, EncodeError> {
         use cosmos_sdk_proto::cosmos::distribution::v1beta1::{
             MsgSetWithdrawAddress, MsgWithdrawDelegatorReward,
         };
