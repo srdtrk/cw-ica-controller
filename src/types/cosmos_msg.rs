@@ -58,10 +58,8 @@ mod convert_to_any {
         cosmos::{
             bank::v1beta1::MsgSend,
             base::v1beta1::Coin as ProtoCoin,
-            gov::v1beta1::{
-                MsgVote, MsgVoteWeighted, VoteOption as ProtoVoteOption,
-                WeightedVoteOption as ProtoWeightedVoteOption,
-            },
+            gov::v1::{MsgVoteWeighted, WeightedVoteOption as ProtoWeightedVoteOption},
+            gov::v1beta1::{MsgVote, VoteOption as ProtoVoteOption},
         },
         cosmwasm::wasm::v1::{
             MsgClearAdmin, MsgExecuteContract, MsgInstantiateContract, MsgInstantiateContract2,
@@ -243,7 +241,7 @@ mod convert_to_any {
                 proposal_id,
                 options,
             } => {
-                let options = options
+                let options: Vec<ProtoWeightedVoteOption> = options
                     .into_iter()
                     .map(|weighted_option| -> ProtoWeightedVoteOption {
                         ProtoWeightedVoteOption {
@@ -257,10 +255,11 @@ mod convert_to_any {
                     proposal_id,
                     voter,
                     options,
+                    metadata: String::new(),
                 };
 
                 Any {
-                    type_url: "/cosmos.gov.v1beta1.MsgVoteWeighted".to_string(),
+                    type_url: "/cosmos.gov.v1.MsgVoteWeighted".to_string(),
                     value: value.encode_to_vec(),
                 }
             }
@@ -268,14 +267,14 @@ mod convert_to_any {
     }
 
     #[cfg(feature = "staking")]
-    pub fn staking(msg: StakingMsg, from_address: String) -> Result<Any, EncodeError> {
+    pub fn staking(msg: StakingMsg, delegator_address: String) -> Result<Any, EncodeError> {
         use cosmos_sdk_proto::cosmos::staking::v1beta1::{
             MsgBeginRedelegate, MsgDelegate, MsgUndelegate,
         };
 
         match msg {
             StakingMsg::Delegate { validator, amount } => Any::from_msg(&MsgDelegate {
-                delegator_address: from_address,
+                delegator_address,
                 validator_address: validator,
                 amount: Some(ProtoCoin {
                     denom: amount.denom,
@@ -283,7 +282,7 @@ mod convert_to_any {
                 }),
             }),
             StakingMsg::Undelegate { validator, amount } => Any::from_msg(&MsgUndelegate {
-                delegator_address: from_address,
+                delegator_address,
                 validator_address: validator,
                 amount: Some(ProtoCoin {
                     denom: amount.denom,
@@ -295,7 +294,7 @@ mod convert_to_any {
                 dst_validator,
                 amount,
             } => Any::from_msg(&MsgBeginRedelegate {
-                delegator_address: from_address,
+                delegator_address,
                 validator_src_address: src_validator,
                 validator_dst_address: dst_validator,
                 amount: Some(ProtoCoin {
@@ -308,7 +307,7 @@ mod convert_to_any {
     }
 
     #[cfg(feature = "staking")]
-    pub fn distribution(msg: DistributionMsg, from_address: String) -> Result<Any, EncodeError> {
+    pub fn distribution(msg: DistributionMsg, delegator_address: String) -> Result<Any, EncodeError> {
         use cosmos_sdk_proto::cosmos::distribution::v1beta1::{
             MsgSetWithdrawAddress, MsgWithdrawDelegatorReward,
         };
@@ -316,13 +315,13 @@ mod convert_to_any {
         match msg {
             DistributionMsg::WithdrawDelegatorReward { validator } => {
                 Any::from_msg(&MsgWithdrawDelegatorReward {
-                    delegator_address: from_address,
+                    delegator_address,
                     validator_address: validator,
                 })
             }
             DistributionMsg::SetWithdrawAddress { address } => {
                 Any::from_msg(&MsgSetWithdrawAddress {
-                    delegator_address: from_address,
+                    delegator_address,
                     withdraw_address: address,
                 })
             }
@@ -746,7 +745,9 @@ mod convert_to_json {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{coins, from_json};
+    use std::str::FromStr;
+
+    use cosmwasm_std::{coins, from_json, Decimal, Uint128, VoteOption, WeightedVoteOption};
 
     use crate::ibc::types::packet::IcaPacketData;
 
@@ -772,5 +773,24 @@ mod tests {
         };
 
         assert_eq!(expected, cosmos_tx.messages[0]);
+    }
+
+    #[test]
+    fn test_weighted_vote_option() {
+        let test_msg = r#"{"option":"yes","weight":"0.5"}"#;
+
+        let vote_option = serde_json_wasm::from_str::<WeightedVoteOption>(test_msg).unwrap();
+
+        assert_eq!(
+            vote_option,
+            WeightedVoteOption {
+                option: VoteOption::Yes,
+                weight: Decimal::from_ratio(
+                    Uint128::from_str("1").unwrap(),
+                    Uint128::from_str("2").unwrap()
+                ),
+            }
+        );
+        assert_eq!("0.5".to_string(), vote_option.weight.to_string());
     }
 }
