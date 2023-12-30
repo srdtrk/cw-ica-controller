@@ -4,7 +4,27 @@
 
 This is a CosmWasm smart contract that communicates with the golang ica/host module on the host chain to create and manage **one** interchain account. This contract can also execute callbacks based on the result of the interchain account transaction. Because this is a CosmWasm implementation of the entire ICA controller, the chain that this contract is deployed on need **not** have the ICA module enabled. This contract can be deployed on any chain that supports IBC CosmWasm smart contracts.
 
-This contract was originally written to test the json encoding/decoding [feature being added to interchain accounts txs](https://github.com/cosmos/ibc-go/pull/3796). Previously, the only way to encode ica txs was to use Protobuf (`proto3`) encoding. Proto3Json encoding/decoding feature is supported in ibc-go v7.3+. This contract now supports both proto3json and protobuf encoding/decoding. In current mainnets (ibc-go v7.2 and below), only protobuf encoding/decoding is supported.
+This contract was originally written to test the `proto3json` encoding/decoding [feature added to interchain accounts](https://github.com/cosmos/ibc-go/pull/3796). This contract now supports both `proto3json` and protobuf encoding/decoding.
+**The recommended encoding is protobuf.** If no encoding is specified, then the contract will default to protobuf encoding.
+
+## Table of Contents
+
+- [CosmWasm ICA Controller Contract](#cosmwasm-ica-controller-contract)
+  - [Table of Contents](#table-of-contents)
+  - [Usage](#usage)
+    - [Create an interchain account](#create-an-interchain-account)
+      - [Using `InstantiateMsg` and/or `ExecuteMsg::CreateChannel`](#using-instantiatemsg-andor-executemsgcreatechannel)
+      - [Using the Relayer](#using-the-relayer)
+    - [Execute an interchain account transaction](#execute-an-interchain-account-transaction)
+      - [`SendCosmosMsgs`](#sendcosmosmsgs)
+      - [`SendCustomIcaMessages`](#sendcustomicamessages)
+    - [Execute a callback](#execute-a-callback)
+    - [Channel Closing and Reopening](#channel-closing-and-reopening)
+  - [Testing](#testing)
+    - [Unit tests](#unit-tests)
+    - [End to end tests](#end-to-end-tests)
+  - [Limitations](#limitations)
+  - [Acknowledgements](#acknowledgements)
 
 ## Usage
 
@@ -50,9 +70,79 @@ To create an interchain account, the relayer must start the channel handshake on
 
 ### Execute an interchain account transaction
 
-In this contract, the `ExecuteMsg::SendCustomIcaMessages` message is used to commit a packet to be sent to the host chain.
+This contract provides two APIs to send ICA transactions. The `ExecuteMsg::SendCustomIcaMessages` and `ExecuteMsg::SendCosmosMsgs` messages are used to commit a packet to be sent to the host chain.
+
+#### `SendCosmosMsgs`
+
+In CosmWasm contracts, `CosmosMsg`s are used to execute transactions on the chain that the contract is deployed on. In this contract, we use CosmosMsgs to execute transactions on the host chain. This is done by converting the `CosmosMsg`s to an ICA tx based on the encoding of the channel. The ICA tx is then sent to the host chain. The host chain then executes the ICA tx and sends the result back to this contract.
+
+`SendCosmosMsgs` is the recommended way to send ICA transactions in this contract. This execute message allows the user to submit an array of [`cosmwasm_std::CosmosMsg`](https://github.com/CosmWasm/cosmwasm/blob/v1.5.0/packages/std/src/results/cosmos_msg.rs#L27) which are then converted by the contract to an atomic ICA tx.
+
+```rust, ignore
+pub enum ExecuteMsg {
+    // ...
+
+    /// `SendCosmosMsgs` converts the provided array of [`CosmosMsg`] to an ICA tx and sends them to the ICA host.
+    /// [`CosmosMsg::Stargate`] and [`CosmosMsg::Wasm`] are only supported if the [`TxEncoding`](crate::ibc::types::metadata::TxEncoding) is [`TxEncoding::Protobuf`](crate::ibc::types::metadata::TxEncoding).
+    ///
+    /// **This is the recommended way to send messages to the ICA host.**
+    SendCosmosMsgs {
+        /// The stargate messages to convert and send to the ICA host.
+        messages: Vec<CosmosMsg>,
+        /// Optional memo to include in the ibc packet.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        packet_memo: Option<String>,
+        /// Optional timeout in seconds to include with the ibc packet.
+        /// If not specified, the [default timeout](crate::ibc::types::packet::DEFAULT_TIMEOUT_SECONDS) is used.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        timeout_seconds: Option<u64>,
+    },
+
+    // ...
+}
+```
+
+Note that `SendCosmosMsgs` only supports `Stargate` and `Wasm` messages if the channel is using the protobuf encoding. This is because the `Stargate` and `Wasm` messages are converted to protobuf messages before being sent to the host chain. If the channel is using `proto3json` encoding, then the `Stargate` and `Wasm` messages are not supported.
+
+(`Stargate` allows the user to submit any protobuf message to the host chain.)
+
+
+Here is an example execute message that delegates tokens to a validator on the host chain and then votes on a proposal (atomically).
+
+```json
+{
+  "send_cosmos_msgs":{
+    "messages":[
+      {
+        "staking":{
+          "delegate":{
+            "validator":"validatorAddress",
+            "amount":{
+              "denom":"uatom",
+              "amount":"10000000"
+            }
+          }
+        }
+      },
+      {
+        "gov":{
+          "vote":{
+            "proposal_id":1,
+            "vote":"yes"
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+#### `SendCustomIcaMessages`
 
 `SendCustomIcaMessages`: This message requires the sender to give base64 encoded messages that will be sent to the host chain. The host chain will decode the messages and execute them. The result of the execution is sent back to this contract, and a callback is executed based on the result.
+
+This execute message is not recommended because it requires the user to know the encoding of the channel. If the user does not know the encoding of the channel, then they will not be able to submit the correct messages.
+This execute message is only useful if the user wants to submit any arbitrary messages while using the `proto3json` encoding. (This is because `CosmosMsg::Stargate` is not supported if the channel is using `proto3json` encoding.)
 
 If the channel is using `proto3json` encoding, then the format that json messages have to take are defined by the cosmos-sdk's json codec. The following is an example of a json message that is submitting a text legacy governance: (In this example, the `proposer` is the address of the interchain account on the host chain)
 
@@ -167,6 +257,14 @@ pub enum ExecuteMsg {
     /// The callback message from the ICA controller contract.
     ReceiveIcaCallback(IcaControllerCallbackMsg),
 }
+```
+
+Any contract that imports the `cw-ica-controller` as a library needs to disable the `default-features` of the `cw-ica-controller` crate.
+This is because the `default-features` of the `cw-ica-controller` crate includes the CosmWasm entry points.
+
+```toml
+[dependencies]
+cw-ica-controller = { version = "0.3.0", default-features = false }
 ```
 
 ### Channel Closing and Reopening
