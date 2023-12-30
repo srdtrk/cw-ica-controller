@@ -33,3 +33,14 @@ Initial release.
 
 - Removed `ExecuteMsg::SendPredefinedAction` (https://github.com/srdtrk/cw-ica-controller/pull/16)
 - Removed `library` feature. (https://github.com/srdtrk/cw-ica-controller/pull/20)
+
+## v0.3.0 (2023-12-30)
+
+### Features
+
+- Added `CosmosMsg` support. (https://github.com/srdtrk/cw-ica-controller/pull/28)
+
+### API Breaking Changes
+
+- Removed stargate query fallback in the contract. (https://github.com/srdtrk/cw-ica-controller/pull/31)
+- Switched to `cw-ownable` for contract's admin management. (https://github.com/srdtrk/cw-ica-controller/pull/25)
