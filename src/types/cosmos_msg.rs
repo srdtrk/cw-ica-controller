@@ -58,10 +58,8 @@ mod convert_to_any {
         cosmos::{
             bank::v1beta1::MsgSend,
             base::v1beta1::Coin as ProtoCoin,
-            gov::v1beta1::{
-                MsgVote, MsgVoteWeighted, VoteOption as ProtoVoteOption,
-                WeightedVoteOption as ProtoWeightedVoteOption,
-            },
+            gov::v1::{MsgVoteWeighted, WeightedVoteOption as ProtoWeightedVoteOption},
+            gov::v1beta1::{MsgVote, VoteOption as ProtoVoteOption},
         },
         cosmwasm::wasm::v1::{
             MsgClearAdmin, MsgExecuteContract, MsgInstantiateContract, MsgInstantiateContract2,
@@ -243,7 +241,7 @@ mod convert_to_any {
                 proposal_id,
                 options,
             } => {
-                let options = options
+                let options: Vec<ProtoWeightedVoteOption> = options
                     .into_iter()
                     .map(|weighted_option| -> ProtoWeightedVoteOption {
                         ProtoWeightedVoteOption {
@@ -257,10 +255,11 @@ mod convert_to_any {
                     proposal_id,
                     voter,
                     options,
+                    metadata: String::new(),
                 };
 
                 Any {
-                    type_url: "/cosmos.gov.v1beta1.MsgVoteWeighted".to_string(),
+                    type_url: "/cosmos.gov.v1.MsgVoteWeighted".to_string(),
                     value: value.encode_to_vec(),
                 }
             }
@@ -268,14 +267,14 @@ mod convert_to_any {
     }
 
     #[cfg(feature = "staking")]
-    pub fn staking(msg: StakingMsg, from_address: String) -> Result<Any, EncodeError> {
+    pub fn staking(msg: StakingMsg, delegator_address: String) -> Result<Any, EncodeError> {
         use cosmos_sdk_proto::cosmos::staking::v1beta1::{
             MsgBeginRedelegate, MsgDelegate, MsgUndelegate,
         };
 
         match msg {
             StakingMsg::Delegate { validator, amount } => Any::from_msg(&MsgDelegate {
-                delegator_address: from_address,
+                delegator_address,
                 validator_address: validator,
                 amount: Some(ProtoCoin {
                     denom: amount.denom,
@@ -283,7 +282,7 @@ mod convert_to_any {
                 }),
             }),
             StakingMsg::Undelegate { validator, amount } => Any::from_msg(&MsgUndelegate {
-                delegator_address: from_address,
+                delegator_address,
                 validator_address: validator,
                 amount: Some(ProtoCoin {
                     denom: amount.denom,
@@ -295,7 +294,7 @@ mod convert_to_any {
                 dst_validator,
                 amount,
             } => Any::from_msg(&MsgBeginRedelegate {
-                delegator_address: from_address,
+                delegator_address,
                 validator_src_address: src_validator,
                 validator_dst_address: dst_validator,
                 amount: Some(ProtoCoin {
@@ -308,7 +307,10 @@ mod convert_to_any {
     }
 
     #[cfg(feature = "staking")]
-    pub fn distribution(msg: DistributionMsg, from_address: String) -> Result<Any, EncodeError> {
+    pub fn distribution(
+        msg: DistributionMsg,
+        delegator_address: String,
+    ) -> Result<Any, EncodeError> {
         use cosmos_sdk_proto::cosmos::distribution::v1beta1::{
             MsgSetWithdrawAddress, MsgWithdrawDelegatorReward,
         };
@@ -316,13 +318,13 @@ mod convert_to_any {
         match msg {
             DistributionMsg::WithdrawDelegatorReward { validator } => {
                 Any::from_msg(&MsgWithdrawDelegatorReward {
-                    delegator_address: from_address,
+                    delegator_address,
                     validator_address: validator,
                 })
             }
             DistributionMsg::SetWithdrawAddress { address } => {
                 Any::from_msg(&MsgSetWithdrawAddress {
-                    delegator_address: from_address,
+                    delegator_address,
                     withdraw_address: address,
                 })
             }
@@ -335,18 +337,13 @@ mod convert_to_any {
 /// [`proto3json`](crate::ibc::types::metadata::TxEncoding::Proto3Json) encoding format.
 ///
 /// # Panics
-/// Panics if the [`CosmosMsg`] is not supported. Notably, [`CosmosMsg::Stargate`] is not supported.
+/// Panics if the [`CosmosMsg`] is not supported.
+/// Notably, [`CosmosMsg::Stargate`] and [`CosmosMsg::Wasm`] are not supported.
 ///
 /// ## List of supported [`CosmosMsg`]
 ///
 /// - [`CosmosMsg::Bank`] with [`BankMsg::Send`]
 /// - [`CosmosMsg::Ibc`] with [`IbcMsg::Transfer`]
-/// - [`CosmosMsg::Wasm`] with [`cosmwasm_std::WasmMsg::Execute`]
-/// - [`CosmosMsg::Wasm`] with [`cosmwasm_std::WasmMsg::Instantiate`]
-/// - [`CosmosMsg::Wasm`] with [`cosmwasm_std::WasmMsg::Instantiate2`]
-/// - [`CosmosMsg::Wasm`] with [`cosmwasm_std::WasmMsg::Migrate`]
-/// - [`CosmosMsg::Wasm`] with [`cosmwasm_std::WasmMsg::UpdateAdmin`]
-/// - [`CosmosMsg::Wasm`] with [`cosmwasm_std::WasmMsg::ClearAdmin`]
 /// - [`CosmosMsg::Gov`] with [`cosmwasm_std::GovMsg::Vote`]
 /// - [`CosmosMsg::Gov`] with [`cosmwasm_std::GovMsg::VoteWeighted`]
 /// - [`CosmosMsg::Staking`] with [`cosmwasm_std::StakingMsg::Delegate`]
@@ -359,7 +356,6 @@ pub fn convert_to_proto3json(msg: CosmosMsg, from_address: String) -> String {
     match msg {
         CosmosMsg::Bank(msg) => convert_to_json::bank(msg, from_address),
         CosmosMsg::Ibc(msg) => convert_to_json::ibc(msg, from_address),
-        CosmosMsg::Wasm(msg) => convert_to_json::wasm(msg, from_address),
         CosmosMsg::Gov(msg) => convert_to_json::gov(msg, from_address),
         #[cfg(feature = "staking")]
         CosmosMsg::Staking(msg) => convert_to_json::staking(msg, from_address),
@@ -372,7 +368,7 @@ pub fn convert_to_proto3json(msg: CosmosMsg, from_address: String) -> String {
 mod convert_to_json {
     #[cfg(feature = "staking")]
     use cosmwasm_std::{DistributionMsg, StakingMsg};
-    use cosmwasm_std::{GovMsg, VoteOption, WasmMsg};
+    use cosmwasm_std::{GovMsg, VoteOption};
 
     use super::{BankMsg, Coin, IbcMsg};
 
@@ -415,76 +411,6 @@ mod convert_to_json {
                 memo: None,
             },
             _ => panic!("Unsupported IbcMsg"),
-        }
-        .to_string()
-    }
-
-    pub fn wasm(msg: WasmMsg, sender: String) -> String {
-        match msg {
-            WasmMsg::Execute {
-                contract_addr,
-                msg,
-                funds,
-            } => CosmosMsgProto3JsonSerializer::ExecuteContract {
-                sender,
-                contract: contract_addr,
-                msg: msg.to_vec(),
-                funds,
-            },
-            WasmMsg::Instantiate {
-                admin,
-                code_id,
-                msg,
-                funds,
-                label,
-            } => CosmosMsgProto3JsonSerializer::InstantiateContract {
-                admin: admin.unwrap_or_default(),
-                sender,
-                code_id,
-                msg: msg.to_vec(),
-                funds,
-                label,
-            },
-            WasmMsg::Migrate {
-                contract_addr,
-                new_code_id,
-                msg,
-            } => CosmosMsgProto3JsonSerializer::MigrateContract {
-                sender,
-                contract: contract_addr,
-                code_id: new_code_id,
-                msg: msg.to_vec(),
-            },
-            WasmMsg::UpdateAdmin {
-                contract_addr,
-                admin,
-            } => CosmosMsgProto3JsonSerializer::UpdateAdmin {
-                sender,
-                new_admin: admin,
-                contract: contract_addr,
-            },
-            WasmMsg::ClearAdmin { contract_addr } => CosmosMsgProto3JsonSerializer::ClearAdmin {
-                sender,
-                contract: contract_addr,
-            },
-            WasmMsg::Instantiate2 {
-                admin,
-                code_id,
-                label,
-                msg,
-                funds,
-                salt,
-            } => CosmosMsgProto3JsonSerializer::InstantiateContract2 {
-                admin: admin.unwrap_or_default(),
-                sender,
-                code_id,
-                label,
-                msg: msg.to_vec(),
-                funds,
-                salt: salt.to_vec(),
-                fix_msg: false,
-            },
-            _ => panic!("Unsupported WasmMsg"),
         }
         .to_string()
     }
@@ -620,54 +546,6 @@ mod convert_to_json {
             #[serde(skip_serializing_if = "Option::is_none")]
             memo: Option<String>,
         },
-        /// This is a Cosmos message to execute a smart contract.
-        #[serde(rename = "/cosmwasm.wasm.v1.MsgExecuteContract")]
-        ExecuteContract {
-            sender: String,
-            contract: String,
-            msg: Vec<u8>,
-            funds: Vec<Coin>,
-        },
-        /// This is a Cosmos message to instantiate a smart contract.
-        #[serde(rename = "/cosmwasm.wasm.v1.MsgInstantiateContract")]
-        InstantiateContract {
-            admin: String,
-            sender: String,
-            code_id: u64,
-            msg: Vec<u8>,
-            funds: Vec<Coin>,
-            label: String,
-        },
-        /// This is a Cosmos message to migrate a smart contract.
-        #[serde(rename = "/cosmwasm.wasm.v1.MsgMigrateContract")]
-        MigrateContract {
-            sender: String,
-            contract: String,
-            code_id: u64,
-            msg: Vec<u8>,
-        },
-        /// This is a Cosmos message to update the admin of a smart contract.
-        #[serde(rename = "/cosmwasm.wasm.v1.MsgUpdateAdmin")]
-        UpdateAdmin {
-            sender: String,
-            new_admin: String,
-            contract: String,
-        },
-        /// This is a Cosmos message to clear the admin of a smart contract.
-        #[serde(rename = "/cosmwasm.wasm.v1.MsgClearAdmin")]
-        ClearAdmin { sender: String, contract: String },
-        /// This is a Cosmos message to instantiate2 a smart contract with a salt.
-        #[serde(rename = "/cosmwasm.wasm.v1.MsgInstantiateContract2")]
-        InstantiateContract2 {
-            admin: String,
-            sender: String,
-            code_id: u64,
-            label: String,
-            msg: Vec<u8>,
-            funds: Vec<Coin>,
-            salt: Vec<u8>,
-            fix_msg: bool,
-        },
         /// This is a Cosmos message to vote on a governance proposal.
         #[serde(rename = "/cosmos.gov.v1beta1.MsgVote")]
         Vote {
@@ -746,7 +624,9 @@ mod convert_to_json {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{coins, from_json};
+    use std::str::FromStr;
+
+    use cosmwasm_std::{coins, from_json, Decimal, Uint128, VoteOption, WeightedVoteOption};
 
     use crate::ibc::types::packet::IcaPacketData;
 
@@ -772,5 +652,24 @@ mod tests {
         };
 
         assert_eq!(expected, cosmos_tx.messages[0]);
+    }
+
+    #[test]
+    fn test_weighted_vote_option() {
+        let test_msg = r#"{"option":"yes","weight":"0.5"}"#;
+
+        let vote_option = serde_json_wasm::from_str::<WeightedVoteOption>(test_msg).unwrap();
+
+        assert_eq!(
+            vote_option,
+            WeightedVoteOption {
+                option: VoteOption::Yes,
+                weight: Decimal::from_ratio(
+                    Uint128::from_str("1").unwrap(),
+                    Uint128::from_str("2").unwrap()
+                ),
+            }
+        );
+        assert_eq!("0.5".to_string(), vote_option.weight.to_string());
     }
 }

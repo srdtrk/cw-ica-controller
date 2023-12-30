@@ -32,6 +32,9 @@ jobs:
           - TestIcaContractTimeoutPacket
           - TestOwnerCreateIcaContract
           - TestOwnerPredefinedAction
+          - TestSendCosmosMsgsProto3JsonEncoding
+          - TestSendCosmosMsgsProtobufEncoding
+          - TestSendWasmMsgsProtobufEncoding
     name: ${{ matrix.test }}
     runs-on: ubuntu-latest
     steps:

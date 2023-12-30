@@ -36,7 +36,24 @@ pub enum ExecuteMsg {
         #[serde(skip_serializing_if = "Option::is_none")]
         channel_open_init_options: Option<options::ChannelOpenInitOptions>,
     },
+    /// `SendCosmosMsgs` converts the provided array of [`CosmosMsg`] to an ICA tx and sends them to the ICA host.
+    /// [`CosmosMsg::Stargate`] and [`CosmosMsg::Wasm`] are only supported if the [`TxEncoding`](crate::ibc::types::metadata::TxEncoding) is [`TxEncoding::Protobuf`](crate::ibc::types::metadata::TxEncoding).
+    ///
+    /// **This is the recommended way to send messages to the ICA host.**
+    SendCosmosMsgs {
+        /// The stargate messages to convert and send to the ICA host.
+        messages: Vec<CosmosMsg>,
+        /// Optional memo to include in the ibc packet.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        packet_memo: Option<String>,
+        /// Optional timeout in seconds to include with the ibc packet.
+        /// If not specified, the [default timeout](crate::ibc::types::packet::DEFAULT_TIMEOUT_SECONDS) is used.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        timeout_seconds: Option<u64>,
+    },
     /// `SendCustomIcaMessages` sends custom messages from the ICA controller to the ICA host.
+    ///
+    /// **Use this only if you know what you are doing.**
     SendCustomIcaMessages {
         /// Base64-encoded json or proto messages to send to the ICA host.
         ///
@@ -63,19 +80,6 @@ pub enum ExecuteMsg {
         ///
         /// where proposer is the ICA controller's address.
         messages: Binary,
-        /// Optional memo to include in the ibc packet.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        packet_memo: Option<String>,
-        /// Optional timeout in seconds to include with the ibc packet.
-        /// If not specified, the [default timeout](crate::ibc::types::packet::DEFAULT_TIMEOUT_SECONDS) is used.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        timeout_seconds: Option<u64>,
-    },
-    /// `SendCosmosMsgs` converts the provided array of [`CosmosMsg`] to an ICA tx and sends them to the ICA host.
-    /// [`CosmosMsg::Stargate`] is only supported if the [`TxEncoding`](crate::ibc::types::metadata::TxEncoding) is [`TxEncoding::Protobuf`](crate::ibc::types::metadata::TxEncoding).
-    SendCosmosMsgs {
-        /// The stargate messages to convert and send to the ICA host.
-        messages: Vec<CosmosMsg>,
         /// Optional memo to include in the ibc packet.
         #[serde(skip_serializing_if = "Option::is_none")]
         packet_memo: Option<String>,

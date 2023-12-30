@@ -176,7 +176,7 @@ func newSendCosmosMsgsMsgFromProto(msgs []proto.Message, memo *string, timeout *
 	}
 
 	type SendCosmosMsgsAsIcaTxMsgWrapper struct {
-		SendCosmosMsgsAsIcaTxMsg SendCosmosMsgsAsIcaTxMsg `json:"send_cosmos_msgs_as_ica_tx"`
+		SendCosmosMsgsMsg SendCosmosMsgsAsIcaTxMsg `json:"send_cosmos_msgs"`
 	}
 
 	cosmosMsgs := make([]ContractCosmosMsg, len(msgs))
@@ -200,7 +200,7 @@ func newSendCosmosMsgsMsgFromProto(msgs []proto.Message, memo *string, timeout *
 	}
 
 	msg := SendCosmosMsgsAsIcaTxMsgWrapper{
-		SendCosmosMsgsAsIcaTxMsg: SendCosmosMsgsAsIcaTxMsg{
+		SendCosmosMsgsMsg: SendCosmosMsgsAsIcaTxMsg{
 			Messages:       cosmosMsgs,
 			PacketMemo:     memo,
 			TimeoutSeconds: timeout,
