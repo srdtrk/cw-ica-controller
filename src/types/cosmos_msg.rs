@@ -337,18 +337,13 @@ mod convert_to_any {
 /// [`proto3json`](crate::ibc::types::metadata::TxEncoding::Proto3Json) encoding format.
 ///
 /// # Panics
-/// Panics if the [`CosmosMsg`] is not supported. Notably, [`CosmosMsg::Stargate`] is not supported.
+/// Panics if the [`CosmosMsg`] is not supported.
+/// Notably, [`CosmosMsg::Stargate`] and [`CosmosMsg::Wasm`] are not supported.
 ///
 /// ## List of supported [`CosmosMsg`]
 ///
 /// - [`CosmosMsg::Bank`] with [`BankMsg::Send`]
 /// - [`CosmosMsg::Ibc`] with [`IbcMsg::Transfer`]
-/// - [`CosmosMsg::Wasm`] with [`cosmwasm_std::WasmMsg::Execute`]
-/// - [`CosmosMsg::Wasm`] with [`cosmwasm_std::WasmMsg::Instantiate`]
-/// - [`CosmosMsg::Wasm`] with [`cosmwasm_std::WasmMsg::Instantiate2`]
-/// - [`CosmosMsg::Wasm`] with [`cosmwasm_std::WasmMsg::Migrate`]
-/// - [`CosmosMsg::Wasm`] with [`cosmwasm_std::WasmMsg::UpdateAdmin`]
-/// - [`CosmosMsg::Wasm`] with [`cosmwasm_std::WasmMsg::ClearAdmin`]
 /// - [`CosmosMsg::Gov`] with [`cosmwasm_std::GovMsg::Vote`]
 /// - [`CosmosMsg::Gov`] with [`cosmwasm_std::GovMsg::VoteWeighted`]
 /// - [`CosmosMsg::Staking`] with [`cosmwasm_std::StakingMsg::Delegate`]
@@ -361,7 +356,6 @@ pub fn convert_to_proto3json(msg: CosmosMsg, from_address: String) -> String {
     match msg {
         CosmosMsg::Bank(msg) => convert_to_json::bank(msg, from_address),
         CosmosMsg::Ibc(msg) => convert_to_json::ibc(msg, from_address),
-        CosmosMsg::Wasm(msg) => convert_to_json::wasm(msg, from_address),
         CosmosMsg::Gov(msg) => convert_to_json::gov(msg, from_address),
         #[cfg(feature = "staking")]
         CosmosMsg::Staking(msg) => convert_to_json::staking(msg, from_address),
@@ -374,7 +368,7 @@ pub fn convert_to_proto3json(msg: CosmosMsg, from_address: String) -> String {
 mod convert_to_json {
     #[cfg(feature = "staking")]
     use cosmwasm_std::{DistributionMsg, StakingMsg};
-    use cosmwasm_std::{GovMsg, VoteOption, WasmMsg};
+    use cosmwasm_std::{GovMsg, VoteOption};
 
     use super::{BankMsg, Coin, IbcMsg};
 
@@ -417,76 +411,6 @@ mod convert_to_json {
                 memo: None,
             },
             _ => panic!("Unsupported IbcMsg"),
-        }
-        .to_string()
-    }
-
-    pub fn wasm(msg: WasmMsg, sender: String) -> String {
-        match msg {
-            WasmMsg::Execute {
-                contract_addr,
-                msg,
-                funds,
-            } => CosmosMsgProto3JsonSerializer::ExecuteContract {
-                sender,
-                contract: contract_addr,
-                msg: msg.to_vec(),
-                funds,
-            },
-            WasmMsg::Instantiate {
-                admin,
-                code_id,
-                msg,
-                funds,
-                label,
-            } => CosmosMsgProto3JsonSerializer::InstantiateContract {
-                admin: admin.unwrap_or_default(),
-                sender,
-                code_id,
-                msg: msg.to_vec(),
-                funds,
-                label,
-            },
-            WasmMsg::Migrate {
-                contract_addr,
-                new_code_id,
-                msg,
-            } => CosmosMsgProto3JsonSerializer::MigrateContract {
-                sender,
-                contract: contract_addr,
-                code_id: new_code_id,
-                msg: msg.to_vec(),
-            },
-            WasmMsg::UpdateAdmin {
-                contract_addr,
-                admin,
-            } => CosmosMsgProto3JsonSerializer::UpdateAdmin {
-                sender,
-                new_admin: admin,
-                contract: contract_addr,
-            },
-            WasmMsg::ClearAdmin { contract_addr } => CosmosMsgProto3JsonSerializer::ClearAdmin {
-                sender,
-                contract: contract_addr,
-            },
-            WasmMsg::Instantiate2 {
-                admin,
-                code_id,
-                label,
-                msg,
-                funds,
-                salt,
-            } => CosmosMsgProto3JsonSerializer::InstantiateContract2 {
-                admin: admin.unwrap_or_default(),
-                sender,
-                code_id,
-                label,
-                msg: msg.to_vec(),
-                funds,
-                salt: salt.to_vec(),
-                fix_msg: false,
-            },
-            _ => panic!("Unsupported WasmMsg"),
         }
         .to_string()
     }
@@ -621,54 +545,6 @@ mod convert_to_json {
             /// Optional memo.
             #[serde(skip_serializing_if = "Option::is_none")]
             memo: Option<String>,
-        },
-        /// This is a Cosmos message to execute a smart contract.
-        #[serde(rename = "/cosmwasm.wasm.v1.MsgExecuteContract")]
-        ExecuteContract {
-            sender: String,
-            contract: String,
-            msg: Vec<u8>,
-            funds: Vec<Coin>,
-        },
-        /// This is a Cosmos message to instantiate a smart contract.
-        #[serde(rename = "/cosmwasm.wasm.v1.MsgInstantiateContract")]
-        InstantiateContract {
-            admin: String,
-            sender: String,
-            code_id: u64,
-            msg: Vec<u8>,
-            funds: Vec<Coin>,
-            label: String,
-        },
-        /// This is a Cosmos message to migrate a smart contract.
-        #[serde(rename = "/cosmwasm.wasm.v1.MsgMigrateContract")]
-        MigrateContract {
-            sender: String,
-            contract: String,
-            code_id: u64,
-            msg: Vec<u8>,
-        },
-        /// This is a Cosmos message to update the admin of a smart contract.
-        #[serde(rename = "/cosmwasm.wasm.v1.MsgUpdateAdmin")]
-        UpdateAdmin {
-            sender: String,
-            new_admin: String,
-            contract: String,
-        },
-        /// This is a Cosmos message to clear the admin of a smart contract.
-        #[serde(rename = "/cosmwasm.wasm.v1.MsgClearAdmin")]
-        ClearAdmin { sender: String, contract: String },
-        /// This is a Cosmos message to instantiate2 a smart contract with a salt.
-        #[serde(rename = "/cosmwasm.wasm.v1.MsgInstantiateContract2")]
-        InstantiateContract2 {
-            admin: String,
-            sender: String,
-            code_id: u64,
-            label: String,
-            msg: Vec<u8>,
-            funds: Vec<Coin>,
-            salt: Vec<u8>,
-            fix_msg: bool,
         },
         /// This is a Cosmos message to vote on a governance proposal.
         #[serde(rename = "/cosmos.gov.v1beta1.MsgVote")]
