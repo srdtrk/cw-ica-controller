@@ -7,6 +7,25 @@ This is a CosmWasm smart contract that communicates with the golang ica/host mod
 This contract was originally written to test the `proto3json` encoding/decoding [feature added to interchain accounts](https://github.com/cosmos/ibc-go/pull/3796). This contract now supports both `proto3json` and protobuf encoding/decoding.
 **The recommended encoding is protobuf.** If no encoding is specified, then the contract will default to protobuf encoding.
 
+## Table of Contents
+
+- [CosmWasm ICA Controller Contract](#cosmwasm-ica-controller-contract)
+  - [Table of Contents](#table-of-contents)
+  - [Usage](#usage)
+    - [Create an interchain account](#create-an-interchain-account)
+      - [Using `InstantiateMsg` and/or `ExecuteMsg::CreateChannel`](#using-instantiatemsg-andor-executemsgcreatechannel)
+      - [Using the Relayer](#using-the-relayer)
+    - [Execute an interchain account transaction](#execute-an-interchain-account-transaction)
+      - [`SendCosmosMsgs`](#sendcosmosmsgs)
+      - [`SendCustomIcaMessages`](#sendcustomicamessages)
+    - [Execute a callback](#execute-a-callback)
+    - [Channel Closing and Reopening](#channel-closing-and-reopening)
+  - [Testing](#testing)
+    - [Unit tests](#unit-tests)
+    - [End to end tests](#end-to-end-tests)
+  - [Limitations](#limitations)
+  - [Acknowledgements](#acknowledgements)
+
 ## Usage
 
 The following is a brief overview of the contract's functionality. You can also see the various ways this contract can be used in the end to end tests in the `e2e` directory.
