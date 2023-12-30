@@ -87,14 +87,11 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding str
 	return counterCodeID
 }
 
-func (s *ContractTestSuite) TestSendWasmMsgsProto3JsonEncoding() {
-	s.SendWasmMsgsTestWithEncoding(icatypes.EncodingProto3JSON)
-}
-
 func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 	s.SendWasmMsgsTestWithEncoding(icatypes.EncodingProtobuf)
 }
 
+// currently, Wasm is only supported with protobuf encoding
 func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 	ctx := context.Background()
 

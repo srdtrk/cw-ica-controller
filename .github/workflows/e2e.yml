@@ -34,7 +34,6 @@ jobs:
           - TestOwnerPredefinedAction
           - TestSendCosmosMsgsProto3JsonEncoding
           - TestSendCosmosMsgsProtobufEncoding
-          - TestSendWasmMsgsProto3JsonEncoding
           - TestSendWasmMsgsProtobufEncoding
     name: ${{ matrix.test }}
     runs-on: ubuntu-latest
