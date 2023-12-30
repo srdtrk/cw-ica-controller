@@ -33,5 +33,5 @@ func NewGetCallbackCounterQueryMsg() map[string]interface{} {
 
 // NewSendCosmosMsgsMsg is a wrapper for newSendCosmosMsgsMsg for internal testing
 func NewSendCosmosMsgsMsg(cosmosMsgs []ContractCosmosMsg, memo *string, timeout *uint64) string {
-  return newSendCosmosMsgsMsg(cosmosMsgs, memo, timeout)
+	return newSendCosmosMsgsMsg(cosmosMsgs, memo, timeout)
 }
