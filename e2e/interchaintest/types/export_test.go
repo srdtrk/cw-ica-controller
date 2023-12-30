@@ -30,3 +30,8 @@ func NewGetContractStateQueryMsg() map[string]interface{} {
 func NewGetCallbackCounterQueryMsg() map[string]interface{} {
 	return newGetCallbackCounterQueryMsg()
 }
+
+// NewSendCosmosMsgsMsg is a wrapper for newSendCosmosMsgsMsg for internal testing
+func NewSendCosmosMsgsMsg(cosmosMsgs []ContractCosmosMsg, memo *string, timeout *uint64) string {
+  return newSendCosmosMsgsMsg(cosmosMsgs, memo, timeout)
+}
