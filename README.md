@@ -23,6 +23,7 @@ This contract was originally written to test the `proto3json` encoding/decoding 
   - [Testing](#testing)
     - [Unit tests](#unit-tests)
     - [End to end tests](#end-to-end-tests)
+  - [Releases](#releases)
   - [Limitations](#limitations)
   - [Acknowledgements](#acknowledgements)
 
@@ -282,6 +283,13 @@ In general, the unit tests are for testing the verification functions for the ha
 ### End to end tests
 
 The end to end tests are for testing the contract's functionality in an environment mimicking production. To see whether or not it can perform the channel handshake, send packets, and execute callbacks. We achieve this by running two local chains, one for the contract, and one for the host chain. The relayer is then used to perform the channel handshake, and send packets. The contract then executes callbacks based on the result of the packet. To learn more about the end to end tests, see the [Readme](./e2e/Readme.md) in the `e2e` directory.
+
+## Releases
+
+This contract follows [semantic versioning](https://semver.org/), but with the following deviations:
+
+- A major version will not be tagged until the contract is audited.
+- Any API breaking changes or state-machine breaking changes will result in a minor version bump.
 
 ## Limitations
 
