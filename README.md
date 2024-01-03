@@ -1,5 +1,18 @@
 # CosmWasm ICA Controller Contract
 
+<div align="center">
+  <img alt="E2E Status" src="https://github.com/srdtrk/cw-ica-controller/actions/workflows/e2e.yml/badge.svg?branch=main" />
+  <a href="https://github.com/cosmos/ibc-go/releases/latest">
+    <img alt="Version" src="https://img.shields.io/github/tag/srdtrk/cw-ica-controller.svg" />
+  </a>
+  <a href="https://github.com/cosmos/ibc-go/blob/main/LICENSE">
+    <img alt="License: Apache-2.0" src="https://img.shields.io/github/license/srdtrk/cw-ica-controller.svg" />
+  </a>
+  <a href="https://github.com/cosmos/ibc-go">
+    <img alt="Lines Of Code" src="https://tokei.rs/b1/github/srdtrk/cw-ica-controller" />
+  </a>
+</div>
+
 ![cw-ica-controller](./cw-ica-controller.svg)
 
 This is a CosmWasm smart contract that communicates with the golang ica/host module on the host chain to create and manage **one** interchain account. This contract can also execute callbacks based on the result of the interchain account transaction. Because this is a CosmWasm implementation of the entire ICA controller, the chain that this contract is deployed on need **not** have the ICA module enabled. This contract can be deployed on any chain that supports IBC CosmWasm smart contracts.
