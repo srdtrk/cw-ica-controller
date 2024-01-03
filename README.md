@@ -2,13 +2,13 @@
 
 <div align="center">
   <img alt="E2E Status" src="https://github.com/srdtrk/cw-ica-controller/actions/workflows/e2e.yml/badge.svg?branch=main" />
-  <a href="https://github.com/cosmos/ibc-go/releases/latest">
+  <a href="https://github.com/srdtrk/cw-ica-controller/releases/latest">
     <img alt="Version" src="https://img.shields.io/github/tag/srdtrk/cw-ica-controller.svg" />
   </a>
-  <a href="https://github.com/cosmos/ibc-go/blob/main/LICENSE">
+  <a href="https://github.com/srdtrk/cw-ica-controller/blob/main/LICENSE">
     <img alt="License: Apache-2.0" src="https://img.shields.io/github/license/srdtrk/cw-ica-controller.svg" />
   </a>
-  <a href="https://github.com/cosmos/ibc-go">
+  <a href="https://github.com/srdtrk/cw-ica-controller">
     <img alt="Lines Of Code" src="https://tokei.rs/b1/github/srdtrk/cw-ica-controller" />
   </a>
 </div>
