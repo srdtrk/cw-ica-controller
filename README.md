@@ -10,10 +10,9 @@
 
 ![cw-ica-controller](./cw-ica-controller.svg)
 
-This is a CosmWasm smart contract that communicates with the golang ica/host module on the host chain to create and manage **one** interchain account. This contract can also execute callbacks based on the result of the interchain account transaction. Because this is a CosmWasm implementation of the entire ICA controller, the chain that this contract is deployed on need **not** have the ICA module enabled. This contract can be deployed on any chain that supports IBC CosmWasm smart contracts.
+This is a CosmWasm smart contract that communicates with the golang `ica/host` module on the counterparty chain to create and manage **one** interchain account. This contract can also execute callbacks based on the result of the interchain account transaction. Because this is a CosmWasm implementation of the entire ICA controller, the chain that this contract is deployed on need **not** have the ICA module enabled. Moreover, the counterparty chain need not have CosmWasm support. This contract can be deployed on chains that support CosmWasm `v1.2+`.
 
-This contract was originally written to test the `proto3json` encoding/decoding [feature added to interchain accounts](https://github.com/cosmos/ibc-go/pull/3796). This contract now supports both `proto3json` and protobuf encoding/decoding.
-**The recommended encoding is protobuf.** If no encoding is specified, then the contract will default to protobuf encoding.
+This contract now supports both `proto3json` and protobuf encoding/decoding for ICA transactions. **The recommended encoding is protobuf.** If no encoding is specified, then the contract will default to protobuf encoding.
 
 ## Table of Contents
 
@@ -37,20 +36,20 @@ This contract was originally written to test the `proto3json` encoding/decoding 
 
 ## Usage
 
-The following is a brief overview of the contract's functionality. You can also see the various ways this contract can be used in the end to end tests in the `e2e` directory.
+The following is a brief overview of the contract's functionality. (You can also see the various ways this contract can be used in the end to end tests in the `e2e` directory.)
 
 ### Create an interchain account
 
 This contract provides two ways to create an interchain account:
 
-1. Using `InstantiateMsg` and/or `ExecuteMsg::CreateChannel`
+1. Using `InstantiateMsg` and/or `ExecuteMsg::CreateChannel` (recommended)
 2. Using the relayer
 
 #### Using `InstantiateMsg` and/or `ExecuteMsg::CreateChannel`
 
-**This contract only accepts the first `MsgChannelOpenInit` message that is submitted to it or one that is submitted by the contract itself.**
+**This contract only accepts the first `MsgChannelOpenInit` message that is submitted to it which may be the one that is submitted by the contract itself.**
 
-`InstantiateMsg` is the recommended way to initiate the channel handshake since it would not allow any relayer to front run the first `MsgChannelOpenInit` that the contract allows. If the `channel_open_init_options` field is not specified in `InstantiateMsg`, then the IBC channel is not initialized at contract instantiation. Then a relayer can start the channel handshake on the contract's chain or you must submit an `ExecuteMsg::CreateChannel`.
+`InstantiateMsg` is the recommended way to initiate the ICS-27 channel handshake since it would not allow any relayer to front run the first `MsgChannelOpenInit` that the contract allows. If the `channel_open_init_options` field is not specified in `InstantiateMsg`, then the IBC channel is not initialized at contract instantiation. Then a relayer can start the channel handshake on the contract's chain or you must submit an `ExecuteMsg::CreateChannel`.
 
 ```rust, ignore
 /// The message to instantiate the ICA controller contract.
@@ -81,9 +80,9 @@ To create an interchain account, the relayer must start the channel handshake on
 
 This contract provides two APIs to send ICA transactions. The `ExecuteMsg::SendCustomIcaMessages` and `ExecuteMsg::SendCosmosMsgs` messages are used to commit a packet to be sent to the host chain.
 
-#### `SendCosmosMsgs`
+#### `SendCosmosMsgs` (recommended)
 
-In CosmWasm contracts, `CosmosMsg`s are used to execute transactions on the chain that the contract is deployed on. In this contract, we use CosmosMsgs to execute transactions on the host chain. This is done by converting the `CosmosMsg`s to an ICA tx based on the encoding of the channel. The ICA tx is then sent to the host chain. The host chain then executes the ICA tx and sends the result back to this contract.
+In CosmWasm contracts, `CosmosMsg` are used to execute transactions on the chain that the contract is deployed on. In this contract, we use `CosmosMsg`s to execute transactions on the host chain. This is done by converting the `CosmosMsg`s to an ICA tx based on the encoding of the channel. The ICA tx is then sent to the host chain. The host chain then executes the ICA tx and sends the result back to this contract.
 
 `SendCosmosMsgs` is the recommended way to send ICA transactions in this contract. This execute message allows the user to submit an array of [`cosmwasm_std::CosmosMsg`](https://github.com/CosmWasm/cosmwasm/blob/v1.5.0/packages/std/src/results/cosmos_msg.rs#L27) which are then converted by the contract to an atomic ICA tx.
 
