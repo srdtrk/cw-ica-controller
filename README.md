@@ -1,6 +1,7 @@
 # CosmWasm ICA Controller Contract
 
 <div align="center">
+
   ![E2E Status](https://github.com/srdtrk/cw-ica-controller/actions/workflows/e2e.yml/badge.svg?branch=main)
   ![[Tag](https://github.com/srdtrk/cw-ica-controller/releases/latest)](https://img.shields.io/github/tag/srdtrk/cw-ica-controller.svg)
   ![[License: Apache-2.0](https://github.com/srdtrk/cw-ica-controller/blob/main/LICENSE)](https://img.shields.io/github/license/srdtrk/cw-ica-controller.svg)
