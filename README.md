@@ -1,8 +1,10 @@
 # CosmWasm ICA Controller Contract
 
 <div align="center">
-  <img alt="E2E Status" src="https://github.com/srdtrk/cw-ica-controller/actions/workflows/e2e.yml/badge.svg?branch=main" />
-  <a href="https://github.com/srdtrk/cw-ica-controller/releases/latest"><img alt="Version" src="https://img.shields.io/github/tag/srdtrk/cw-ica-controller.svg" /></a><a href="https://github.com/srdtrk/cw-ica-controller/blob/main/LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/github/license/srdtrk/cw-ica-controller.svg" /></a><a href="https://github.com/srdtrk/cw-ica-controller"><img alt="Lines Of Code" src="https://tokei.rs/b1/github/srdtrk/cw-ica-controller" /></a>
+  ![E2E Status](https://github.com/srdtrk/cw-ica-controller/actions/workflows/e2e.yml/badge.svg?branch=main)
+  ![[Tag](https://github.com/srdtrk/cw-ica-controller/releases/latest)](https://img.shields.io/github/tag/srdtrk/cw-ica-controller.svg)
+  ![[License: Apache-2.0](https://github.com/srdtrk/cw-ica-controller/blob/main/LICENSE)](https://img.shields.io/github/license/srdtrk/cw-ica-controller.svg)
+  ![[Lines of Code](https://github.com/srdtrk/cw-ica-controller)](https://tokei.rs/b1/github/srdtrk/cw-ica-controller)
 </div>
 
 ![cw-ica-controller](./cw-ica-controller.svg)
