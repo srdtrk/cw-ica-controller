@@ -16,6 +16,7 @@ import (
 
 	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
 )
 
 type OwnerTestSuite struct {
@@ -46,7 +47,7 @@ func (s *OwnerTestSuite) SetupOwnerTestSuite(ctx context.Context) {
 	s.NumOfIcaContracts = 0
 
 	// Create the ICA Contract
-	channelOpenInitOptions := types.ChannelOpenInitOptions{
+	channelOpenInitOptions := icacontroller.ChannelOpenInitOptions{
 		ConnectionId:             s.ChainAConnID,
 		CounterpartyConnectionId: s.ChainBConnID,
 	}

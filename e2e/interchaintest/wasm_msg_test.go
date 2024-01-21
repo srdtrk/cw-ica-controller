@@ -52,12 +52,19 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding str
 	s.Require().NoError(err)
 
 	// Instantiate the contract with channel:
-	instantiateMsg := types.NewInstantiateMsgWithChannelInitOptions(nil, s.ChainAConnID, s.ChainBConnID, nil, &encoding)
+	instantiateMsg := icacontroller.InstantiateMsg{
+		Owner: nil,
+		ChannelOpenInitOptions: &icacontroller.ChannelOpenInitOptions{
+			ConnectionId:             s.ChainAConnID,
+			CounterpartyConnectionId: s.ChainBConnID,
+			CounterpartyPortId:       nil,
+			TxEncoding:               &encoding,
+		},
+		SendCallbacksTo: nil,
+	}
 
-	contractAddr, err := s.ChainA.InstantiateContract(ctx, s.UserA.KeyName(), codeId, instantiateMsg, true, "--gas", "500000")
+	err = s.Contract.Instantiate(ctx, s.UserA.KeyName(), codeId, instantiateMsg, "--gas", "500000")
 	s.Require().NoError(err)
-
-	s.Contract = types.NewIcaContract(types.NewContract(contractAddr, codeId, s.ChainA))
 
 	// Wait for the channel to get set up
 	err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)

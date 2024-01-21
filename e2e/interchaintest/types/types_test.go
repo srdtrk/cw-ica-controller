@@ -19,17 +19,6 @@ import (
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
 )
 
-func TestInstantiateMsg(t *testing.T) {
-	t.Parallel()
-
-	msg := types.NewInstantiateMsg(nil)
-	require.Equal(t, `{}`, msg)
-
-	admin := "srdtrk"
-	msg = types.NewInstantiateMsg(&admin)
-	require.Equal(t, `{"admin":"srdtrk"}`, msg)
-}
-
 func TestExecuteMsgs(t *testing.T) {
 	const testAddress = "srdtrk"
 

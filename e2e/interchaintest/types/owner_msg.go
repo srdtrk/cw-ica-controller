@@ -3,6 +3,8 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
 )
 
 // newOwnerInstantiateMsg creates a new InstantiateMsg.
@@ -15,12 +17,12 @@ func newOwnerInstantiateMsg(admin *string, icaControllerCodeId uint64) string {
 }
 
 // NewOwnerCreateIcaContractMsg creates a new CreateIcaContractMsg.
-func NewOwnerCreateIcaContractMsg(salt *string, coip *ChannelOpenInitOptions) string {
+func NewOwnerCreateIcaContractMsg(salt *string, coip *icacontroller.ChannelOpenInitOptions) string {
 	type CreateIcaContractMsg struct {
 		Salt *string `json:"salt,omitempty"`
 		// The options to initialize the IBC channel upon contract instantiation.
 		// If not specified, the IBC channel is not initialized, and the relayer must.
-		ChannelOpenInitOptions *ChannelOpenInitOptions `json:"channel_open_init_options,omitempty"`
+		ChannelOpenInitOptions *icacontroller.ChannelOpenInitOptions `json:"channel_open_init_options,omitempty"`
 	}
 
 	type CreateIcaContractMsgWrapper struct {

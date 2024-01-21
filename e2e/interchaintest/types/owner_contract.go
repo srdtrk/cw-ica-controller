@@ -35,7 +35,7 @@ func StoreAndInstantiateNewOwnerContract(
 	contract := Contract{
 		Address: contractAddr,
 		CodeID:  codeId,
-		chain:   chain,
+		Chain:   chain,
 	}
 
 	return NewOwnerContract(contract), nil
@@ -52,7 +52,7 @@ func (c *OwnerContract) ExecSendPredefinedAction(
 // QueryContractState queries the contract's state
 func (c *OwnerContract) QueryContractState(ctx context.Context) (*OwnerContractState, error) {
 	queryResp := QueryResponse[OwnerContractState]{}
-	err := c.chain.QueryContract(ctx, c.Address, newOwnerGetContractStateQueryMsg(), &queryResp)
+	err := c.Chain.QueryContract(ctx, c.Address, newOwnerGetContractStateQueryMsg(), &queryResp)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (c *OwnerContract) QueryContractState(ctx context.Context) (*OwnerContractS
 // QueryIcaContractState queries the contract's ica state for a given icaID
 func (c *OwnerContract) QueryIcaContractState(ctx context.Context, icaID uint64) (*OwnerIcaContractState, error) {
 	queryResp := QueryResponse[OwnerIcaContractState]{}
-	err := c.chain.QueryContract(ctx, c.Address, newOwnerGetIcaContractStateQueryMsg(icaID), &queryResp)
+	err := c.Chain.QueryContract(ctx, c.Address, newOwnerGetIcaContractStateQueryMsg(icaID), &queryResp)
 	if err != nil {
 		return nil, err
 	}

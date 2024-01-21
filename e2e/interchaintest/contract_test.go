@@ -42,16 +42,24 @@ type ContractTestSuite struct {
 func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding string) {
 	s.SetupSuite(ctx, chainSpecs)
 
+	s.Contract.Chain = s.ChainA
 	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
 
 	// Instantiate the contract with channel:
-	instantiateMsg := types.NewInstantiateMsgWithChannelInitOptions(nil, s.ChainAConnID, s.ChainBConnID, nil, &encoding)
+	instantiateMsg := icacontroller.InstantiateMsg{
+		Owner: nil,
+		ChannelOpenInitOptions: &icacontroller.ChannelOpenInitOptions{
+			ConnectionId:             s.ChainAConnID,
+			CounterpartyConnectionId: s.ChainBConnID,
+			CounterpartyPortId:       nil,
+			TxEncoding:               &encoding,
+		},
+		SendCallbacksTo: nil,
+	}
 
-	contractAddr, err := s.ChainA.InstantiateContract(ctx, s.UserA.KeyName(), codeId, instantiateMsg, true, "--gas", "500000")
+	err = s.Contract.Instantiate(ctx, s.UserA.KeyName(), codeId, instantiateMsg, "--gas", "500000")
 	s.Require().NoError(err)
-
-	s.Contract = types.NewIcaContract(types.NewContract(contractAddr, codeId, s.ChainA))
 
 	// Wait for the channel to get set up
 	err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
@@ -236,23 +244,38 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 	s.Require().NoError(err)
 
 	s.Run("TestChannelHandshakeFail: invalid connection id", func() {
+		s.Contract.Chain = s.ChainA
 		// Instantiate the contract with channel:
-		instantiateMsg := types.NewInstantiateMsgWithChannelInitOptions(nil, "invalid", s.ChainBConnID, nil, nil)
+		instantiateMsg := icacontroller.InstantiateMsg{
+			Owner: nil,
+			ChannelOpenInitOptions: &icacontroller.ChannelOpenInitOptions{
+				ConnectionId:             "invalid",
+				CounterpartyConnectionId: s.ChainBConnID,
+				CounterpartyPortId:       nil,
+				TxEncoding:               nil,
+			},
+			SendCallbacksTo: nil,
+		}
 
-		_, err = wasmd.InstantiateContract(ctx, wasmdUser.KeyName(), codeId, instantiateMsg, true, "--gas", "500000")
+		err = s.Contract.Instantiate(ctx, s.UserA.KeyName(), codeId, instantiateMsg, "--gas", "500000")
 		s.Require().ErrorContains(err, "submessages: invalid connection hop ID")
 	})
 
 	s.Run("TestChannelHandshakeFail: invalid counterparty connection id", func() {
 		// Instantiate the contract with channel:
-		instantiateMsg := types.NewInstantiateMsgWithChannelInitOptions(nil, s.ChainAConnID, "connection-123", nil, nil)
+		instantiateMsg := icacontroller.InstantiateMsg{
+			Owner: nil,
+			ChannelOpenInitOptions: &icacontroller.ChannelOpenInitOptions{
+				ConnectionId:             s.ChainAConnID,
+				CounterpartyConnectionId: "connection-123",
+				CounterpartyPortId:       nil,
+				TxEncoding:               nil,
+			},
+			SendCallbacksTo: nil,
+		}
 
-		// unfortunately, this doesn't error out because the connection id is in the counterparty.
-		// instead, the handshake never completes. A new channel may be created by the relayer.
-		contractAddr, err := wasmd.InstantiateContract(ctx, wasmdUser.KeyName(), codeId, instantiateMsg, true, "--gas", "500000")
+		err = s.Contract.Instantiate(ctx, s.UserA.KeyName(), codeId, instantiateMsg, "--gas", "500000")
 		s.Require().NoError(err)
-
-		s.Contract = types.NewIcaContract(types.NewContract(contractAddr, codeId, wasmd))
 	})
 
 	s.Run("TestChannelHandshakeSuccessAfterFail", func() {

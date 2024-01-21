@@ -6,11 +6,6 @@ import (
 	codec "github.com/cosmos/cosmos-sdk/codec"
 )
 
-// NewInstantiateMsg is a wrapper for newInstantiateMsg for internal testing
-func NewInstantiateMsg(admin *string) string {
-	return newInstantiateMsg(admin)
-}
-
 // NewSendCustomIcaMessagesMsg is a wrapper for newSendCustomIcaMessagesMsg for internal testing
 func NewSendCustomIcaMessagesMsg(cdc codec.BinaryCodec, msgs []proto.Message, encoding string, memo *string, timeout *uint64) string {
 	return newSendCustomIcaMessagesMsg(cdc, msgs, encoding, memo, timeout)
@@ -29,9 +24,4 @@ func NewGetContractStateQueryMsg() map[string]interface{} {
 // NewGetCallbackCounterQueryMsg is a wrapper for newGetCallbackCounterQueryMsg for internal testing
 func NewGetCallbackCounterQueryMsg() map[string]interface{} {
 	return newGetCallbackCounterQueryMsg()
-}
-
-// NewSendCosmosMsgsMsg is a wrapper for newSendCosmosMsgsMsg for internal testing
-func NewSendCosmosMsgsMsg(cosmosMsgs []ContractCosmosMsg, memo *string, timeout *uint64) string {
-	return newSendCosmosMsgsMsg(cosmosMsgs, memo, timeout)
 }

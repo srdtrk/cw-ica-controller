@@ -9,7 +9,7 @@ import (
 type Contract struct {
 	Address string
 	CodeID  string
-	chain   *cosmos.CosmosChain
+	Chain   *cosmos.CosmosChain
 }
 
 // NewContract creates a new Contract instance
@@ -17,7 +17,7 @@ func NewContract(address string, codeId string, chain *cosmos.CosmosChain) Contr
 	return Contract{
 		Address: address,
 		CodeID:  codeId,
-		chain:   chain,
+		Chain:   chain,
 	}
 }
 
@@ -26,8 +26,13 @@ func (c *Contract) Port() string {
 }
 
 func (c *Contract) ExecAnyMsg(ctx context.Context, callerKeyName string, execMsg string, extraExecTxArgs ...string) error {
-	_, err := c.chain.ExecuteContract(ctx, callerKeyName, c.Address, execMsg, extraExecTxArgs...)
+	_, err := c.Chain.ExecuteContract(ctx, callerKeyName, c.Address, execMsg, extraExecTxArgs...)
 	return err
+}
+
+// InitAnyMsg instantiates a contract with the given instantiateMsg
+func (c *Contract) InitAnyMsg(ctx context.Context, callerKeyName string, instantiateMsg string, extraExecTxArgs ...string) (string, error) {
+	return c.Chain.InstantiateContract(ctx, callerKeyName, c.CodeID, instantiateMsg, true, extraExecTxArgs...)
 }
 
 func QueryContract[T any](ctx context.Context, chain *cosmos.CosmosChain, contractAddr string, queryMsg string) (*T, error) {
