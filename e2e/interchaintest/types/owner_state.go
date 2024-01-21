@@ -1,5 +1,7 @@
 package types
 
+import "github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
+
 // OwnerContractState is used to represent its state in Contract's storage
 type OwnerContractState struct {
 	Admin               string `json:"admin"`
@@ -14,8 +16,8 @@ type OwnerIcaContractState struct {
 
 // OwnerIcaState is the state of the ICA.
 type OwnerIcaState struct {
-	IcaID        uint32                   `json:"ica_id"`
-	IcaAddr      string                   `json:"ica_addr"`
-	TxEncoding   string                   `json:"tx_encoding"`
-	ChannelState *IcaContractChannelState `json:"channel_state"`
+	IcaID        uint32                         `json:"ica_id"`
+	IcaAddr      string                         `json:"ica_addr"`
+	TxEncoding   string                         `json:"tx_encoding"`
+	ChannelState *icacontroller.CallbackCounter `json:"channel_state"`
 }

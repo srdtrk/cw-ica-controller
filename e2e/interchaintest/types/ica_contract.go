@@ -90,8 +90,8 @@ func (c *IcaContract) ExecSendStargateMsgs(
 }
 
 // QueryContractState queries the contract's state
-func (c *IcaContract) QueryContractState(ctx context.Context) (*IcaContractState, error) {
-	queryResp := QueryResponse[IcaContractState]{}
+func (c *IcaContract) QueryContractState(ctx context.Context) (*icacontroller.ContractState, error) {
+	queryResp := QueryResponse[icacontroller.ContractState]{}
 	err := c.Chain.QueryContract(ctx, c.Address, newGetContractStateQueryMsg(), &queryResp)
 	if err != nil {
 		return nil, err
@@ -106,8 +106,8 @@ func (c *IcaContract) QueryContractState(ctx context.Context) (*IcaContractState
 }
 
 // QueryChannelState queries the channel state stored in the contract
-func (c *IcaContract) QueryChannelState(ctx context.Context) (*IcaContractChannelState, error) {
-	queryResp := QueryResponse[IcaContractChannelState]{}
+func (c *IcaContract) QueryChannelState(ctx context.Context) (*icacontroller.ContractChannelState, error) {
+	queryResp := QueryResponse[icacontroller.ContractChannelState]{}
 	err := c.Chain.QueryContract(ctx, c.Address, newGetChannelQueryMsg(), &queryResp)
 	if err != nil {
 		return nil, err
@@ -122,8 +122,8 @@ func (c *IcaContract) QueryChannelState(ctx context.Context) (*IcaContractChanne
 }
 
 // QueryCallbackCounter queries the callback counter stored in the contract
-func (c *IcaContract) QueryCallbackCounter(ctx context.Context) (*IcaContractCallbackCounter, error) {
-	queryResp := QueryResponse[IcaContractCallbackCounter]{}
+func (c *IcaContract) QueryCallbackCounter(ctx context.Context) (*icacontroller.CallbackCounter, error) {
+	queryResp := QueryResponse[icacontroller.CallbackCounter]{}
 	err := c.Chain.QueryContract(ctx, c.Address, newGetCallbackCounterQueryMsg(), &queryResp)
 	if err != nil {
 		return nil, err
