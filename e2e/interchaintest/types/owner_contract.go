@@ -45,7 +45,7 @@ func (c *OwnerContract) ExecSendPredefinedAction(
 	ctx context.Context, callerKeyName string, icaId uint64, toAddress string,
 ) error {
 	msg := newOwnerSendPredefinedActionMsg(icaId, toAddress)
-	err := c.Execute(ctx, callerKeyName, msg)
+	err := c.ExecAnyMsg(ctx, callerKeyName, msg)
 	return err
 }
 

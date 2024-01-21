@@ -52,7 +52,7 @@ func (s *OwnerTestSuite) SetupOwnerTestSuite(ctx context.Context) {
 	}
 	createMsg := types.NewOwnerCreateIcaContractMsg(nil, &channelOpenInitOptions)
 
-	err = s.OwnerContract.Execute(ctx, s.UserA.KeyName(), createMsg, "--gas", "500000")
+	err = s.OwnerContract.ExecAnyMsg(ctx, s.UserA.KeyName(), createMsg, "--gas", "500000")
 	s.Require().NoError(err)
 
 	s.NumOfIcaContracts++

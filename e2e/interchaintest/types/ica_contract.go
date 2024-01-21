@@ -51,6 +51,10 @@ func StoreAndInstantiateNewIcaContract(
 	return NewIcaContract(contract), nil
 }
 
+func (c *IcaContract) Execute(ctx context.Context, callerKeyName string, msg icacontroller.ExecuteMsg, extraExecTxArgs ...string) error {
+	return c.Contract.ExecAnyMsg(ctx, callerKeyName, msg.ToString(), extraExecTxArgs...)
+}
+
 func (c *IcaContract) ExecCreateChannel(
 	ctx context.Context, callerKeyName string,
 	chanOpenInitOpts *icacontroller.ChannelOpenInitOptions,
@@ -62,7 +66,7 @@ func (c *IcaContract) ExecCreateChannel(
 		},
 	}
 
-	err := c.Execute(ctx, callerKeyName, msg.ToString(), extraExecTxArgs...)
+	err := c.Execute(ctx, callerKeyName, msg, extraExecTxArgs...)
 	return err
 }
 
@@ -73,7 +77,7 @@ func (c *IcaContract) ExecCustomIcaMessages(
 	memo *string, timeout *uint64,
 ) error {
 	customMsg := newSendCustomIcaMessagesMsg(c.chain.Config().EncodingConfig.Codec, messages, encoding, memo, timeout)
-	err := c.Execute(ctx, callerKeyName, customMsg)
+	err := c.ExecAnyMsg(ctx, callerKeyName, customMsg)
 	return err
 }
 
@@ -83,7 +87,7 @@ func (c *IcaContract) ExecSendCosmosMsgs(
 	memo *string, timeout *uint64, extraExecTxArgs ...string,
 ) error {
 	cosmosMsg := newSendCosmosMsgsMsg(cosmosMsgs, memo, timeout)
-	err := c.Execute(ctx, callerKeyName, cosmosMsg, extraExecTxArgs...)
+	err := c.ExecAnyMsg(ctx, callerKeyName, cosmosMsg, extraExecTxArgs...)
 	return err
 }
 
@@ -95,7 +99,7 @@ func (c *IcaContract) ExecSendStargateMsgs(
 	msgs []proto.Message, memo *string, timeout *uint64,
 ) error {
 	cosmosMsg := newSendCosmosMsgsMsgFromProto(msgs, memo, timeout)
-	err := c.Execute(ctx, callerKeyName, cosmosMsg)
+	err := c.ExecAnyMsg(ctx, callerKeyName, cosmosMsg)
 	return err
 }
 

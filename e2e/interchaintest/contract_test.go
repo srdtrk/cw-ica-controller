@@ -470,7 +470,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		badCustomMsg := `{"send_custom_ica_messages":{"messages":"` + badMessage + `"}}`
 
 		// Execute the contract:
-		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), badCustomMsg)
+		err := s.Contract.ExecAnyMsg(ctx, wasmdUser.KeyName(), badCustomMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
