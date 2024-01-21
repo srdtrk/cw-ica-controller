@@ -11,6 +11,8 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 
 	icatypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/types"
+
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
 )
 
 // newInstantiateMsg creates a new InstantiateMsg.
@@ -69,16 +71,6 @@ func NewInstantiateMsgWithChannelInitOptions(
 
 // newSendCustomIcaMessagesMsg creates a new SendCustomIcaMessagesMsg.
 func newSendCustomIcaMessagesMsg(cdc codec.BinaryCodec, msgs []proto.Message, encoding string, memo *string, timeout *uint64) string {
-	type SendCustomIcaMessagesMsg struct {
-		Messages       string  `json:"messages"`
-		PacketMemo     *string `json:"packet_memo,omitempty"`
-		TimeoutSeconds *uint64 `json:"timeout_seconds,omitempty"`
-	}
-
-	type SendCustomIcaMessagesMsgWrapper struct {
-		SendCustomIcaMessagesMsg SendCustomIcaMessagesMsg `json:"send_custom_ica_messages"`
-	}
-
 	bz, err := icatypes.SerializeCosmosTxWithEncoding(cdc, msgs, encoding)
 	if err != nil {
 		panic(err)
@@ -86,8 +78,8 @@ func newSendCustomIcaMessagesMsg(cdc codec.BinaryCodec, msgs []proto.Message, en
 
 	messages := base64.StdEncoding.EncodeToString(bz)
 
-	msg := SendCustomIcaMessagesMsgWrapper{
-		SendCustomIcaMessagesMsg: SendCustomIcaMessagesMsg{
+	msg := icacontroller.ExecuteMsg{
+		SendCustomIcaMessages: &icacontroller.ExecuteMsg_SendCustomIcaMessages{
 			Messages:       messages,
 			PacketMemo:     memo,
 			TimeoutSeconds: timeout,

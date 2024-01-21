@@ -256,14 +256,18 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 	})
 
 	s.Run("TestChannelHandshakeSuccessAfterFail", func() {
-		channelOpenInitOptions := &icacontroller.ChannelOpenInitOptions{
-			ConnectionId:             s.ChainAConnID,
-			CounterpartyConnectionId: s.ChainBConnID,
-			CounterpartyPortId:       nil,
-			TxEncoding:               nil,
+		createChannelMsg := icacontroller.ExecuteMsg{
+			CreateChannel: &icacontroller.ExecuteMsg_CreateChannel{
+				ChannelOpenInitOptions: &icacontroller.ChannelOpenInitOptions{
+					ConnectionId:             s.ChainAConnID,
+					CounterpartyConnectionId: s.ChainBConnID,
+					CounterpartyPortId:       nil,
+					TxEncoding:               nil,
+				},
+			},
 		}
 
-		err = s.Contract.ExecCreateChannel(ctx, wasmdUser.KeyName(), channelOpenInitOptions, "--gas", "500000")
+		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), createChannelMsg, "--gas", "500000")
 		s.Require().NoError(err)
 
 		// Wait for the channel to get set up
@@ -400,11 +404,11 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		s.Require().NoError(err)
 
 		// Stake some tokens through CosmosMsgs:
-		stakeCosmosMsg := types.ContractCosmosMsg{
-			Staking: &types.StakingCosmosMsg{
-				Delegate: &types.StakingDelegateCosmosMsg{
+		stakeCosmosMsg := icacontroller.ContractCosmosMsg{
+			Staking: &icacontroller.StakingCosmosMsg{
+				Delegate: &icacontroller.StakingDelegateCosmosMsg{
 					Validator: validator,
-					Amount: types.Coin{
+					Amount: icacontroller.Coin{
 						Denom:  simd.Config().Denom,
 						Amount: "10000000",
 					},
@@ -412,9 +416,9 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 			},
 		}
 		// Vote on the proposal through CosmosMsgs:
-		voteCosmosMsg := types.ContractCosmosMsg{
-			Gov: &types.GovCosmosMsg{
-				Vote: &types.GovVoteCosmosMsg{
+		voteCosmosMsg := icacontroller.ContractCosmosMsg{
+			Gov: &icacontroller.GovCosmosMsg{
+				Vote: &icacontroller.GovVoteCosmosMsg{
 					ProposalID: 1,
 					Vote:       "yes",
 				},
@@ -422,7 +426,12 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		}
 
 		// Execute the contract:
-		err = s.Contract.ExecSendCosmosMsgs(ctx, wasmdUser.KeyName(), []types.ContractCosmosMsg{stakeCosmosMsg, voteCosmosMsg}, nil, nil)
+		sendCosmosMsgsExecMsg := icacontroller.ExecuteMsg{
+			SendCosmosMsgs: &icacontroller.ExecuteMsg_SendCosmosMsgs{
+				Messages: []icacontroller.ContractCosmosMsg{stakeCosmosMsg, voteCosmosMsg},
+			},
+		}
+		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCosmosMsgsExecMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
@@ -577,11 +586,11 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		s.Require().NoError(err)
 
 		// Stake some tokens through CosmosMsgs:
-		stakeCosmosMsg := types.ContractCosmosMsg{
-			Staking: &types.StakingCosmosMsg{
-				Delegate: &types.StakingDelegateCosmosMsg{
+		stakeCosmosMsg := icacontroller.ContractCosmosMsg{
+			Staking: &icacontroller.StakingCosmosMsg{
+				Delegate: &icacontroller.StakingDelegateCosmosMsg{
 					Validator: validator,
-					Amount: types.Coin{
+					Amount: icacontroller.Coin{
 						Denom:  simd.Config().Denom,
 						Amount: "10000000",
 					},
@@ -589,11 +598,11 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 			},
 		}
 		// Vote on the proposal through CosmosMsgs:
-		voteCosmosMsg := types.ContractCosmosMsg{
-			Gov: &types.GovCosmosMsg{
-				VoteWeighted: &types.GovVoteWeightedCosmosMsg{
+		voteCosmosMsg := icacontroller.ContractCosmosMsg{
+			Gov: &icacontroller.GovCosmosMsg{
+				VoteWeighted: &icacontroller.GovVoteWeightedCosmosMsg{
 					ProposalID: 1,
-					Options: []types.GovVoteWeightedOption{
+					Options: []icacontroller.GovVoteWeightedOption{
 						{
 							Option: "yes",
 							Weight: "0.5",
@@ -608,7 +617,12 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		}
 
 		// Execute the contract:
-		err = s.Contract.ExecSendCosmosMsgs(ctx, wasmdUser.KeyName(), []types.ContractCosmosMsg{stakeCosmosMsg, voteCosmosMsg}, nil, nil)
+		sendCosmosMsgsExecMsg := icacontroller.ExecuteMsg{
+			SendCosmosMsgs: &icacontroller.ExecuteMsg_SendCosmosMsgs{
+				Messages: []icacontroller.ContractCosmosMsg{stakeCosmosMsg, voteCosmosMsg},
+			},
+		}
+		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCosmosMsgsExecMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
@@ -658,11 +672,11 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		s.Require().NoError(err)
 
 		// Send some tokens to the simdUser from the ICA address
-		sendMsg := types.ContractCosmosMsg{
-			Bank: &types.BankCosmosMsg{
-				Send: &types.BankSendCosmosMsg{
+		sendMsg := icacontroller.ContractCosmosMsg{
+			Bank: &icacontroller.BankCosmosMsg{
+				Send: &icacontroller.BankSendCosmosMsg{
 					ToAddress: simdUser.FormattedAddress(),
-					Amount: []types.Coin{
+					Amount: []icacontroller.Coin{
 						{
 							Denom:  simd.Config().Denom,
 							Amount: "1000000",
@@ -673,16 +687,21 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		}
 
 		// Set the withdraw address to the simdUser
-		setWithdrawAddressMsg := types.ContractCosmosMsg{
-			Distribution: &types.DistributionCosmosMsg{
-				SetWithdrawAddress: &types.DistributionSetWithdrawAddressCosmosMsg{
+		setWithdrawAddressMsg := icacontroller.ContractCosmosMsg{
+			Distribution: &icacontroller.DistributionCosmosMsg{
+				SetWithdrawAddress: &icacontroller.DistributionSetWithdrawAddressCosmosMsg{
 					Address: simdUser.FormattedAddress(),
 				},
 			},
 		}
 
 		// Execute the contract:
-		err = s.Contract.ExecSendCosmosMsgs(ctx, wasmdUser.KeyName(), []types.ContractCosmosMsg{sendMsg, setWithdrawAddressMsg}, nil, nil)
+		sendCosmosMsgsExecMsg := icacontroller.ExecuteMsg{
+			SendCosmosMsgs: &icacontroller.ExecuteMsg_SendCosmosMsgs{
+				Messages: []icacontroller.ContractCosmosMsg{sendMsg, setWithdrawAddressMsg},
+			},
+		}
+		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCosmosMsgsExecMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
@@ -778,7 +797,13 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 
 	s.Run("TestChannelReopening", func() {
 		// Reopen the channel:
-		err := s.Contract.ExecCreateChannel(ctx, wasmdUser.KeyName(), nil, "--gas", "500000")
+		createChannelMsg := icacontroller.ExecuteMsg{
+			CreateChannel: &icacontroller.ExecuteMsg_CreateChannel{
+				ChannelOpenInitOptions: &icacontroller.ChannelOpenInitOptions{},
+			},
+		}
+
+		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), createChannelMsg, "--gas", "500000")
 		s.Require().NoError(err)
 
 		// Wait for the channel to get set up

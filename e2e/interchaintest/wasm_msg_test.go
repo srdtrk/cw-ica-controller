@@ -17,6 +17,7 @@ import (
 
 	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
 )
 
 func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding string) uint64 {
@@ -107,20 +108,25 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 	var counterAddress string
 	s.Run(fmt.Sprintf("TestInstantiate-%s", encoding), func() {
 		// Instantiate the contract:
-		instantiateMsg := types.ContractCosmosMsg{
-			Wasm: &types.WasmCosmosMsg{
-				Instantiate: &types.WasmInstantiateCosmosMsg{
+		instantiateMsg := icacontroller.ContractCosmosMsg{
+			Wasm: &icacontroller.WasmCosmosMsg{
+				Instantiate: &icacontroller.WasmInstantiateCosmosMsg{
 					Admin:  s.IcaAddress,
 					CodeID: counterCodeID,
 					Label:  "counter",
 					Msg:    toBase64(`{"count": 0}`),
-					Funds:  []types.Coin{},
+					Funds:  []icacontroller.Coin{},
 				},
 			},
 		}
 
 		// Execute the contract:
-		err := s.Contract.ExecSendCosmosMsgs(ctx, wasmdUser.KeyName(), []types.ContractCosmosMsg{instantiateMsg}, nil, nil)
+		sendCosmosMsgsExecMsg := icacontroller.ExecuteMsg{
+			SendCosmosMsgs: &icacontroller.ExecuteMsg_SendCosmosMsgs{
+				Messages: []icacontroller.ContractCosmosMsg{instantiateMsg},
+			},
+		}
+		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCosmosMsgsExecMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, wasmd2)
@@ -153,39 +159,44 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 	var counter2Address string
 	s.Run(fmt.Sprintf("TestExecuteAndInstantiate2AndClearAdminMsg-%s", encoding), func() {
 		// Execute the contract:
-		executeMsg := types.ContractCosmosMsg{
-			Wasm: &types.WasmCosmosMsg{
-				Execute: &types.WasmExecuteCosmosMsg{
+		executeMsg := icacontroller.ContractCosmosMsg{
+			Wasm: &icacontroller.WasmCosmosMsg{
+				Execute: &icacontroller.WasmExecuteCosmosMsg{
 					ContractAddr: counterAddress,
 					Msg:          toBase64(`{"increment": {}}`),
-					Funds:        []types.Coin{},
+					Funds:        []icacontroller.Coin{},
 				},
 			},
 		}
 
-		clearAdminMsg := types.ContractCosmosMsg{
-			Wasm: &types.WasmCosmosMsg{
-				ClearAdmin: &types.WasmClearAdminCosmosMsg{
+		clearAdminMsg := icacontroller.ContractCosmosMsg{
+			Wasm: &icacontroller.WasmCosmosMsg{
+				ClearAdmin: &icacontroller.WasmClearAdminCosmosMsg{
 					ContractAddr: counterAddress,
 				},
 			},
 		}
 
-		instantiate2Msg := types.ContractCosmosMsg{
-			Wasm: &types.WasmCosmosMsg{
-				Instantiate2: &types.WasmInstantiate2CosmosMsg{
+		instantiate2Msg := icacontroller.ContractCosmosMsg{
+			Wasm: &icacontroller.WasmCosmosMsg{
+				Instantiate2: &icacontroller.WasmInstantiate2CosmosMsg{
 					Admin:  s.IcaAddress,
 					CodeID: counterCodeID,
 					Label:  "counter2",
 					Msg:    toBase64(`{"count": 0}`),
-					Funds:  []types.Coin{},
+					Funds:  []icacontroller.Coin{},
 					Salt:   toBase64("salt"),
 				},
 			},
 		}
 
 		// Execute the contract:
-		err := s.Contract.ExecSendCosmosMsgs(ctx, wasmdUser.KeyName(), []types.ContractCosmosMsg{executeMsg, clearAdminMsg, instantiate2Msg}, nil, nil)
+		sendCosmosMsgsExecMsg := icacontroller.ExecuteMsg{
+			SendCosmosMsgs: &icacontroller.ExecuteMsg_SendCosmosMsgs{
+				Messages: []icacontroller.ContractCosmosMsg{executeMsg, clearAdminMsg, instantiate2Msg},
+			},
+		}
+		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCosmosMsgsExecMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, wasmd2)
@@ -226,9 +237,9 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 	})
 
 	s.Run(fmt.Sprintf("TestMigrateAndUpdateAdmin-%s", encoding), func() {
-		migrateMsg := types.ContractCosmosMsg{
-			Wasm: &types.WasmCosmosMsg{
-				Migrate: &types.WasmMigrateCosmosMsg{
+		migrateMsg := icacontroller.ContractCosmosMsg{
+			Wasm: &icacontroller.WasmCosmosMsg{
+				Migrate: &icacontroller.WasmMigrateCosmosMsg{
 					ContractAddr: counter2Address,
 					NewCodeID:    counterCodeID + 1,
 					Msg:          toBase64(`{}`),
@@ -236,9 +247,9 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 			},
 		}
 
-		updateAdminMsg := types.ContractCosmosMsg{
-			Wasm: &types.WasmCosmosMsg{
-				UpdateAdmin: &types.WasmUpdateAdminCosmosMsg{
+		updateAdminMsg := icacontroller.ContractCosmosMsg{
+			Wasm: &icacontroller.WasmCosmosMsg{
+				UpdateAdmin: &icacontroller.WasmUpdateAdminCosmosMsg{
 					ContractAddr: counter2Address,
 					Admin:        wasmd2User.FormattedAddress(),
 				},
@@ -246,7 +257,12 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		}
 
 		// Execute the contract:
-		err := s.Contract.ExecSendCosmosMsgs(ctx, wasmdUser.KeyName(), []types.ContractCosmosMsg{migrateMsg, updateAdminMsg}, nil, nil)
+		sendCosmosMsgsExecMsg := icacontroller.ExecuteMsg{
+			SendCosmosMsgs: &icacontroller.ExecuteMsg_SendCosmosMsgs{
+				Messages: []icacontroller.ContractCosmosMsg{migrateMsg, updateAdminMsg},
+			},
+		}
+		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCosmosMsgsExecMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, wasmd2)

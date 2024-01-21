@@ -55,21 +55,6 @@ func (c *IcaContract) Execute(ctx context.Context, callerKeyName string, msg ica
 	return c.Contract.ExecAnyMsg(ctx, callerKeyName, msg.ToString(), extraExecTxArgs...)
 }
 
-func (c *IcaContract) ExecCreateChannel(
-	ctx context.Context, callerKeyName string,
-	chanOpenInitOpts *icacontroller.ChannelOpenInitOptions,
-	extraExecTxArgs ...string,
-) error {
-	msg := icacontroller.ExecuteMsg{
-		CreateChannel: &icacontroller.ExecuteMsg_CreateChannel{
-			ChannelOpenInitOptions: chanOpenInitOpts,
-		},
-	}
-
-	err := c.Execute(ctx, callerKeyName, msg, extraExecTxArgs...)
-	return err
-}
-
 // ExecCustomMessages invokes the contract's `CustomIcaMessages` message as the caller
 func (c *IcaContract) ExecCustomIcaMessages(
 	ctx context.Context, callerKeyName string,
@@ -78,16 +63,6 @@ func (c *IcaContract) ExecCustomIcaMessages(
 ) error {
 	customMsg := newSendCustomIcaMessagesMsg(c.chain.Config().EncodingConfig.Codec, messages, encoding, memo, timeout)
 	err := c.ExecAnyMsg(ctx, callerKeyName, customMsg)
-	return err
-}
-
-// ExecSendCosmosMsgs invokes the contract's `SendCosmosMsgsAsIcaTx` message as the caller
-func (c *IcaContract) ExecSendCosmosMsgs(
-	ctx context.Context, callerKeyName string, cosmosMsgs []ContractCosmosMsg,
-	memo *string, timeout *uint64, extraExecTxArgs ...string,
-) error {
-	cosmosMsg := newSendCosmosMsgsMsg(cosmosMsgs, memo, timeout)
-	err := c.ExecAnyMsg(ctx, callerKeyName, cosmosMsg, extraExecTxArgs...)
 	return err
 }
 
