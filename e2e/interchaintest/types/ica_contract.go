@@ -6,6 +6,8 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 
 	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
+
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
 )
 
 type IcaContract struct {
@@ -35,7 +37,7 @@ func StoreAndInstantiateNewIcaContract(
 		return nil, err
 	}
 
-	contractAddr, err := chain.InstantiateContract(ctx, callerKeyName, codeId, newInstantiateMsg(nil), true)
+	contractAddr, err := chain.InstantiateContract(ctx, callerKeyName, codeId, "{}", true)
 	if err != nil {
 		return nil, err
 	}
@@ -50,20 +52,17 @@ func StoreAndInstantiateNewIcaContract(
 }
 
 func (c *IcaContract) ExecCreateChannel(
-	ctx context.Context, callerKeyName string, extraExecTxArgs ...string,
+	ctx context.Context, callerKeyName string,
+	chanOpenInitOpts *icacontroller.ChannelOpenInitOptions,
+	extraExecTxArgs ...string,
 ) error {
-	msg := newEmptyCreateChannelMsg()
-	err := c.Execute(ctx, callerKeyName, msg, extraExecTxArgs...)
-	return err
-}
+	msg := icacontroller.ExecuteMsg{
+		CreateChannel: &icacontroller.ExecuteMsg_CreateChannel{
+			ChannelOpenInitOptions: chanOpenInitOpts,
+		},
+	}
 
-func (c *IcaContract) ExecCreateChannelWithOptions(
-	ctx context.Context, callerKeyName string, connectionId string,
-	counterpartyConnectionId string, counterpartyPortId *string,
-	txEncoding *string, extraExecTxArgs ...string,
-) error {
-	msg := newCreateChannelMsg(connectionId, counterpartyConnectionId, counterpartyPortId, txEncoding)
-	err := c.Execute(ctx, callerKeyName, msg, extraExecTxArgs...)
+	err := c.Execute(ctx, callerKeyName, msg.ToString(), extraExecTxArgs...)
 	return err
 }
 

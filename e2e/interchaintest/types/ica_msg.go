@@ -67,43 +67,6 @@ func NewInstantiateMsgWithChannelInitOptions(
 	return string(jsonBytes)
 }
 
-func newEmptyCreateChannelMsg() string {
-	return `{ "create_channel": {} }`
-}
-
-func newCreateChannelMsg(
-	connectionId string, counterpartyConnectionId string,
-	counterpartyPortId *string, txEncoding *string,
-) string {
-	type ChannelCreateMsg struct {
-		ChannelOpenInitOptions *ChannelOpenInitOptions `json:"channel_open_init_options,omitempty"`
-	}
-
-	type ChannelCreateMsgWrapper struct {
-		CreateChannelMsg ChannelCreateMsg `json:"create_channel"`
-	}
-
-	channelOpenInitOptions := ChannelOpenInitOptions{
-		ConnectionId:             connectionId,
-		CounterpartyConnectionId: counterpartyConnectionId,
-		CounterpartyPortId:       counterpartyPortId,
-		TxEncoding:               txEncoding,
-	}
-
-	msg := ChannelCreateMsgWrapper{
-		CreateChannelMsg: ChannelCreateMsg{
-			ChannelOpenInitOptions: &channelOpenInitOptions,
-		},
-	}
-
-	jsonBytes, err := json.Marshal(msg)
-	if err != nil {
-		panic(err)
-	}
-
-	return string(jsonBytes)
-}
-
 // newSendCustomIcaMessagesMsg creates a new SendCustomIcaMessagesMsg.
 func newSendCustomIcaMessagesMsg(cdc codec.BinaryCodec, msgs []proto.Message, encoding string, memo *string, timeout *uint64) string {
 	type SendCustomIcaMessagesMsg struct {

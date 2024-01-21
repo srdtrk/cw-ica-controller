@@ -27,6 +27,7 @@ import (
 
 	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
 )
 
 type ContractTestSuite struct {
@@ -255,7 +256,14 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 	})
 
 	s.Run("TestChannelHandshakeSuccessAfterFail", func() {
-		err = s.Contract.ExecCreateChannelWithOptions(ctx, wasmdUser.KeyName(), s.ChainAConnID, s.ChainBConnID, nil, nil, "--gas", "500000")
+		channelOpenInitOptions := &icacontroller.ChannelOpenInitOptions{
+			ConnectionId:             s.ChainAConnID,
+			CounterpartyConnectionId: s.ChainBConnID,
+			CounterpartyPortId:       nil,
+			TxEncoding:               nil,
+		}
+
+		err = s.Contract.ExecCreateChannel(ctx, wasmdUser.KeyName(), channelOpenInitOptions, "--gas", "500000")
 		s.Require().NoError(err)
 
 		// Wait for the channel to get set up
@@ -770,7 +778,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 
 	s.Run("TestChannelReopening", func() {
 		// Reopen the channel:
-		err := s.Contract.ExecCreateChannel(ctx, wasmdUser.KeyName(), "--gas", "500000")
+		err := s.Contract.ExecCreateChannel(ctx, wasmdUser.KeyName(), nil, "--gas", "500000")
 		s.Require().NoError(err)
 
 		// Wait for the channel to get set up
