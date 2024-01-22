@@ -153,8 +153,19 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 
 	var err error
 	// Upload and Instantiate the contract on wasmd:
-	s.Contract, err = types.StoreAndInstantiateNewIcaContract(ctx, wasmd, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
+	codeId, err := wasmd.StoreContract(ctx, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
+
+	contractAddr, err := wasmd.InstantiateContract(ctx, wasmdUser.KeyName(), codeId, "{}", true)
+	s.Require().NoError(err)
+
+	contract := types.Contract{
+		Address: contractAddr,
+		CodeID:  codeId,
+		Chain:   wasmd,
+	}
+
+	s.Contract = types.NewIcaContract(contract)
 
 	contractState, err := s.Contract.QueryContractState(ctx)
 	s.Require().NoError(err)

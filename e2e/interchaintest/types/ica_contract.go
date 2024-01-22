@@ -3,8 +3,6 @@ package types
 import (
 	"context"
 
-	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
-
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
 )
 
@@ -22,31 +20,6 @@ func NewIcaContract(contract Contract) *IcaContract {
 
 func (c *IcaContract) SetIcaAddress(icaAddress string) {
 	c.IcaAddress = icaAddress
-}
-
-// StoreAndInstantiateNewIcaContract stores the contract code and instantiates a new contract as the caller.
-// Returns a new Contract instance.
-func StoreAndInstantiateNewIcaContract(
-	ctx context.Context, chain *cosmos.CosmosChain,
-	callerKeyName, fileName string,
-) (*IcaContract, error) {
-	codeId, err := chain.StoreContract(ctx, callerKeyName, fileName)
-	if err != nil {
-		return nil, err
-	}
-
-	contractAddr, err := chain.InstantiateContract(ctx, callerKeyName, codeId, "{}", true)
-	if err != nil {
-		return nil, err
-	}
-
-	contract := Contract{
-		Address: contractAddr,
-		CodeID:  codeId,
-		Chain:   chain,
-	}
-
-	return NewIcaContract(contract), nil
 }
 
 func (c *IcaContract) Execute(ctx context.Context, callerKeyName string, msg icacontroller.ExecuteMsg, extraExecTxArgs ...string) error {
