@@ -66,7 +66,7 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding
 		SendCallbacksTo: nil,
 	}
 
-	err = s.Contract.Instantiate(ctx, s.UserA.KeyName(), s.ChainA, codeId, instantiateMsg)
+	err = s.Contract.Instantiate(ctx, s.UserA.KeyName(), s.ChainA, codeId, instantiateMsg, "--gas", "500000")
 	s.Require().NoError(err)
 
 	// Wait for the channel to get set up
