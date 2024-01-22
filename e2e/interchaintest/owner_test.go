@@ -16,6 +16,8 @@ import (
 
 	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/owner"
 )
 
 type OwnerTestSuite struct {
@@ -38,19 +40,26 @@ func (s *OwnerTestSuite) SetupOwnerTestSuite(ctx context.Context) {
 	s.IcaContractCodeId, err = strconv.ParseUint(codeId, 10, 64)
 	s.Require().NoError(err)
 
-	s.OwnerContract, err = types.StoreAndInstantiateNewOwnerContract(
-		ctx, s.ChainA, s.UserA.KeyName(), "../../artifacts/cw_ica_owner.wasm", s.IcaContractCodeId,
-	)
+	codeId, err = s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_owner.wasm")
 	s.Require().NoError(err)
 
+	instantiateMsg := owner.InstantiateMsg{IcaControllerCodeId: s.IcaContractCodeId}
+	contractAddr, err := s.ChainA.InstantiateContract(ctx, s.UserA.KeyName(), codeId, instantiateMsg.ToString(), true)
+	s.Require().NoError(err)
+
+	s.OwnerContract = types.NewOwnerContract(types.NewContract(contractAddr, codeId, s.ChainA))
 	s.NumOfIcaContracts = 0
 
 	// Create the ICA Contract
-	channelOpenInitOptions := types.ChannelOpenInitOptions{
-		ConnectionId:             s.ChainAConnID,
-		CounterpartyConnectionId: s.ChainBConnID,
+	createMsg := owner.ExecuteMsg{
+		CreateIcaContract: &owner.ExecuteMsg_CreateIcaContract{
+			Salt: nil,
+			ChannelOpenInitOptions: &icacontroller.ChannelOpenInitOptions{
+				ConnectionId:             s.ChainAConnID,
+				CounterpartyConnectionId: s.ChainBConnID,
+			},
+		},
 	}
-	createMsg := types.NewOwnerCreateIcaContractMsg(nil, &channelOpenInitOptions)
 
 	err = s.OwnerContract.Execute(ctx, s.UserA.KeyName(), createMsg, "--gas", "500000")
 	s.Require().NoError(err)
@@ -74,7 +83,8 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 	s.SetupOwnerTestSuite(ctx)
 	wasmd, simd := s.ChainA, s.ChainB
 
-	icaState, err := s.OwnerContract.QueryIcaContractState(ctx, 0)
+	icaStateRequest := owner.QueryMsg{GetIcaContractState: &owner.QueryMsg_GetIcaContractState{IcaId: 0}}
+	icaState, err := types.QueryAnyMsg[owner.IcaContractState](ctx, &s.OwnerContract.Contract, icaStateRequest)
 	s.Require().NoError(err)
 	s.Require().NotNil(icaState.IcaState)
 
@@ -109,7 +119,7 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 		s.Require().Equal(channeltypes.OPEN.String(), simdChannel.State)
 
 		// Check contract's channel state
-		contractChannelState, err := icaContract.QueryChannelState(ctx)
+		contractChannelState, err := types.QueryAnyMsg[icacontroller.ContractChannelState](ctx, &icaContract.Contract, icacontroller.GetChannelRequest)
 		s.Require().NoError(err)
 
 		s.T().Logf("contract's channel store after handshake: %s", toJSONString(contractChannelState))
@@ -124,16 +134,19 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 		s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
 
 		// Check contract state
-		contractState, err := icaContract.QueryContractState(ctx)
+		contractState, err := types.QueryAnyMsg[icacontroller.ContractState](
+			ctx, &icaContract.Contract,
+			icacontroller.GetContractStateRequest,
+		)
 		s.Require().NoError(err)
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
 		s.Require().Equal(false, contractState.AllowChannelOpenInit)
 
-		ownerResponse, err := icaContract.QueryOwnership(ctx)
+		ownershipResponse, err := types.QueryAnyMsg[icacontroller.OwnershipResponse](ctx, &icaContract.Contract, icacontroller.OwnershipRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(s.OwnerContract.Address, ownerResponse.Owner)
-		s.Require().Nil(ownerResponse.PendingOwner)
-		s.Require().Nil(ownerResponse.PendingExpiry)
+		s.Require().Equal(s.OwnerContract.Address, ownershipResponse.Owner)
+		s.Require().Nil(ownershipResponse.PendingOwner)
+		s.Require().Nil(ownershipResponse.PendingExpiry)
 	})
 }
 
@@ -146,13 +159,17 @@ func (s *OwnerTestSuite) TestOwnerPredefinedAction() {
 	wasmd, simd := s.ChainA, s.ChainB
 	wasmdUser, simdUser := s.UserA, s.UserB
 
-	icaState, err := s.OwnerContract.QueryIcaContractState(ctx, 0)
+	icaStateRequest := owner.QueryMsg{GetIcaContractState: &owner.QueryMsg_GetIcaContractState{IcaId: 0}}
+	icaState, err := types.QueryAnyMsg[owner.IcaContractState](ctx, &s.OwnerContract.Contract, icaStateRequest)
 	s.Require().NoError(err)
 
 	icaContract := types.NewIcaContract(types.NewContract(icaState.ContractAddr, strconv.FormatUint(s.IcaContractCodeId, 10), wasmd))
 
 	// Check contract state
-	contractState, err := icaContract.QueryContractState(ctx)
+	contractState, err := types.QueryAnyMsg[icacontroller.ContractState](
+		ctx, &icaContract.Contract,
+		icacontroller.GetContractStateRequest,
+	)
 	s.Require().NoError(err)
 
 	icaAddress := contractState.IcaInfo.IcaAddress
@@ -161,7 +178,13 @@ func (s *OwnerTestSuite) TestOwnerPredefinedAction() {
 	s.FundAddressChainB(ctx, icaAddress)
 
 	s.Run("TestSendPredefinedActionSuccess", func() {
-		err := s.OwnerContract.ExecSendPredefinedAction(ctx, wasmdUser.KeyName(), 0, simdUser.FormattedAddress())
+		execPredefinedActionMsg := owner.ExecuteMsg{
+			SendPredefinedAction: &owner.ExecuteMsg_SendPredefinedAction{
+				IcaId:     0,
+				ToAddress: simdUser.FormattedAddress(),
+			},
+		}
+		err := s.OwnerContract.Execute(ctx, wasmdUser.KeyName(), execPredefinedActionMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 6, wasmd, simd)
@@ -172,7 +195,7 @@ func (s *OwnerTestSuite) TestOwnerPredefinedAction() {
 		s.Require().Equal(sdkmath.NewInt(1000000000-100), icaBalance)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := icaContract.QueryCallbackCounter(ctx)
+		callbackCounter, err := types.QueryAnyMsg[icacontroller.CallbackCounter](ctx, &icaContract.Contract, icacontroller.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)
