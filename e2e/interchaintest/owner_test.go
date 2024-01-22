@@ -110,7 +110,7 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 		s.Require().Equal(channeltypes.OPEN.String(), simdChannel.State)
 
 		// Check contract's channel state
-		contractChannelState, err := types.QueryContract[icacontroller.ContractChannelState](ctx, &icaContract.Contract, icacontroller.GetChannelRequest)
+		contractChannelState, err := types.QueryAnyMsg[icacontroller.ContractChannelState](ctx, &icaContract.Contract, icacontroller.GetChannelRequest)
 		s.Require().NoError(err)
 
 		s.T().Logf("contract's channel store after handshake: %s", toJSONString(contractChannelState))
@@ -125,7 +125,7 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 		s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
 
 		// Check contract state
-		contractState, err := types.QueryContract[icacontroller.ContractState](
+		contractState, err := types.QueryAnyMsg[icacontroller.ContractState](
 			ctx, &icaContract.Contract,
 			icacontroller.GetContractStateRequest,
 		)
@@ -133,7 +133,7 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
 		s.Require().Equal(false, contractState.AllowChannelOpenInit)
 
-		ownershipResponse, err := types.QueryContract[icacontroller.OwnershipResponse](ctx, &icaContract.Contract, icacontroller.OwnershipRequest)
+		ownershipResponse, err := types.QueryAnyMsg[icacontroller.OwnershipResponse](ctx, &icaContract.Contract, icacontroller.OwnershipRequest)
 		s.Require().NoError(err)
 		s.Require().Equal(s.OwnerContract.Address, ownershipResponse.Owner)
 		s.Require().Nil(ownershipResponse.PendingOwner)
@@ -156,7 +156,7 @@ func (s *OwnerTestSuite) TestOwnerPredefinedAction() {
 	icaContract := types.NewIcaContract(types.NewContract(icaState.ContractAddr, strconv.FormatUint(s.IcaContractCodeId, 10), wasmd))
 
 	// Check contract state
-	contractState, err := types.QueryContract[icacontroller.ContractState](
+	contractState, err := types.QueryAnyMsg[icacontroller.ContractState](
 		ctx, &icaContract.Contract,
 		icacontroller.GetContractStateRequest,
 	)
@@ -179,7 +179,7 @@ func (s *OwnerTestSuite) TestOwnerPredefinedAction() {
 		s.Require().Equal(sdkmath.NewInt(1000000000-100), icaBalance)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryContract[icacontroller.CallbackCounter](ctx, &icaContract.Contract, icacontroller.GetCallbackCounterRequest)
+		callbackCounter, err := types.QueryAnyMsg[icacontroller.CallbackCounter](ctx, &icaContract.Contract, icacontroller.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)

@@ -71,13 +71,13 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding str
 	err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
 	s.Require().NoError(err)
 
-	contractState, err := types.QueryContract[icacontroller.ContractState](
+	contractState, err := types.QueryAnyMsg[icacontroller.ContractState](
 		ctx, &s.Contract.Contract,
 		icacontroller.GetContractStateRequest,
 	)
 	s.Require().NoError(err)
 
-	ownershipResponse, err := types.QueryContract[icacontroller.OwnershipResponse](ctx, &s.Contract.Contract, icacontroller.OwnershipRequest)
+	ownershipResponse, err := types.QueryAnyMsg[icacontroller.OwnershipResponse](ctx, &s.Contract.Contract, icacontroller.OwnershipRequest)
 	s.Require().NoError(err)
 
 	s.IcaAddress = contractState.IcaInfo.IcaAddress
@@ -144,7 +144,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryContract[icacontroller.CallbackCounter](ctx, &s.Contract.Contract, icacontroller.GetCallbackCounterRequest)
+		callbackCounter, err := types.QueryAnyMsg[icacontroller.CallbackCounter](ctx, &s.Contract.Contract, icacontroller.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)
@@ -165,7 +165,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 			wasmd2,
 		)
 
-		counterState, err := types.QueryContract[types.GetCountResponse](ctx, &counterContract, `{"get_count": {}}`)
+		counterState, err := types.QueryAnyMsg[types.GetCountResponse](ctx, &counterContract, `{"get_count": {}}`)
 		s.Require().NoError(err)
 
 		s.Require().Equal(int64(0), counterState.Count)
@@ -218,13 +218,13 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryContract[icacontroller.CallbackCounter](ctx, &s.Contract.Contract, icacontroller.GetCallbackCounterRequest)
+		callbackCounter, err := types.QueryAnyMsg[icacontroller.CallbackCounter](ctx, &s.Contract.Contract, icacontroller.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(2), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 
-		counterState, err := types.QueryContract[types.GetCountResponse](ctx, &counterContract, `{"get_count": {}}`)
+		counterState, err := types.QueryAnyMsg[types.GetCountResponse](ctx, &counterContract, `{"get_count": {}}`)
 		s.Require().NoError(err)
 
 		s.Require().Equal(int64(1), counterState.Count)
@@ -288,14 +288,14 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryContract[icacontroller.CallbackCounter](ctx, &s.Contract.Contract, icacontroller.GetCallbackCounterRequest)
+		callbackCounter, err := types.QueryAnyMsg[icacontroller.CallbackCounter](ctx, &s.Contract.Contract, icacontroller.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
 		// s.Require().Equal(uint64(1), callbackCounter.Error)
 		s.Require().Equal(uint64(3), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 
-		counterState, err := types.QueryContract[types.GetCountResponse](ctx, &counter2Contract, `{"get_count": {}}`)
+		counterState, err := types.QueryAnyMsg[types.GetCountResponse](ctx, &counter2Contract, `{"get_count": {}}`)
 		s.Require().NoError(err)
 
 		s.Require().Equal(int64(0), counterState.Count)
