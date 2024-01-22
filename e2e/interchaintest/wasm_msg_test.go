@@ -20,6 +20,10 @@ import (
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
 )
 
+type GetCountResponse struct {
+	Count int64 `json:"count"`
+}
+
 func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding string) uint64 {
 	wasmChainSpecs := []*interchaintest.ChainSpec{
 		chainSpecs[0],
@@ -164,7 +168,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 			wasmd2,
 		)
 
-		counterState, err := types.QueryAnyMsg[types.GetCountResponse](ctx, &counterContract, `{"get_count": {}}`)
+		counterState, err := types.QueryAnyMsg[GetCountResponse](ctx, &counterContract, `{"get_count": {}}`)
 		s.Require().NoError(err)
 
 		s.Require().Equal(int64(0), counterState.Count)
@@ -223,7 +227,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		s.Require().Equal(uint64(2), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 
-		counterState, err := types.QueryAnyMsg[types.GetCountResponse](ctx, &counterContract, `{"get_count": {}}`)
+		counterState, err := types.QueryAnyMsg[GetCountResponse](ctx, &counterContract, `{"get_count": {}}`)
 		s.Require().NoError(err)
 
 		s.Require().Equal(int64(1), counterState.Count)
@@ -294,7 +298,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		s.Require().Equal(uint64(3), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 
-		counterState, err := types.QueryAnyMsg[types.GetCountResponse](ctx, &counter2Contract, `{"get_count": {}}`)
+		counterState, err := types.QueryAnyMsg[GetCountResponse](ctx, &counter2Contract, `{"get_count": {}}`)
 		s.Require().NoError(err)
 
 		s.Require().Equal(int64(0), counterState.Count)
