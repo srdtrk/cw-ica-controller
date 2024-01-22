@@ -22,6 +22,7 @@ import (
 	icatypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 
+	"github.com/strangelove-ventures/interchaintest/v7"
 	"github.com/strangelove-ventures/interchaintest/v7/ibc"
 	"github.com/strangelove-ventures/interchaintest/v7/testutil"
 
@@ -37,12 +38,19 @@ type ContractTestSuite struct {
 	IcaAddress string
 }
 
+// SetupSuite calls the underlying TestSuite's SetupSuite method and initializes an empty contract
+func (s *ContractTestSuite) SetupSuite(ctx context.Context, chainSpecs []*interchaintest.ChainSpec) {
+	s.TestSuite.SetupSuite(ctx, chainSpecs)
+
+	// Initialize an empty contract so that we can use the methods of the contract
+	s.Contract = types.NewIcaContract(types.Contract{})
+}
+
 // SetupContractTestSuite starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 // sets up the contract and does the channel handshake for the contract test suite.
 func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding string) {
 	s.SetupSuite(ctx, chainSpecs)
 
-	s.Contract = &types.IcaContract{Contract: types.Contract{Chain: s.ChainA}}
 	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
 
@@ -58,7 +66,7 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding
 		SendCallbacksTo: nil,
 	}
 
-	err = s.Contract.Instantiate(ctx, s.UserA.KeyName(), codeId, instantiateMsg, "--gas", "500000")
+	err = s.Contract.Instantiate(ctx, s.UserA.KeyName(), s.ChainA, codeId, instantiateMsg)
 	s.Require().NoError(err)
 
 	// Wait for the channel to get set up
@@ -270,7 +278,6 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 	s.Require().NoError(err)
 
 	s.Run("TestChannelHandshakeFail: invalid connection id", func() {
-		s.Contract = &types.IcaContract{Contract: types.Contract{Chain: s.ChainA}}
 		// Instantiate the contract with channel:
 		instantiateMsg := icacontroller.InstantiateMsg{
 			Owner: nil,
@@ -283,7 +290,7 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 			SendCallbacksTo: nil,
 		}
 
-		err = s.Contract.Instantiate(ctx, s.UserA.KeyName(), codeId, instantiateMsg, "--gas", "500000")
+		err = s.Contract.Instantiate(ctx, wasmdUser.KeyName(), wasmd, codeId, instantiateMsg, "--gas", "500000")
 		s.Require().ErrorContains(err, "submessages: invalid connection hop ID")
 	})
 
@@ -300,7 +307,7 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 			SendCallbacksTo: nil,
 		}
 
-		err = s.Contract.Instantiate(ctx, s.UserA.KeyName(), codeId, instantiateMsg, "--gas", "500000")
+		err = s.Contract.Instantiate(ctx, wasmdUser.KeyName(), wasmd, codeId, instantiateMsg, "--gas", "500000")
 		s.Require().NoError(err)
 	})
 

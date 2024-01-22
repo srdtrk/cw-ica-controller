@@ -30,11 +30,6 @@ func (c *Contract) ExecAnyMsg(ctx context.Context, callerKeyName string, execMsg
 	return err
 }
 
-// InitAnyMsg instantiates a contract with the given instantiateMsg
-func (c *Contract) InitAnyMsg(ctx context.Context, callerKeyName string, instantiateMsg string, extraExecTxArgs ...string) (string, error) {
-	return c.Chain.InstantiateContract(ctx, callerKeyName, c.CodeID, instantiateMsg, true, extraExecTxArgs...)
-}
-
 func QueryAnyMsg[T any](ctx context.Context, c *Contract, queryMsg any) (*T, error) {
 	queryResp := QueryResponse[T]{}
 	err := c.Chain.QueryContract(ctx, c.Address, queryMsg, &queryResp)

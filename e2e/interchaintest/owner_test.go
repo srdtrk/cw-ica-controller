@@ -40,11 +40,14 @@ func (s *OwnerTestSuite) SetupOwnerTestSuite(ctx context.Context) {
 	s.IcaContractCodeId, err = strconv.ParseUint(codeId, 10, 64)
 	s.Require().NoError(err)
 
-	s.OwnerContract, err = types.StoreAndInstantiateNewOwnerContract(
-		ctx, s.ChainA, s.UserA.KeyName(), "../../artifacts/cw_ica_owner.wasm", s.IcaContractCodeId,
-	)
+	codeId, err = s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_owner.wasm")
 	s.Require().NoError(err)
 
+	instantiateMsg := owner.InstantiateMsg{IcaControllerCodeId: s.IcaContractCodeId}
+	contractAddr, err := s.ChainA.InstantiateContract(ctx, s.UserA.KeyName(), codeId, instantiateMsg.ToString(), true)
+	s.Require().NoError(err)
+
+	s.OwnerContract = types.NewOwnerContract(types.NewContract(contractAddr, codeId, s.ChainA))
 	s.NumOfIcaContracts = 0
 
 	// Create the ICA Contract

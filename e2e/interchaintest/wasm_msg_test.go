@@ -48,7 +48,6 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding str
 	}
 	s.SetupSuite(ctx, wasmChainSpecs)
 
-	s.Contract = &types.IcaContract{Contract: types.Contract{Chain: s.ChainA}}
 	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
 
@@ -64,7 +63,7 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding str
 		SendCallbacksTo: nil,
 	}
 
-	err = s.Contract.Instantiate(ctx, s.UserA.KeyName(), codeId, instantiateMsg, "--gas", "500000")
+	err = s.Contract.Instantiate(ctx, s.UserA.KeyName(), s.ChainA, codeId, instantiateMsg, "--gas", "500000")
 	s.Require().NoError(err)
 
 	// Wait for the channel to get set up
