@@ -113,7 +113,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, s.IcaAddress)
 
-	var counterAddress string
+	var counterContract types.Contract
 	s.Run(fmt.Sprintf("TestInstantiate-%s", encoding), func() {
 		// Instantiate the contract:
 		instantiateMsg := icacontroller.ContractCosmosMsg{
@@ -156,21 +156,25 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		s.Require().NoError(err)
 		s.Require().Len(contractByCodeResp.Contracts, 1)
 
-		counterAddress = contractByCodeResp.Contracts[0]
+		counterContract = types.NewContract(
+			contractByCodeResp.Contracts[0],
+			strconv.FormatUint(counterCodeID, 10),
+			wasmd2,
+		)
 
-		counterState, err := types.QueryContract[types.GetCountResponse](ctx, wasmd2, counterAddress, `{"get_count": {}}`)
+		counterState, err := types.QueryContract[types.GetCountResponse](ctx, &counterContract, `{"get_count": {}}`)
 		s.Require().NoError(err)
 
 		s.Require().Equal(int64(0), counterState.Count)
 	})
 
-	var counter2Address string
+	var counter2Contract types.Contract
 	s.Run(fmt.Sprintf("TestExecuteAndInstantiate2AndClearAdminMsg-%s", encoding), func() {
 		// Execute the contract:
 		executeMsg := icacontroller.ContractCosmosMsg{
 			Wasm: &icacontroller.WasmCosmosMsg{
 				Execute: &icacontroller.WasmExecuteCosmosMsg{
-					ContractAddr: counterAddress,
+					ContractAddr: counterContract.Address,
 					Msg:          toBase64(`{"increment": {}}`),
 					Funds:        []icacontroller.Coin{},
 				},
@@ -180,7 +184,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		clearAdminMsg := icacontroller.ContractCosmosMsg{
 			Wasm: &icacontroller.WasmCosmosMsg{
 				ClearAdmin: &icacontroller.WasmClearAdminCosmosMsg{
-					ContractAddr: counterAddress,
+					ContractAddr: counterContract.Address,
 				},
 			},
 		}
@@ -217,7 +221,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		s.Require().Equal(uint64(2), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 
-		counterState, err := types.QueryContract[types.GetCountResponse](ctx, wasmd2, counterAddress, `{"get_count": {}}`)
+		counterState, err := types.QueryContract[types.GetCountResponse](ctx, &counterContract, `{"get_count": {}}`)
 		s.Require().NoError(err)
 
 		s.Require().Equal(int64(1), counterState.Count)
@@ -225,7 +229,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		contractInfoQuerier := mysuite.NewGRPCQuerier[wasmtypes.QueryContractInfoResponse](s.T(), wasmd2, "/cosmwasm.wasm.v1.Query/ContractInfo")
 
 		contractInfoRequest := wasmtypes.QueryContractInfoRequest{
-			Address: counterAddress,
+			Address: counterContract.Address,
 		}
 		contractInfoResp, err := contractInfoQuerier.GRPCQuery(ctx, &contractInfoRequest)
 		s.Require().NoError(err)
@@ -241,14 +245,18 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		s.Require().NoError(err)
 		s.Require().Len(contractByCodeResp.Contracts, 2)
 
-		counter2Address = contractByCodeResp.Contracts[1]
+		counter2Contract = types.NewContract(
+			contractByCodeResp.Contracts[1],
+			strconv.FormatUint(counterCodeID, 10),
+			wasmd2,
+		)
 	})
 
 	s.Run(fmt.Sprintf("TestMigrateAndUpdateAdmin-%s", encoding), func() {
 		migrateMsg := icacontroller.ContractCosmosMsg{
 			Wasm: &icacontroller.WasmCosmosMsg{
 				Migrate: &icacontroller.WasmMigrateCosmosMsg{
-					ContractAddr: counter2Address,
+					ContractAddr: counter2Contract.Address,
 					NewCodeID:    counterCodeID + 1,
 					Msg:          toBase64(`{}`),
 				},
@@ -258,7 +266,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		updateAdminMsg := icacontroller.ContractCosmosMsg{
 			Wasm: &icacontroller.WasmCosmosMsg{
 				UpdateAdmin: &icacontroller.WasmUpdateAdminCosmosMsg{
-					ContractAddr: counter2Address,
+					ContractAddr: counter2Contract.Address,
 					Admin:        wasmd2User.FormattedAddress(),
 				},
 			},
@@ -284,7 +292,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		s.Require().Equal(uint64(3), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 
-		counterState, err := types.QueryContract[types.GetCountResponse](ctx, wasmd2, counter2Address, `{"get_count": {}}`)
+		counterState, err := types.QueryContract[types.GetCountResponse](ctx, &counter2Contract, `{"get_count": {}}`)
 		s.Require().NoError(err)
 
 		s.Require().Equal(int64(0), counterState.Count)
@@ -292,7 +300,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		contractInfoQuerier := mysuite.NewGRPCQuerier[wasmtypes.QueryContractInfoResponse](s.T(), wasmd2, "/cosmwasm.wasm.v1.Query/ContractInfo")
 
 		contractInfoRequest := wasmtypes.QueryContractInfoRequest{
-			Address: counter2Address,
+			Address: counter2Contract.Address,
 		}
 		contractInfoResp, err := contractInfoQuerier.GRPCQuery(ctx, &contractInfoRequest)
 		s.Require().NoError(err)

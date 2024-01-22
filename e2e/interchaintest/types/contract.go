@@ -35,9 +35,9 @@ func (c *Contract) InitAnyMsg(ctx context.Context, callerKeyName string, instant
 	return c.Chain.InstantiateContract(ctx, callerKeyName, c.CodeID, instantiateMsg, true, extraExecTxArgs...)
 }
 
-func QueryContract[T any](ctx context.Context, chain *cosmos.CosmosChain, contractAddr string, queryMsg string) (*T, error) {
+func QueryContract[T any](ctx context.Context, c *Contract, queryMsg any) (*T, error) {
 	queryResp := QueryResponse[T]{}
-	err := chain.QueryContract(ctx, contractAddr, queryMsg, &queryResp)
+	err := c.Chain.QueryContract(ctx, c.Address, queryMsg, &queryResp)
 	if err != nil {
 		return nil, err
 	}
