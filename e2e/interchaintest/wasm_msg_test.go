@@ -77,7 +77,7 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding str
 	)
 	s.Require().NoError(err)
 
-	ownershipResponse, err := s.Contract.QueryOwnership(ctx)
+	ownershipResponse, err := types.QueryContract[icacontroller.OwnershipResponse](ctx, &s.Contract.Contract, icacontroller.OwnershipRequest)
 	s.Require().NoError(err)
 
 	s.IcaAddress = contractState.IcaInfo.IcaAddress
@@ -144,7 +144,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := s.Contract.QueryCallbackCounter(ctx)
+		callbackCounter, err := types.QueryContract[icacontroller.CallbackCounter](ctx, &s.Contract.Contract, icacontroller.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)
@@ -218,7 +218,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := s.Contract.QueryCallbackCounter(ctx)
+		callbackCounter, err := types.QueryContract[icacontroller.CallbackCounter](ctx, &s.Contract.Contract, icacontroller.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(2), callbackCounter.Success)
@@ -288,7 +288,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := s.Contract.QueryCallbackCounter(ctx)
+		callbackCounter, err := types.QueryContract[icacontroller.CallbackCounter](ctx, &s.Contract.Contract, icacontroller.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
 		// s.Require().Equal(uint64(1), callbackCounter.Error)

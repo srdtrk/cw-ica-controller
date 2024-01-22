@@ -27,8 +27,8 @@ type ContractChannelState struct {
 	ChannelStatus string       `json:"channel_status"`
 }
 
-// OwnershipQueryResponse is the response type for the OwnershipQueryMsg
-type OwnershipQueryResponse struct {
+// OwnershipResponse is the response type for the OwnershipQueryMsg
+type OwnershipResponse struct {
 	// The current owner of the contract.
 	// This contract must have an owner.
 	Owner string `json:"owner"`

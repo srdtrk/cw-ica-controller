@@ -110,7 +110,7 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 		s.Require().Equal(channeltypes.OPEN.String(), simdChannel.State)
 
 		// Check contract's channel state
-		contractChannelState, err := icaContract.QueryChannelState(ctx)
+		contractChannelState, err := types.QueryContract[icacontroller.ContractChannelState](ctx, &icaContract.Contract, icacontroller.GetChannelRequest)
 		s.Require().NoError(err)
 
 		s.T().Logf("contract's channel store after handshake: %s", toJSONString(contractChannelState))
@@ -133,11 +133,11 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
 		s.Require().Equal(false, contractState.AllowChannelOpenInit)
 
-		ownerResponse, err := icaContract.QueryOwnership(ctx)
+		ownershipResponse, err := types.QueryContract[icacontroller.OwnershipResponse](ctx, &icaContract.Contract, icacontroller.OwnershipRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(s.OwnerContract.Address, ownerResponse.Owner)
-		s.Require().Nil(ownerResponse.PendingOwner)
-		s.Require().Nil(ownerResponse.PendingExpiry)
+		s.Require().Equal(s.OwnerContract.Address, ownershipResponse.Owner)
+		s.Require().Nil(ownershipResponse.PendingOwner)
+		s.Require().Nil(ownershipResponse.PendingExpiry)
 	})
 }
 
@@ -179,7 +179,7 @@ func (s *OwnerTestSuite) TestOwnerPredefinedAction() {
 		s.Require().Equal(sdkmath.NewInt(1000000000-100), icaBalance)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := icaContract.QueryCallbackCounter(ctx)
+		callbackCounter, err := types.QueryContract[icacontroller.CallbackCounter](ctx, &icaContract.Contract, icacontroller.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)
