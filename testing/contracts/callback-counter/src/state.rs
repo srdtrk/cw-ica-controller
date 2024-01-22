@@ -1,98 +1,40 @@
-use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Addr;
-use cw_storage_plus::{Item, Map};
+use cw_storage_plus::Item;
 
-pub use contract::ContractState;
-pub use ica::{IcaContractState, IcaState};
+pub use contract::CallbackCounter;
 
-/// The item used to store the state of the IBC application.
-pub const STATE: Item<ContractState> = Item::new("state");
-/// The map used to store the state of the cw-ica-controller contracts.
-pub const ICA_STATES: Map<u64, IcaContractState> = Map::new("ica_states");
-/// The item used to store the count of the cw-ica-controller contracts.
-pub const ICA_COUNT: Item<u64> = Item::new("ica_count");
-/// The item used to map contract addresses to ICA IDs.
-pub const CONTRACT_ADDR_TO_ICA_ID: Map<Addr, u64> = Map::new("contract_addr_to_ica_id");
+/// The item used to store the successful and erroneous callbacks in store.
+pub const CALLBACK_COUNTER: Item<CallbackCounter> = Item::new("callback_counter");
 
 mod contract {
-    use crate::ContractError;
+    use cosmwasm_schema::cw_serde;
 
-    use super::*;
-
-    /// ContractState is the state of the IBC application.
+    /// CallbackCounter tracks the number of callbacks in store.
     #[cw_serde]
-    pub struct ContractState {
-        /// The admin of this contract.
-        pub admin: Addr,
-        /// The code ID of the cw-ica-controller contract.
-        pub ica_controller_code_id: u64,
+    #[derive(Default)]
+    pub struct CallbackCounter {
+        /// The number of successful callbacks.
+        pub success: u32,
+        /// The number of erroneous callbacks.
+        pub error: u32,
+        /// The number of timeout callbacks.
+        /// The channel is closed after a timeout due to the semantics of ordered channels.
+        pub timeout: u32,
     }
 
-    impl ContractState {
-        /// Creates a new ContractState.
-        pub fn new(admin: Addr, ica_controller_code_id: u64) -> Self {
-            Self {
-                admin,
-                ica_controller_code_id,
-            }
+    impl CallbackCounter {
+        /// Increments the success counter
+        pub fn success(&mut self) {
+            self.success += 1;
         }
 
-        /// Checks if the address is the admin
-        pub fn verify_admin(&self, sender: impl Into<String>) -> Result<(), ContractError> {
-            if self.admin == sender.into() {
-                Ok(())
-            } else {
-                Err(ContractError::Unauthorized {})
-            }
+        /// Increments the error counter
+        pub fn error(&mut self) {
+            self.error += 1;
         }
-    }
-}
 
-mod ica {
-    use cw_ica_controller::{ibc::types::metadata::TxEncoding, types::state::ChannelState};
-
-    use super::*;
-
-    /// IcaContractState is the state of the cw-ica-controller contract.
-    #[cw_serde]
-    pub struct IcaContractState {
-        pub contract_addr: Addr,
-        pub ica_state: Option<IcaState>,
-    }
-
-    /// IcaState is the state of the ICA.
-    #[cw_serde]
-    pub struct IcaState {
-        pub ica_id: u64,
-        pub ica_addr: String,
-        pub tx_encoding: TxEncoding,
-        pub channel_state: ChannelState,
-    }
-
-    impl IcaContractState {
-        /// Creates a new [`IcaContractState`].
-        pub fn new(contract_addr: Addr) -> Self {
-            Self {
-                contract_addr,
-                ica_state: None,
-            }
-        }
-    }
-
-    impl IcaState {
-        /// Creates a new [`IcaState`].
-        pub fn new(
-            ica_id: u64,
-            ica_addr: String,
-            tx_encoding: TxEncoding,
-            channel_state: ChannelState,
-        ) -> Self {
-            Self {
-                ica_id,
-                ica_addr,
-                tx_encoding,
-                channel_state,
-            }
+        /// Increments the timeout counter
+        pub fn timeout(&mut self) {
+            self.timeout += 1;
         }
     }
 }

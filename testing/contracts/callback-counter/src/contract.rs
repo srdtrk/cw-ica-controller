@@ -5,7 +5,6 @@ use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Resp
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{ContractState, STATE};
 
 /*
 // version info for migration info
@@ -15,21 +14,11 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
-    deps: DepsMut,
+    _deps: DepsMut,
     _env: Env,
-    info: MessageInfo,
-    msg: InstantiateMsg,
+    _info: MessageInfo,
+    _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    let admin = if let Some(admin) = msg.admin {
-        deps.api.addr_validate(&admin)?
-    } else {
-        info.sender
-    };
-
-    STATE.save(
-        deps.storage,
-        &ContractState::new(admin, msg.ica_controller_code_id),
-    )?;
     Ok(Response::default())
 }
 
@@ -50,72 +39,65 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetContractState {} => to_json_binary(&query::state(deps)?),
-        QueryMsg::GetIcaContractState { ica_id } => {
-            to_json_binary(&query::ica_state(deps, ica_id)?)
-        }
-        QueryMsg::GetIcaCount {} => to_json_binary(&query::ica_count(deps)?),
+        QueryMsg::GetCallbackCounter {} => to_json_binary(&query::callback_counter(deps)?),
     }
 }
 
 mod execute {
-    use cw_ica_controller::types::callbacks::IcaControllerCallbackMsg;
-    use cw_ica_controller::types::state::{ChannelState, ChannelStatus};
+    use cw_ica_controller::{
+        ibc::types::packet::acknowledgement::Data, types::callbacks::IcaControllerCallbackMsg,
+    };
 
-    use crate::state::{self, CONTRACT_ADDR_TO_ICA_ID, ICA_STATES};
+    use crate::state::CALLBACK_COUNTER;
 
     use super::*;
 
     /// Handles ICA controller callback messages.
     pub fn ica_callback_handler(
         deps: DepsMut,
-        info: MessageInfo,
+        _info: MessageInfo,
         callback_msg: IcaControllerCallbackMsg,
     ) -> Result<Response, ContractError> {
-        let ica_id = CONTRACT_ADDR_TO_ICA_ID.load(deps.storage, info.sender)?;
-        let mut ica_state = ICA_STATES.load(deps.storage, ica_id)?;
-
-        if let IcaControllerCallbackMsg::OnChannelOpenAckCallback {
-            channel,
-            ica_address,
-            tx_encoding,
-        } = callback_msg
-        {
-            ica_state.ica_state = Some(state::IcaState {
-                ica_id,
-                channel_state: ChannelState {
-                    channel,
-                    channel_status: ChannelStatus::Open,
-                },
-                ica_addr: ica_address,
-                tx_encoding,
-            });
-
-            ICA_STATES.save(deps.storage, ica_id, &ica_state)?;
+        match callback_msg {
+            IcaControllerCallbackMsg::OnChannelOpenAckCallback { .. } => Ok(Response::default()),
+            IcaControllerCallbackMsg::OnAcknowledgementPacketCallback {
+                ica_acknowledgement,
+                ..
+            } => match ica_acknowledgement {
+                Data::Result(_) => {
+                    CALLBACK_COUNTER.update(deps.storage, |mut counter| -> StdResult<_> {
+                        counter.success();
+                        Ok(counter)
+                    })?;
+                    Ok(Response::default())
+                }
+                Data::Error(_) => {
+                    CALLBACK_COUNTER.update(deps.storage, |mut counter| -> StdResult<_> {
+                        counter.error();
+                        Ok(counter)
+                    })?;
+                    Ok(Response::default())
+                }
+            },
+            IcaControllerCallbackMsg::OnTimeoutPacketCallback { .. } => {
+                CALLBACK_COUNTER.update(deps.storage, |mut counter| -> StdResult<_> {
+                    counter.timeout();
+                    Ok(counter)
+                })?;
+                Ok(Response::default())
+            }
         }
-
-        Ok(Response::default())
     }
 }
 
 mod query {
-    use crate::state::{IcaContractState, ICA_COUNT, ICA_STATES};
+    use crate::state::{CallbackCounter, CALLBACK_COUNTER};
 
     use super::*;
 
-    /// Returns the saved contract state.
-    pub fn state(deps: Deps) -> StdResult<ContractState> {
-        STATE.load(deps.storage)
-    }
-
-    /// Returns the saved ICA state for the given ICA ID.
-    pub fn ica_state(deps: Deps, ica_id: u64) -> StdResult<IcaContractState> {
-        ICA_STATES.load(deps.storage, ica_id)
-    }
-
-    /// Returns the saved ICA count.
-    pub fn ica_count(deps: Deps) -> StdResult<u64> {
-        ICA_COUNT.load(deps.storage)
+    /// Returns the callback counter.
+    pub fn callback_counter(deps: Deps) -> StdResult<CallbackCounter> {
+        CALLBACK_COUNTER.load(deps.storage)
     }
 }
 
