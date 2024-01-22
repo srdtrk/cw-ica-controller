@@ -56,12 +56,13 @@ func (c *IcaContract) Execute(ctx context.Context, callerKeyName string, msg ica
 }
 
 func (c *IcaContract) Instantiate(ctx context.Context, callerKeyName string, codeId string, msg icacontroller.InstantiateMsg, extraExecTxArgs ...string) error {
+	c.CodeID = codeId
+
 	contractAddr, err := c.Contract.InitAnyMsg(ctx, callerKeyName, msg.ToString(), extraExecTxArgs...)
 	if err != nil {
 		return err
 	}
 
-	c.CodeID = codeId
 	c.Address = contractAddr
 	return nil
 }
