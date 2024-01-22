@@ -14,10 +14,7 @@ type IcaContract struct {
 }
 
 func NewIcaContract(contract Contract) *IcaContract {
-	return &IcaContract{
-		Contract:   contract,
-		IcaAddress: "",
-	}
+	return &IcaContract{Contract: contract, IcaAddress: ""}
 }
 
 func (c *IcaContract) SetIcaAddress(icaAddress string) {

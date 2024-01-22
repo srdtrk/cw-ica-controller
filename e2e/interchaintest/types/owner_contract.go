@@ -11,9 +11,7 @@ type OwnerContract struct {
 }
 
 func NewOwnerContract(contract Contract) *OwnerContract {
-	return &OwnerContract{
-		Contract: contract,
-	}
+	return &OwnerContract{Contract: contract}
 }
 
 func (c *OwnerContract) Execute(ctx context.Context, callerKeyName string, msg owner.ExecuteMsg, extraExecTxArgs ...string) error {
