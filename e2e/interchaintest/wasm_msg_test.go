@@ -48,6 +48,7 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding str
 	}
 	s.SetupSuite(ctx, wasmChainSpecs)
 
+	s.Contract = &types.IcaContract{Contract: types.Contract{Chain: s.ChainA}}
 	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
 

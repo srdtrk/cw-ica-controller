@@ -42,7 +42,7 @@ type ContractTestSuite struct {
 func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding string) {
 	s.SetupSuite(ctx, chainSpecs)
 
-	s.Contract.Chain = s.ChainA
+	s.Contract = &types.IcaContract{Contract: types.Contract{Chain: s.ChainA}}
 	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
 
@@ -244,7 +244,7 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 	s.Require().NoError(err)
 
 	s.Run("TestChannelHandshakeFail: invalid connection id", func() {
-		s.Contract.Chain = s.ChainA
+		s.Contract = &types.IcaContract{Contract: types.Contract{Chain: s.ChainA}}
 		// Instantiate the contract with channel:
 		instantiateMsg := icacontroller.InstantiateMsg{
 			Owner: nil,
