@@ -822,7 +822,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		// Reopen the channel:
 		createChannelMsg := icacontroller.ExecuteMsg{
 			CreateChannel: &icacontroller.ExecuteMsg_CreateChannel{
-				ChannelOpenInitOptions: &icacontroller.ChannelOpenInitOptions{},
+				ChannelOpenInitOptions: nil,
 			},
 		}
 
