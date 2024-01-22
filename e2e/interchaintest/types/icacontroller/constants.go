@@ -2,11 +2,11 @@ package icacontroller
 
 var (
 	// Query request for contract state
-	GetContractStateRequest = QueryMsg{GetContractState: &EmptyMsg{}}
+	GetContractStateRequest = QueryMsg{GetContractState: &struct{}{}}
 	// Query request for channel state
-	GetChannelRequest = QueryMsg{GetChannel: &EmptyMsg{}}
+	GetChannelRequest = QueryMsg{GetChannel: &struct{}{}}
 	// Query request for callback counter
-	GetCallbackCounterRequest = QueryMsg{GetCallbackCounter: &EmptyMsg{}}
+	GetCallbackCounterRequest = QueryMsg{GetCallbackCounter: &struct{}{}}
 	// Query request for contract ownership
-	OwnershipRequest = QueryMsg{Ownership: &EmptyMsg{}}
+	OwnershipRequest = QueryMsg{Ownership: &struct{}{}}
 )

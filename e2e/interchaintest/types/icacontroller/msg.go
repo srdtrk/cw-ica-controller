@@ -24,17 +24,14 @@ type ExecuteMsg struct {
 
 // QueryMsg is the message to query cw-ica-controller
 type QueryMsg struct {
-	GetChannel         *EmptyMsg `json:"get_channel,omitempty"`
-	GetContractState   *EmptyMsg `json:"get_contract_state,omitempty"`
-	GetCallbackCounter *EmptyMsg `json:"get_callback_counter,omitempty"`
-	Ownership          *EmptyMsg `json:"ownership,omitempty"`
+	GetChannel         *struct{} `json:"get_channel,omitempty"`
+	GetContractState   *struct{} `json:"get_contract_state,omitempty"`
+	GetCallbackCounter *struct{} `json:"get_callback_counter,omitempty"`
+	Ownership          *struct{} `json:"ownership,omitempty"`
 }
 
 // MigrateMsg is the message to migrate cw-ica-controller
-type MigrateMsg = EmptyMsg
-
-// EmptyMsg is an empty message
-type EmptyMsg struct{}
+type MigrateMsg = struct{}
 
 // `CreateChannel` makes the contract submit a stargate MsgChannelOpenInit to the chain.
 // This is a wrapper around [`options::ChannelOpenInitOptions`] and thus requires the
