@@ -16,7 +16,10 @@ import (
 	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos/wasm"
 )
 
-func TestExecuteMsgs(t *testing.T) {
+// This is some boilerplate test code to insert some tests for the types package.
+// It is not meant to be executed, but to be used as a way to test some functions when
+// debugging developing the types package.
+func TestTypes(t *testing.T) {
 	const testAddress = "srdtrk"
 
 	t.Parallel()
