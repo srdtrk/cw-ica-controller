@@ -64,18 +64,6 @@ impl CwIcaControllerContract {
         querier.query_wasm_smart(self.addr(), &msg::QueryMsg::GetContractState {})
     }
 
-    /// `query_callback_counter` queries the [`state::CallbackCounter`] of this contract
-    ///
-    /// # Errors
-    ///
-    /// This function returns an error if the query fails
-    pub fn query_callback_counter(
-        &self,
-        querier: QuerierWrapper,
-    ) -> StdResult<state::CallbackCounter> {
-        querier.query_wasm_smart(self.addr(), &msg::QueryMsg::GetCallbackCounter {})
-    }
-
     /// `update_admin` creates a [`WasmMsg::UpdateAdmin`] message targeting this contract
     pub fn update_admin(&self, admin: impl Into<String>) -> CosmosMsg {
         WasmMsg::UpdateAdmin {

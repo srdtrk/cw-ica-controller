@@ -9,10 +9,7 @@ use cosmwasm_std::{
     IbcPacketTimeoutMsg, IbcReceiveResponse, Never,
 };
 
-use crate::types::{
-    state::{CALLBACK_COUNTER, CHANNEL_STATE},
-    ContractError,
-};
+use crate::types::{state::CHANNEL_STATE, ContractError};
 
 use super::types::{events, packet::acknowledgement::Data as AcknowledgementData};
 
@@ -71,10 +68,7 @@ pub fn ibc_packet_receive(
 mod ibc_packet_ack {
     use cosmwasm_std::{Addr, Binary, IbcPacket};
 
-    use crate::types::{
-        callbacks::IcaControllerCallbackMsg,
-        state::{CALLBACK_COUNTER, STATE},
-    };
+    use crate::types::{callbacks::IcaControllerCallbackMsg, state::STATE};
 
     use super::{events, AcknowledgementData, ContractError, DepsMut, IbcBasicResponse};
 
@@ -88,11 +82,6 @@ mod ibc_packet_ack {
         res: Binary,
     ) -> Result<IbcBasicResponse, ContractError> {
         let state = STATE.load(deps.storage)?;
-
-        CALLBACK_COUNTER.update(deps.storage, |mut counter| -> Result<_, ContractError> {
-            counter.success();
-            Ok(counter)
-        })?;
 
         let success_event = events::packet_ack::success(&packet, &res);
 
@@ -123,11 +112,6 @@ mod ibc_packet_ack {
     ) -> Result<IbcBasicResponse, ContractError> {
         let state = STATE.load(deps.storage)?;
 
-        CALLBACK_COUNTER.update(deps.storage, |mut counter| -> Result<_, ContractError> {
-            counter.error();
-            Ok(counter)
-        })?;
-
         let error_event = events::packet_ack::error(&packet, &err);
 
         if let Some(contract_addr) = state.callback_address {
@@ -152,7 +136,7 @@ mod ibc_packet_timeout {
 
     use crate::types::{callbacks::IcaControllerCallbackMsg, state::STATE};
 
-    use super::{ContractError, DepsMut, IbcBasicResponse, CALLBACK_COUNTER};
+    use super::{ContractError, DepsMut, IbcBasicResponse};
 
     /// Handles the timeout callbacks.
     #[allow(clippy::needless_pass_by_value)]
@@ -162,12 +146,6 @@ mod ibc_packet_timeout {
         relayer: Addr,
     ) -> Result<IbcBasicResponse, ContractError> {
         let state = STATE.load(deps.storage)?;
-
-        // Increment the callback counter.
-        CALLBACK_COUNTER.update(deps.storage, |mut cc| -> Result<_, ContractError> {
-            cc.timeout();
-            Ok(cc)
-        })?;
 
         if let Some(contract_addr) = state.callback_address {
             let callback_msg = IcaControllerCallbackMsg::OnTimeoutPacketCallback {
