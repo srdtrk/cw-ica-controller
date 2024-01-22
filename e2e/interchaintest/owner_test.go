@@ -35,7 +35,7 @@ type OwnerTestSuite struct {
 func (s *OwnerTestSuite) SetupOwnerTestSuite(ctx context.Context) {
 	s.SetupSuite(ctx, chainSpecs)
 
-	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/callback_contract.wasm")
+	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/callback_counter.wasm")
 	s.Require().NoError(err)
 
 	s.CallbackContractAddress, err = s.ChainA.InstantiateContract(ctx, s.UserA.KeyName(), codeId, callbackcounter.InstantiateMsg, true)

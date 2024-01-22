@@ -54,7 +54,7 @@ func (s *ContractTestSuite) SetupSuite(ctx context.Context, chainSpecs []*interc
 func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding string) {
 	s.SetupSuite(ctx, chainSpecs)
 
-	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/callback_contract.wasm")
+	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/callback_counter.wasm")
 	s.Require().NoError(err)
 
 	s.CallbackContractAddress, err = s.ChainA.InstantiateContract(ctx, s.UserA.KeyName(), codeId, callbackcounter.InstantiateMsg, true)
