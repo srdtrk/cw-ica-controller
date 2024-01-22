@@ -24,10 +24,9 @@ type ExecuteMsg struct {
 
 // QueryMsg is the message to query cw-ica-controller
 type QueryMsg struct {
-	GetChannel         *struct{} `json:"get_channel,omitempty"`
-	GetContractState   *struct{} `json:"get_contract_state,omitempty"`
-	GetCallbackCounter *struct{} `json:"get_callback_counter,omitempty"`
-	Ownership          *struct{} `json:"ownership,omitempty"`
+	GetChannel       *struct{} `json:"get_channel,omitempty"`
+	GetContractState *struct{} `json:"get_contract_state,omitempty"`
+	Ownership        *struct{} `json:"ownership,omitempty"`
 }
 
 // MigrateMsg is the message to migrate cw-ica-controller

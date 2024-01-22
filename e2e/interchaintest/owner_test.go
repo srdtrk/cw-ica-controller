@@ -16,6 +16,7 @@ import (
 
 	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
+	callbackcounter "github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/callback-counter"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/owner"
 )
@@ -23,9 +24,10 @@ import (
 type OwnerTestSuite struct {
 	mysuite.TestSuite
 
-	IcaContractCodeId uint64
-	OwnerContract     *types.OwnerContract
-	NumOfIcaContracts uint32
+	IcaContractCodeId       uint64
+	OwnerContract           *types.OwnerContract
+	NumOfIcaContracts       uint32
+	CallbackContractAddress string
 }
 
 // SetupOwnerTestSuite starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
@@ -33,7 +35,13 @@ type OwnerTestSuite struct {
 func (s *OwnerTestSuite) SetupOwnerTestSuite(ctx context.Context) {
 	s.SetupSuite(ctx, chainSpecs)
 
-	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
+	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/callback_contract.wasm")
+	s.Require().NoError(err)
+
+	s.CallbackContractAddress, err = s.ChainA.InstantiateContract(ctx, s.UserA.KeyName(), codeId, callbackcounter.InstantiateMsg, true)
+	s.Require().NoError(err)
+
+	codeId, err = s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
 
 	// codeId is string and needs to be converted to uint64
@@ -195,7 +203,7 @@ func (s *OwnerTestSuite) TestOwnerPredefinedAction() {
 		s.Require().Equal(sdkmath.NewInt(1000000000-100), icaBalance)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryAnyMsg[icacontroller.CallbackCounter](ctx, &icaContract.Contract, icacontroller.GetCallbackCounterRequest)
+		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, &icaContract.Contract, callbackcounter.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)
