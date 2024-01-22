@@ -93,7 +93,10 @@ func (c *IcaContract) ExecSendStargateMsgs(
 // QueryContractState queries the contract's state
 func (c *IcaContract) QueryContractState(ctx context.Context) (*icacontroller.ContractState, error) {
 	queryResp := QueryResponse[icacontroller.ContractState]{}
-	err := c.Chain.QueryContract(ctx, c.Address, newGetContractStateQueryMsg(), &queryResp)
+	queryReq := icacontroller.QueryMsg{
+		GetContractState: &icacontroller.EmptyMsg{},
+	}
+	err := c.Chain.QueryContract(ctx, c.Address, queryReq, &queryResp)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +112,10 @@ func (c *IcaContract) QueryContractState(ctx context.Context) (*icacontroller.Co
 // QueryChannelState queries the channel state stored in the contract
 func (c *IcaContract) QueryChannelState(ctx context.Context) (*icacontroller.ContractChannelState, error) {
 	queryResp := QueryResponse[icacontroller.ContractChannelState]{}
-	err := c.Chain.QueryContract(ctx, c.Address, newGetChannelQueryMsg(), &queryResp)
+	queryReq := icacontroller.QueryMsg{
+		GetChannel: &icacontroller.EmptyMsg{},
+	}
+	err := c.Chain.QueryContract(ctx, c.Address, queryReq, &queryResp)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +131,10 @@ func (c *IcaContract) QueryChannelState(ctx context.Context) (*icacontroller.Con
 // QueryCallbackCounter queries the callback counter stored in the contract
 func (c *IcaContract) QueryCallbackCounter(ctx context.Context) (*icacontroller.CallbackCounter, error) {
 	queryResp := QueryResponse[icacontroller.CallbackCounter]{}
-	err := c.Chain.QueryContract(ctx, c.Address, newGetCallbackCounterQueryMsg(), &queryResp)
+	queryReq := icacontroller.QueryMsg{
+		GetCallbackCounter: &icacontroller.EmptyMsg{},
+	}
+	err := c.Chain.QueryContract(ctx, c.Address, queryReq, &queryResp)
 	if err != nil {
 		return nil, err
 	}
@@ -139,9 +148,12 @@ func (c *IcaContract) QueryCallbackCounter(ctx context.Context) (*icacontroller.
 }
 
 // QueryOwnership queries the owner of the contract
-func (c *IcaContract) QueryOwnership(ctx context.Context) (*OwnershipQueryResponse, error) {
-	queryResp := QueryResponse[OwnershipQueryResponse]{}
-	err := c.Chain.QueryContract(ctx, c.Address, newOwnershipQueryMsg(), &queryResp)
+func (c *IcaContract) QueryOwnership(ctx context.Context) (*icacontroller.OwnershipQueryResponse, error) {
+	queryResp := QueryResponse[icacontroller.OwnershipQueryResponse]{}
+	queryReq := icacontroller.QueryMsg{
+		Ownership: &icacontroller.EmptyMsg{},
+	}
+	err := c.Chain.QueryContract(ctx, c.Address, queryReq, &queryResp)
 	if err != nil {
 		return nil, err
 	}

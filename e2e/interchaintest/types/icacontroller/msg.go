@@ -27,6 +27,7 @@ type QueryMsg struct {
 	GetChannel         *EmptyMsg `json:"get_channel,omitempty"`
 	GetContractState   *EmptyMsg `json:"get_contract_state,omitempty"`
 	GetCallbackCounter *EmptyMsg `json:"get_callback_counter,omitempty"`
+	Ownership          *EmptyMsg `json:"ownership,omitempty"`
 }
 
 // MigrateMsg is the message to migrate cw-ica-controller

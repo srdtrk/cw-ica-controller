@@ -1,5 +1,7 @@
 package icacontroller
 
+import "encoding/json"
+
 // ContractState is used to represent its state in Contract's storage
 type ContractState struct {
 	IcaInfo              IcaInfo `json:"ica_info"`
@@ -23,6 +25,18 @@ type CallbackCounter struct {
 type ContractChannelState struct {
 	Channel       CwIbcChannel `json:"channel"`
 	ChannelStatus string       `json:"channel_status"`
+}
+
+// OwnershipQueryResponse is the response type for the OwnershipQueryMsg
+type OwnershipQueryResponse struct {
+	// The current owner of the contract.
+	// This contract must have an owner.
+	Owner string `json:"owner"`
+	// The pending owner of the contract if one exists.
+	PendingOwner *string `json:"pending_owner"`
+	// The height at which the pending owner offer expires.
+	// Not sure how to represent this, so we'll just use a raw message
+	PendingExpiry *json.RawMessage `json:"pending_expiry"`
 }
 
 // IsOpen returns true if the channel is open
