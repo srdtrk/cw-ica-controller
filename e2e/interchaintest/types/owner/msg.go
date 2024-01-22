@@ -1,6 +1,10 @@
 package owner
 
-import "github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
+import (
+	"encoding/json"
+
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
+)
 
 type InstantiateMsg struct {
 	// The admin address. If not specified, the sender is the admin.
@@ -32,4 +36,28 @@ type QueryMsg struct {
 
 type QueryMsg_GetIcaContractState struct {
 	IcaId uint64 `json:"ica_id"`
+}
+
+// ToString returns a string representation of the message
+func (m *InstantiateMsg) ToString() string {
+	return toString(m)
+}
+
+// ToString returns a string representation of the message
+func (m *ExecuteMsg) ToString() string {
+	return toString(m)
+}
+
+// ToString returns a string representation of the message
+func (m *QueryMsg) ToString() string {
+	return toString(m)
+}
+
+func toString(v any) string {
+	jsonBz, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+
+	return string(jsonBz)
 }
