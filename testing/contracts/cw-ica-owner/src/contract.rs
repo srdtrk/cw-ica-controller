@@ -157,7 +157,8 @@ mod execute {
             return Err(ContractError::IcaInfoNotSet {});
         };
 
-        let cw_ica_contract = CwIcaControllerContract::new(Addr::unchecked(&ica_state.contract_addr));
+        let cw_ica_contract =
+            CwIcaControllerContract::new(Addr::unchecked(&ica_state.contract_addr));
 
         let ica_packet = match ica_info.tx_encoding {
             TxEncoding::Protobuf => {
@@ -205,25 +206,23 @@ mod execute {
         let ica_id = CONTRACT_ADDR_TO_ICA_ID.load(deps.storage, info.sender)?;
         let mut ica_state = ICA_STATES.load(deps.storage, ica_id)?;
 
-        match callback_msg {
-            IcaControllerCallbackMsg::OnChannelOpenAckCallback {
-                channel,
-                ica_address,
+        if let IcaControllerCallbackMsg::OnChannelOpenAckCallback {
+            channel,
+            ica_address,
+            tx_encoding,
+        } = callback_msg
+        {
+            ica_state.ica_state = Some(state::IcaState {
+                ica_id,
+                channel_state: ChannelState {
+                    channel,
+                    channel_status: ChannelStatus::Open,
+                },
+                ica_addr: ica_address,
                 tx_encoding,
-            } => {
-                ica_state.ica_state = Some(state::IcaState {
-                    ica_id,
-                    channel_state: ChannelState {
-                        channel,
-                        channel_status: ChannelStatus::Open,
-                    },
-                    ica_addr: ica_address,
-                    tx_encoding,
-                });
+            });
 
-                ICA_STATES.save(deps.storage, ica_id, &ica_state)?;
-            }
-            _ => (),
+            ICA_STATES.save(deps.storage, ica_id, &ica_state)?;
         }
 
         Ok(Response::default())
