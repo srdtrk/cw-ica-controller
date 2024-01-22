@@ -394,7 +394,12 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		s.Require().NoError(err)
 
 		// Execute the contract:
-		err = s.Contract.ExecCustomIcaMessages(ctx, wasmdUser.KeyName(), []proto.Message{proposalMsg, depositMsg}, encoding, nil, nil)
+		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
+			simd.Config().EncodingConfig.Codec,
+			[]proto.Message{proposalMsg, depositMsg},
+			encoding, nil, nil,
+		)
+		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
@@ -572,10 +577,18 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 
 		if encoding == icatypes.EncodingProtobuf {
 			// Execute the contract:
-			err = s.Contract.ExecSendStargateMsgs(ctx, wasmdUser.KeyName(), []proto.Message{proposalMsg, depositMsg}, nil, nil)
+			sendStargateMsg := icacontroller.NewExecuteMsg_SendCosmosMsgs_FromProto(
+				[]proto.Message{proposalMsg, depositMsg}, nil, nil,
+			)
+			err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendStargateMsg)
 			s.Require().NoError(err)
 		} else if encoding == icatypes.EncodingProto3JSON {
-			err = s.Contract.ExecCustomIcaMessages(ctx, wasmdUser.KeyName(), []proto.Message{proposalMsg, depositMsg}, icatypes.EncodingProto3JSON, nil, nil)
+			sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
+				simd.Config().EncodingConfig.Codec,
+				[]proto.Message{proposalMsg, depositMsg},
+				icatypes.EncodingProto3JSON, nil, nil,
+			)
+			err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 			s.Require().NoError(err)
 		}
 
@@ -771,7 +784,11 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 
 		timeout := uint64(3)
 		// Execute the contract:
-		err = s.Contract.ExecCustomIcaMessages(ctx, wasmdUser.KeyName(), []proto.Message{}, icatypes.EncodingProto3JSON, nil, &timeout)
+		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
+			simd.Config().EncodingConfig.Codec, []proto.Message{},
+			icatypes.EncodingProto3JSON, nil, &timeout,
+		)
+		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 		s.Require().NoError(err)
 
 		// Wait until timeout:
@@ -883,7 +900,12 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		}
 
 		// Execute the contract:
-		err = s.Contract.ExecCustomIcaMessages(ctx, wasmdUser.KeyName(), []proto.Message{sendMsg}, icatypes.EncodingProto3JSON, nil, nil)
+		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
+			simd.Config().EncodingConfig.Codec,
+			[]proto.Message{sendMsg},
+			icatypes.EncodingProto3JSON, nil, nil,
+		)
+		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 10, wasmd, simd)

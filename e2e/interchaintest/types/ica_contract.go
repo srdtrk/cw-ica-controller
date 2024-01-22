@@ -3,8 +3,6 @@ package types
 import (
 	"context"
 
-	"github.com/cosmos/gogoproto/proto"
-
 	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
 
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
@@ -65,29 +63,6 @@ func (c *IcaContract) Instantiate(ctx context.Context, callerKeyName string, cod
 
 	c.Address = contractAddr
 	return nil
-}
-
-// ExecCustomMessages invokes the contract's `CustomIcaMessages` message as the caller
-func (c *IcaContract) ExecCustomIcaMessages(
-	ctx context.Context, callerKeyName string,
-	messages []proto.Message, encoding string,
-	memo *string, timeout *uint64,
-) error {
-	customMsg := newSendCustomIcaMessagesMsg(c.Chain.Config().EncodingConfig.Codec, messages, encoding, memo, timeout)
-	err := c.ExecAnyMsg(ctx, callerKeyName, customMsg)
-	return err
-}
-
-// ExecSendCosmosMsgs invokes the contract's `SendCosmosMsgsAsIcaTx` message as the caller
-// This version takes a slice of proto messages instead of ContractCosmosMsgs to make it easier to use
-// the Stargate Cosmos Message type
-func (c *IcaContract) ExecSendStargateMsgs(
-	ctx context.Context, callerKeyName string,
-	msgs []proto.Message, memo *string, timeout *uint64,
-) error {
-	cosmosMsg := newSendCosmosMsgsMsgFromProto(msgs, memo, timeout)
-	err := c.ExecAnyMsg(ctx, callerKeyName, cosmosMsg)
-	return err
 }
 
 // QueryContractState queries the contract's state
