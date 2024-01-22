@@ -65,7 +65,10 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding
 	err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
 	s.Require().NoError(err)
 
-	contractState, err := s.Contract.QueryContractState(ctx)
+	contractState, err := types.QueryContract[icacontroller.ContractState](
+		ctx, &s.Contract.Contract,
+		icacontroller.GetContractStateRequest,
+	)
 	s.Require().NoError(err)
 
 	ownershipResponse, err := s.Contract.QueryOwnership(ctx)
@@ -135,7 +138,10 @@ func (s *ContractTestSuite) TestIcaContractChannelHandshake() {
 		s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
 
 		// Check contract state
-		contractState, err := s.Contract.QueryContractState(ctx)
+		contractState, err := types.QueryContract[icacontroller.ContractState](
+			ctx, &s.Contract.Contract,
+			icacontroller.GetContractStateRequest,
+		)
 		s.Require().NoError(err)
 
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
@@ -167,7 +173,10 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 
 	s.Contract = types.NewIcaContract(contract)
 
-	contractState, err := s.Contract.QueryContractState(ctx)
+	contractState, err := types.QueryContract[icacontroller.ContractState](
+		ctx, &s.Contract.Contract,
+		icacontroller.GetContractStateRequest,
+	)
 	s.Require().NoError(err)
 	s.Require().Equal(true, contractState.AllowChannelOpenInit)
 
@@ -185,7 +194,10 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 	err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
 	s.Require().NoError(err)
 
-	contractState, err = s.Contract.QueryContractState(ctx)
+	contractState, err = types.QueryContract[icacontroller.ContractState](
+		ctx, &s.Contract.Contract,
+		icacontroller.GetContractStateRequest,
+	)
 	s.Require().NoError(err)
 	s.Require().Equal(false, contractState.AllowChannelOpenInit)
 
@@ -236,7 +248,10 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 		s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
 
 		// Check contract state
-		contractState, err := s.Contract.QueryContractState(ctx)
+		contractState, err = types.QueryContract[icacontroller.ContractState](
+			ctx, &s.Contract.Contract,
+			icacontroller.GetContractStateRequest,
+		)
 		s.Require().NoError(err)
 
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
@@ -351,7 +366,10 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 		s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
 
 		// Check contract state
-		contractState, err := s.Contract.QueryContractState(ctx)
+		contractState, err := types.QueryContract[icacontroller.ContractState](
+			ctx, &s.Contract.Contract,
+			icacontroller.GetContractStateRequest,
+		)
 		s.Require().NoError(err)
 
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
@@ -778,7 +796,10 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, s.IcaAddress)
 
-	contractState, err := s.Contract.QueryContractState(ctx)
+	contractState, err := types.QueryContract[icacontroller.ContractState](
+		ctx, &s.Contract.Contract,
+		icacontroller.GetContractStateRequest,
+	)
 	s.Require().NoError(err)
 
 	var simdChannelsLen int
@@ -889,7 +910,10 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		s.Require().Equal(wasmdChannel.Counterparty.PortID, contractChannelState.Channel.CounterpartyEndpoint.PortID)
 		s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
 
-		contractState, err := s.Contract.QueryContractState(ctx)
+		contractState, err := types.QueryContract[icacontroller.ContractState](
+			ctx, &s.Contract.Contract,
+			icacontroller.GetContractStateRequest,
+		)
 		s.Require().NoError(err)
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
 		s.Require().Equal(s.IcaAddress, contractState.IcaInfo.IcaAddress)

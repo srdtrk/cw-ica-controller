@@ -125,7 +125,10 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 		s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
 
 		// Check contract state
-		contractState, err := icaContract.QueryContractState(ctx)
+		contractState, err := types.QueryContract[icacontroller.ContractState](
+			ctx, &icaContract.Contract,
+			icacontroller.GetContractStateRequest,
+		)
 		s.Require().NoError(err)
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
 		s.Require().Equal(false, contractState.AllowChannelOpenInit)
@@ -153,7 +156,10 @@ func (s *OwnerTestSuite) TestOwnerPredefinedAction() {
 	icaContract := types.NewIcaContract(types.NewContract(icaState.ContractAddr, strconv.FormatUint(s.IcaContractCodeId, 10), wasmd))
 
 	// Check contract state
-	contractState, err := icaContract.QueryContractState(ctx)
+	contractState, err := types.QueryContract[icacontroller.ContractState](
+		ctx, &icaContract.Contract,
+		icacontroller.GetContractStateRequest,
+	)
 	s.Require().NoError(err)
 
 	icaAddress := contractState.IcaInfo.IcaAddress

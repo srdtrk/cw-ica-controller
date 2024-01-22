@@ -71,7 +71,10 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding str
 	err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
 	s.Require().NoError(err)
 
-	contractState, err := s.Contract.QueryContractState(ctx)
+	contractState, err := types.QueryContract[icacontroller.ContractState](
+		ctx, &s.Contract.Contract,
+		icacontroller.GetContractStateRequest,
+	)
 	s.Require().NoError(err)
 
 	ownershipResponse, err := s.Contract.QueryOwnership(ctx)

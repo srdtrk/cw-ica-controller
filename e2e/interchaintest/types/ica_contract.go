@@ -38,25 +38,6 @@ func (c *IcaContract) Instantiate(ctx context.Context, callerKeyName string, cod
 	return nil
 }
 
-// QueryContractState queries the contract's state
-func (c *IcaContract) QueryContractState(ctx context.Context) (*icacontroller.ContractState, error) {
-	queryResp := QueryResponse[icacontroller.ContractState]{}
-	queryReq := icacontroller.QueryMsg{
-		GetContractState: &icacontroller.EmptyMsg{},
-	}
-	err := c.Chain.QueryContract(ctx, c.Address, queryReq, &queryResp)
-	if err != nil {
-		return nil, err
-	}
-
-	contractState, err := queryResp.GetResp()
-	if err != nil {
-		return nil, err
-	}
-
-	return &contractState, nil
-}
-
 // QueryChannelState queries the channel state stored in the contract
 func (c *IcaContract) QueryChannelState(ctx context.Context) (*icacontroller.ContractChannelState, error) {
 	queryResp := QueryResponse[icacontroller.ContractChannelState]{}
