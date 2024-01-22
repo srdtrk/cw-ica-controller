@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
+
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/owner"
 )
 
 type OwnerContract struct {
@@ -41,42 +43,6 @@ func StoreAndInstantiateNewOwnerContract(
 	return NewOwnerContract(contract), nil
 }
 
-func (c *OwnerContract) ExecSendPredefinedAction(
-	ctx context.Context, callerKeyName string, icaId uint64, toAddress string,
-) error {
-	msg := newOwnerSendPredefinedActionMsg(icaId, toAddress)
-	err := c.ExecAnyMsg(ctx, callerKeyName, msg)
-	return err
-}
-
-// QueryContractState queries the contract's state
-func (c *OwnerContract) QueryContractState(ctx context.Context) (*OwnerContractState, error) {
-	queryResp := QueryResponse[OwnerContractState]{}
-	err := c.Chain.QueryContract(ctx, c.Address, newOwnerGetContractStateQueryMsg(), &queryResp)
-	if err != nil {
-		return nil, err
-	}
-
-	contractState, err := queryResp.GetResp()
-	if err != nil {
-		return nil, err
-	}
-
-	return &contractState, nil
-}
-
-// QueryIcaContractState queries the contract's ica state for a given icaID
-func (c *OwnerContract) QueryIcaContractState(ctx context.Context, icaID uint64) (*OwnerIcaContractState, error) {
-	queryResp := QueryResponse[OwnerIcaContractState]{}
-	err := c.Chain.QueryContract(ctx, c.Address, newOwnerGetIcaContractStateQueryMsg(icaID), &queryResp)
-	if err != nil {
-		return nil, err
-	}
-
-	icaContractState, err := queryResp.GetResp()
-	if err != nil {
-		return nil, err
-	}
-
-	return &icaContractState, nil
+func (c *OwnerContract) Execute(ctx context.Context, callerKeyName string, msg owner.ExecuteMsg, extraExecTxArgs ...string) error {
+	return c.Contract.ExecAnyMsg(ctx, callerKeyName, msg.ToString(), extraExecTxArgs...)
 }
