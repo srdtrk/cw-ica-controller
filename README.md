@@ -2,10 +2,10 @@
 
 <div align="center">
 
-  ![E2E Status](https://github.com/srdtrk/cw-ica-controller/actions/workflows/e2e.yml/badge.svg?branch=main)
-  ![[Tag](https://github.com/srdtrk/cw-ica-controller/releases/latest)](https://img.shields.io/github/tag/srdtrk/cw-ica-controller.svg)
-  ![[License: Apache-2.0](https://github.com/srdtrk/cw-ica-controller/blob/main/LICENSE)](https://img.shields.io/github/license/srdtrk/cw-ica-controller.svg)
-  ![[Lines of Code](https://github.com/srdtrk/cw-ica-controller)](https://tokei.rs/b1/github/srdtrk/cw-ica-controller)
+  [![E2E Status](https://github.com/srdtrk/cw-ica-controller/actions/workflows/e2e.yml/badge.svg?branch=main)](https://github.com/srdtrk/cw-ica-controller/tree/main/e2e)
+  [![Tag](https://img.shields.io/github/tag/srdtrk/cw-ica-controller.svg)](https://github.com/srdtrk/cw-ica-controller/releases/latest)
+  [![License: Apache-2.0](https://img.shields.io/github/license/srdtrk/cw-ica-controller.svg)](https://github.com/srdtrk/cw-ica-controller/blob/main/LICENSE)
+  [![Lines of Code](https://tokei.rs/b1/github/srdtrk/cw-ica-controller)](https://github.com/srdtrk/cw-ica-controller)
 </div>
 
 ![cw-ica-controller](./cw-ica-controller.svg)
@@ -23,10 +23,11 @@ This contract now supports both `proto3json` and protobuf encoding/decoding for 
       - [Using `InstantiateMsg` and/or `ExecuteMsg::CreateChannel`](#using-instantiatemsg-andor-executemsgcreatechannel)
       - [Using the Relayer](#using-the-relayer)
     - [Execute an interchain account transaction](#execute-an-interchain-account-transaction)
-      - [`SendCosmosMsgs`](#sendcosmosmsgs)
+      - [`SendCosmosMsgs` (recommended)](#sendcosmosmsgs-recommended)
       - [`SendCustomIcaMessages`](#sendcustomicamessages)
     - [Execute a callback](#execute-a-callback)
     - [Channel Closing and Reopening](#channel-closing-and-reopening)
+  - [Demo](#demo)
   - [Testing](#testing)
     - [Unit tests](#unit-tests)
     - [End to end tests](#end-to-end-tests)
@@ -278,6 +279,19 @@ cw-ica-controller = { version = "0.3.0", default-features = false }
 ### Channel Closing and Reopening
 
 If the ICA channel is closed, for example, due to a timed out packet. (This is because the semantics of ordered channels in IBC is that any timeout will cause the channel to be closed.) The contract is then able to create a new channel with the same interchain account address, and continue to use the same interchain account. To do this, you submit a `ExecuteMsg::CreateChannel`. This can also be seen in the end to end tests.
+
+## Demo
+
+This project was used in the Injective Illuminate hackathon winner project [Tokenized Interchain Accounts](https://dorahacks.io/buidl/8513) where each NFT controls an interchain account. The following is a demo of the project:
+
+<div align="center">
+  <a href="https://www.loom.com/share/4e85206379354f5182d21d8e384aba74">
+    <p>Tokenized Interchain Accounts Demo - Watch Video</p>
+  </a>
+  <a href="https://www.loom.com/share/4e85206379354f5182d21d8e384aba74">
+    <img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/4e85206379354f5182d21d8e384aba74-1703150524626-with-play.gif">
+  </a>
+</div>
 
 ## Testing
 
