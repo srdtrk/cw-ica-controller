@@ -487,7 +487,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		s.Require().NoError(err)
 
 		// Initial balance of the community pool
-		communityPoolInitBalance := communityPoolResp.Pool[0].Amount
+		communityPoolInitBalance := communityPoolResp.Pool.AmountOf(simd.Config().Denom)
 
 		// Stake some tokens through CosmosMsgs:
 		stakeCosmosMsg := icacontroller.ContractCosmosMsg{
@@ -571,7 +571,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 
 		communityPoolResp, err = communityPoolQuerier.GRPCQuery(ctx, &communityPoolRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(communityPoolInitBalance.Add(sdkmath.LegacyNewDec(10_000_000)), communityPoolResp.Pool[0].Amount)
+		s.Require().Equal(communityPoolInitBalance.Add(sdkmath.LegacyNewDec(10_000_000)), communityPoolResp.Pool.AmountOf(simd.Config().Denom))
 	})
 
 	s.Run(fmt.Sprintf("TestSendCustomIcaMessagesError-%s", encoding), func() {
