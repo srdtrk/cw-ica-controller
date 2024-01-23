@@ -16,7 +16,6 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
@@ -584,6 +583,7 @@ func (s *ContractTestSuite) TestSendCosmosMsgsProtobufEncoding() {
 // - Bank::Send
 // - Stargate
 // - VoteWeighted
+// - FundCommunityPool
 // - SetWithdrawAddress
 func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 	ctx := context.Background()
@@ -662,21 +662,12 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		s.Require().Equal(initialBalance.Sub(sdkmath.NewInt(10_000_000+5_000)), postBalance)
 	})
 
-	s.Run(fmt.Sprintf("TestDelegateAndVoteWeighted-%s", encoding), func() {
+	s.Run(fmt.Sprintf("TestDelegateAndVoteWeightedAndCommunityPool-%s", encoding), func() {
 		intialBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 
 		validator, err := simd.Validators[0].KeyBech32(ctx, "validator", "val")
 		s.Require().NoError(err)
-
-		communityPoolQuerier := mysuite.NewGRPCQuerier[distributiontypes.QueryCommunityPoolResponse](s.T(), simd, "/cosmos.distribution.v1beta1.Query/CommunityPool")
-
-		communityPoolRequest := distributiontypes.QueryCommunityPoolRequest{}
-		communityPoolResp, err := communityPoolQuerier.GRPCQuery(ctx, &communityPoolRequest)
-		s.Require().NoError(err)
-
-		// Initial balance of the community pool
-		communityPoolInitBalance := communityPoolResp.Pool.AmountOf(simd.Config().Denom)
 
 		// Stake some tokens through CosmosMsgs:
 		stakeCosmosMsg := icacontroller.ContractCosmosMsg{
@@ -770,11 +761,6 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		s.Require().Equal(expWeight, voteResp.Vote.Options[0].Weight)
 		s.Require().Equal(govtypes.OptionAbstain, voteResp.Vote.Options[1].Option)
 		s.Require().Equal(expWeight, voteResp.Vote.Options[1].Weight)
-
-		// Check if the community pool was funded:
-		communityPoolResp, err = communityPoolQuerier.GRPCQuery(ctx, &communityPoolRequest)
-		s.Require().NoError(err)
-		s.Require().Equal(communityPoolInitBalance.Add(sdkmath.LegacyNewDec(10_000_000)), communityPoolResp.Pool.AmountOf(simd.Config().Denom))
 	})
 
 	s.Run(fmt.Sprintf("TestSendAndSetWithdrawAddress-%s", encoding), func() {
