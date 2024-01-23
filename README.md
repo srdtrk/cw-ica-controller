@@ -23,10 +23,11 @@ This contract now supports both `proto3json` and protobuf encoding/decoding for 
       - [Using `InstantiateMsg` and/or `ExecuteMsg::CreateChannel`](#using-instantiatemsg-andor-executemsgcreatechannel)
       - [Using the Relayer](#using-the-relayer)
     - [Execute an interchain account transaction](#execute-an-interchain-account-transaction)
-      - [`SendCosmosMsgs`](#sendcosmosmsgs)
+      - [`SendCosmosMsgs` (recommended)](#sendcosmosmsgs-recommended)
       - [`SendCustomIcaMessages`](#sendcustomicamessages)
     - [Execute a callback](#execute-a-callback)
     - [Channel Closing and Reopening](#channel-closing-and-reopening)
+  - [Demo](#demo)
   - [Testing](#testing)
     - [Unit tests](#unit-tests)
     - [End to end tests](#end-to-end-tests)
@@ -278,6 +279,12 @@ cw-ica-controller = { version = "0.3.0", default-features = false }
 ### Channel Closing and Reopening
 
 If the ICA channel is closed, for example, due to a timed out packet. (This is because the semantics of ordered channels in IBC is that any timeout will cause the channel to be closed.) The contract is then able to create a new channel with the same interchain account address, and continue to use the same interchain account. To do this, you submit a `ExecuteMsg::CreateChannel`. This can also be seen in the end to end tests.
+
+## Demo
+
+This project was used in the Injective Illuminate hackathon winner project [Tokenized Interchain Accounts](https://dorahacks.io/buidl/8513) where each NFT controls an interchain account. The following is a demo of the project:
+
+<div style="position: relative; padding-bottom: 62.5%; height: 0;"><iframe src="https://www.loom.com/embed/4e85206379354f5182d21d8e384aba74?sid=180b7c3f-944a-446d-88ad-792ab28966b8" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
 
 ## Testing
 
