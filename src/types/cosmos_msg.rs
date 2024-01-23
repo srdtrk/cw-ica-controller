@@ -33,6 +33,7 @@ use cosmwasm_std::{BankMsg, Coin, CosmosMsg, IbcMsg};
 /// - [`CosmosMsg::Staking`] with [`cosmwasm_std::StakingMsg::Redelegate`]
 /// - [`CosmosMsg::Distribution`] with [`cosmwasm_std::DistributionMsg::WithdrawDelegatorReward`]
 /// - [`CosmosMsg::Distribution`] with [`cosmwasm_std::DistributionMsg::SetWithdrawAddress`]
+/// - [`CosmosMsg::Distribution`] with [`cosmwasm_std::DistributionMsg::FundCommunityPool`]
 pub fn convert_to_proto_any(msg: CosmosMsg, from_address: String) -> Result<Any, EncodeError> {
     match msg {
         CosmosMsg::Stargate { type_url, value } => Ok(Any {
@@ -358,6 +359,7 @@ mod convert_to_any {
 /// - [`CosmosMsg::Staking`] with [`cosmwasm_std::StakingMsg::Redelegate`]
 /// - [`CosmosMsg::Distribution`] with [`cosmwasm_std::DistributionMsg::WithdrawDelegatorReward`]
 /// - [`CosmosMsg::Distribution`] with [`cosmwasm_std::DistributionMsg::SetWithdrawAddress`]
+/// - [`CosmosMsg::Distribution`] with [`cosmwasm_std::DistributionMsg::FundCommunityPool`]
 #[must_use]
 pub fn convert_to_proto3json(msg: CosmosMsg, from_address: String) -> String {
     match msg {
