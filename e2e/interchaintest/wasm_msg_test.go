@@ -73,7 +73,7 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding str
 			CounterpartyPortId:       nil,
 			TxEncoding:               &encoding,
 		},
-		SendCallbacksTo: nil,
+		SendCallbacksTo: &callbackAddress,
 	}
 
 	err = s.Contract.Instantiate(ctx, s.UserA.KeyName(), s.ChainA, codeId, instantiateMsg, "--gas", "500000")
