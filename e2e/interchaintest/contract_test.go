@@ -479,6 +479,16 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		validator, err := simd.Validators[0].KeyBech32(ctx, "validator", "val")
 		s.Require().NoError(err)
 
+		// Check if the community pool was funded:
+		communityPoolQuerier := mysuite.NewGRPCQuerier[distributiontypes.QueryCommunityPoolResponse](s.T(), simd, "/cosmos.distribution.v1beta1.Query/CommunityPool")
+
+		communityPoolRequest := distributiontypes.QueryCommunityPoolRequest{}
+		communityPoolResp, err := communityPoolQuerier.GRPCQuery(ctx, &communityPoolRequest)
+		s.Require().NoError(err)
+
+		// Initial balance of the community pool
+		communityPoolInitBalance := communityPoolResp.Pool[0].Amount
+
 		// Stake some tokens through CosmosMsgs:
 		stakeCosmosMsg := icacontroller.ContractCosmosMsg{
 			Staking: &icacontroller.StakingCosmosMsg{
@@ -501,6 +511,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 			},
 		}
 
+		// Fund the community pool through CosmosMsgs:
 		fundPoolCosmosMsg := icacontroller.ContractCosmosMsg{
 			Distribution: &icacontroller.DistributionCosmosMsg{
 				FundCommunityPool: &icacontroller.DistributionFundCommunityPoolCosmosMsg{
@@ -558,13 +569,9 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		s.Require().Equal(govtypes.OptionYes, voteResp.Vote.Options[0].Option)
 		s.Require().Equal(sdkmath.LegacyNewDec(1), voteResp.Vote.Options[0].Weight)
 
-		// Check if the community pool was funded:
-		communityPoolQuerier := mysuite.NewGRPCQuerier[distributiontypes.QueryCommunityPoolResponse](s.T(), simd, "/cosmos.distribution.v1beta1.Query/CommunityPool")
-
-		communityPoolRequest := distributiontypes.QueryCommunityPoolRequest{}
-		communityPoolResp, err := communityPoolQuerier.GRPCQuery(ctx, &communityPoolRequest)
+		communityPoolResp, err = communityPoolQuerier.GRPCQuery(ctx, &communityPoolRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(sdkmath.LegacyNewDec(10_000_000), communityPoolResp.Pool[0].Amount)
+		s.Require().Equal(communityPoolInitBalance.Add(sdkmath.LegacyNewDec(10_000_000)), communityPoolResp.Pool[0].Amount)
 	})
 
 	s.Run(fmt.Sprintf("TestSendCustomIcaMessagesError-%s", encoding), func() {
