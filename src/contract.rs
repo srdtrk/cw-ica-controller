@@ -4,11 +4,9 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
 use crate::ibc::types::stargate::channel::new_ica_channel_open_init_cosmos_msg;
-use crate::types::keys::{CONTRACT_NAME, CONTRACT_VERSION};
+use crate::types::keys;
 use crate::types::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
-use crate::types::state::{
-    ChannelState, ContractState, CHANNEL_OPEN_INIT_OPTIONS, CHANNEL_STATE, STATE,
-};
+use crate::types::state::{self, ChannelState, ContractState};
 use crate::types::ContractError;
 
 /// Instantiates the contract.
@@ -20,7 +18,7 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    cw2::set_contract_version(deps.storage, keys::CONTRACT_NAME, keys::CONTRACT_VERSION)?;
 
     let owner = msg.owner.unwrap_or_else(|| info.sender.to_string());
     cw_ownable::initialize_owner(deps.storage, deps.api, Some(&owner))?;
@@ -31,11 +29,19 @@ pub fn instantiate(
         .transpose()?;
 
     // Save the admin. Ica address is determined during handshake.
-    STATE.save(deps.storage, &ContractState::new(callback_address))?;
+    state::STATE.save(deps.storage, &ContractState::new(callback_address))?;
+
+    if let Some(chan_open_init_whitelist) = msg.channel_open_init_whitelist {
+        let chan_open_init_whitelist = chan_open_init_whitelist
+            .into_iter()
+            .map(|addr| deps.api.addr_validate(&addr))
+            .collect::<StdResult<Vec<_>>>()?;
+        state::CHANNEL_OPEN_INIT_WHITELIST.save(deps.storage, &chan_open_init_whitelist)?;
+    }
 
     // If channel open init options are provided, open the channel.
     if let Some(channel_open_init_options) = msg.channel_open_init_options {
-        CHANNEL_OPEN_INIT_OPTIONS.save(deps.storage, &channel_open_init_options)?;
+        state::CHANNEL_OPEN_INIT_OPTIONS.save(deps.storage, &channel_open_init_options)?;
 
         let ica_channel_open_init_msg = new_ica_channel_open_init_cosmos_msg(
             env.contract.address.to_string(),
@@ -105,7 +111,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     migrate::validate_semver(deps.as_ref())?;
 
-    cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    cw2::set_contract_version(deps.storage, keys::CONTRACT_NAME, keys::CONTRACT_VERSION)?;
     // If state structure changed in any contract version in the way migration is needed, it
     // should occur here
 
@@ -118,8 +124,8 @@ mod execute {
     use crate::{ibc::types::packet::IcaPacketData, types::msg::options::ChannelOpenInitOptions};
 
     use super::{
-        new_ica_channel_open_init_cosmos_msg, Binary, ContractError, DepsMut, Env, MessageInfo,
-        Response, CHANNEL_OPEN_INIT_OPTIONS, STATE,
+        new_ica_channel_open_init_cosmos_msg, state, Binary, ContractError, DepsMut, Env,
+        MessageInfo, Response,
     };
 
     /// Submits a stargate `MsgChannelOpenInit` to the chain.
@@ -132,16 +138,16 @@ mod execute {
     ) -> Result<Response, ContractError> {
         cw_ownable::assert_owner(deps.storage, &info.sender)?;
 
-        STATE.update(deps.storage, |mut state| -> StdResult<_> {
+        state::STATE.update(deps.storage, |mut state| -> StdResult<_> {
             state.enable_channel_open_init();
             Ok(state)
         })?;
 
         let options = if let Some(new_options) = options {
-            CHANNEL_OPEN_INIT_OPTIONS.save(deps.storage, &new_options)?;
+            state::CHANNEL_OPEN_INIT_OPTIONS.save(deps.storage, &new_options)?;
             new_options
         } else {
-            CHANNEL_OPEN_INIT_OPTIONS
+            state::CHANNEL_OPEN_INIT_OPTIONS
                 .may_load(deps.storage)?
                 .ok_or(ContractError::NoChannelInitOptions)?
         };
@@ -169,7 +175,7 @@ mod execute {
     ) -> Result<Response, ContractError> {
         cw_ownable::assert_owner(deps.storage, &info.sender)?;
 
-        let contract_state = STATE.load(deps.storage)?;
+        let contract_state = state::STATE.load(deps.storage)?;
         let ica_info = contract_state.get_ica_info()?;
 
         let ica_packet = IcaPacketData::new(messages.to_vec(), packet_memo);
@@ -190,7 +196,7 @@ mod execute {
     ) -> Result<Response, ContractError> {
         cw_ownable::assert_owner(deps.storage, &info.sender)?;
 
-        let contract_state = STATE.load(deps.storage)?;
+        let contract_state = state::STATE.load(deps.storage)?;
         let ica_info = contract_state.get_ica_info()?;
 
         let ica_packet = IcaPacketData::from_cosmos_msgs(
@@ -230,50 +236,50 @@ mod execute {
     ) -> Result<Response, ContractError> {
         cw_ownable::assert_owner(deps.storage, &info.sender)?;
 
-        let mut contract_state = STATE.load(deps.storage)?;
+        let mut contract_state = state::STATE.load(deps.storage)?;
 
         contract_state.callback_address = callback_address
             .map(|addr| deps.api.addr_validate(&addr))
             .transpose()?;
 
-        STATE.save(deps.storage, &contract_state)?;
+        state::STATE.save(deps.storage, &contract_state)?;
 
         Ok(Response::default())
     }
 }
 
 mod query {
-    use super::{ChannelState, ContractState, Deps, StdResult, CHANNEL_STATE, STATE};
+    use super::{state, ChannelState, ContractState, Deps, StdResult};
 
     /// Returns the saved contract state.
     pub fn state(deps: Deps) -> StdResult<ContractState> {
-        STATE.load(deps.storage)
+        state::STATE.load(deps.storage)
     }
 
     /// Returns the saved channel state if it exists.
     pub fn channel(deps: Deps) -> StdResult<ChannelState> {
-        CHANNEL_STATE.load(deps.storage)
+        state::CHANNEL_STATE.load(deps.storage)
     }
 }
 
 mod migrate {
-    use super::{ContractError, Deps, CONTRACT_NAME, CONTRACT_VERSION};
+    use super::{keys, ContractError, Deps};
 
     pub fn validate_semver(deps: Deps) -> Result<(), ContractError> {
         let prev_cw2_version = cw2::get_contract_version(deps.storage)?;
-        if prev_cw2_version.contract != CONTRACT_NAME {
+        if prev_cw2_version.contract != keys::CONTRACT_NAME {
             return Err(ContractError::InvalidMigrationVersion {
-                expected: CONTRACT_NAME.to_string(),
+                expected: keys::CONTRACT_NAME.to_string(),
                 actual: prev_cw2_version.contract,
             });
         }
 
-        let version: semver::Version = CONTRACT_VERSION.parse()?;
+        let version: semver::Version = keys::CONTRACT_VERSION.parse()?;
         let prev_version: semver::Version = prev_cw2_version.version.parse()?;
         if prev_version >= version {
             return Err(ContractError::InvalidMigrationVersion {
                 expected: format!("> {prev_version}"),
-                actual: CONTRACT_VERSION.to_string(),
+                actual: keys::CONTRACT_VERSION.to_string(),
             });
         }
         Ok(())
@@ -298,6 +304,7 @@ mod tests {
             owner: None,
             channel_open_init_options: None,
             send_callbacks_to: None,
+            channel_open_init_whitelist: None,
         };
 
         // Ensure the contract is instantiated successfully
@@ -313,8 +320,8 @@ mod tests {
 
         // Ensure that the contract name and version are saved correctly
         let contract_version = cw2::get_contract_version(&deps.storage).unwrap();
-        assert_eq!(contract_version.contract, CONTRACT_NAME);
-        assert_eq!(contract_version.version, CONTRACT_VERSION);
+        assert_eq!(contract_version.contract, keys::CONTRACT_NAME);
+        assert_eq!(contract_version.version, keys::CONTRACT_VERSION);
     }
 
     #[test]
@@ -333,12 +340,13 @@ mod tests {
                 owner: None,
                 channel_open_init_options: None,
                 send_callbacks_to: None,
+                channel_open_init_whitelist: None,
             },
         )
         .unwrap();
 
         // for this unit test, we have to set ica info manually or else the contract will error
-        STATE
+        state::STATE
             .update(&mut deps.storage, |mut state| -> StdResult<ContractState> {
                 state.set_ica_info("ica_address", "channel-0", TxEncoding::Proto3Json);
                 Ok(state)
@@ -395,6 +403,7 @@ mod tests {
                 owner: None,
                 channel_open_init_options: None,
                 send_callbacks_to: None,
+                channel_open_init_whitelist: None,
             },
         )
         .unwrap();
@@ -408,7 +417,7 @@ mod tests {
 
         assert_eq!(0, res.messages.len());
 
-        let state = STATE.load(&deps.storage).unwrap();
+        let state = state::STATE.load(&deps.storage).unwrap();
         assert_eq!(
             state.callback_address,
             Some(deps.api.addr_validate(&new_callback_address).unwrap())
@@ -444,32 +453,36 @@ mod tests {
                 owner: None,
                 channel_open_init_options: None,
                 send_callbacks_to: None,
+                channel_open_init_whitelist: None,
             },
         )
         .unwrap();
 
         // We need to set the contract version manually to a lower version than the current version
-        cw2::set_contract_version(&mut deps.storage, CONTRACT_NAME, "0.0.1").unwrap();
+        cw2::set_contract_version(&mut deps.storage, keys::CONTRACT_NAME, "0.0.1").unwrap();
 
         // Ensure that the contract version is updated correctly
         let contract_version = cw2::get_contract_version(&deps.storage).unwrap();
-        assert_eq!(contract_version.contract, CONTRACT_NAME);
+        assert_eq!(contract_version.contract, keys::CONTRACT_NAME);
         assert_eq!(contract_version.version, "0.0.1");
 
         // Perform the migration
         let _res = migrate(deps.as_mut(), mock_env(), MigrateMsg {}).unwrap();
 
         let contract_version = cw2::get_contract_version(&deps.storage).unwrap();
-        assert_eq!(contract_version.contract, CONTRACT_NAME);
-        assert_eq!(contract_version.version, CONTRACT_VERSION);
+        assert_eq!(contract_version.contract, keys::CONTRACT_NAME);
+        assert_eq!(contract_version.version, keys::CONTRACT_VERSION);
 
         // Ensure that the contract version cannot be downgraded
-        cw2::set_contract_version(&mut deps.storage, CONTRACT_NAME, "100.0.0").unwrap();
+        cw2::set_contract_version(&mut deps.storage, keys::CONTRACT_NAME, "100.0.0").unwrap();
 
         let res = migrate(deps.as_mut(), mock_env(), MigrateMsg {});
         assert_eq!(
             res.unwrap_err().to_string(),
-            format!("invalid migration version: expected > 100.0.0, got {CONTRACT_VERSION}")
+            format!(
+                "invalid migration version: expected > 100.0.0, got {}",
+                keys::CONTRACT_VERSION
+            )
         );
     }
 }

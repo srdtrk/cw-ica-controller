@@ -20,6 +20,11 @@ pub struct InstantiateMsg {
     /// If not specified, then no callbacks are sent.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub send_callbacks_to: Option<String>,
+    /// The list of addresses that are allowed to call `channel_open_init`.
+    /// The contract's own address is **always** allowed to call `channel_open_init`.
+    /// A user may add trusted relayer addresses to this list for convenience.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub channel_open_init_whitelist: Option<Vec<String>>,
 }
 
 /// The messages to execute the ICA controller contract.
