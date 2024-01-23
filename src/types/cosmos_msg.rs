@@ -33,6 +33,7 @@ use cosmwasm_std::{BankMsg, Coin, CosmosMsg, IbcMsg};
 /// - [`CosmosMsg::Staking`] with [`cosmwasm_std::StakingMsg::Redelegate`]
 /// - [`CosmosMsg::Distribution`] with [`cosmwasm_std::DistributionMsg::WithdrawDelegatorReward`]
 /// - [`CosmosMsg::Distribution`] with [`cosmwasm_std::DistributionMsg::SetWithdrawAddress`]
+/// - [`CosmosMsg::Distribution`] with [`cosmwasm_std::DistributionMsg::FundCommunityPool`]
 pub fn convert_to_proto_any(msg: CosmosMsg, from_address: String) -> Result<Any, EncodeError> {
     match msg {
         CosmosMsg::Stargate { type_url, value } => Ok(Any {
@@ -268,66 +269,73 @@ mod convert_to_any {
 
     #[cfg(feature = "staking")]
     pub fn staking(msg: StakingMsg, delegator_address: String) -> Result<Any, EncodeError> {
-        use cosmos_sdk_proto::cosmos::staking::v1beta1::{
-            MsgBeginRedelegate, MsgDelegate, MsgUndelegate,
-        };
-
         match msg {
-            StakingMsg::Delegate { validator, amount } => Any::from_msg(&MsgDelegate {
-                delegator_address,
-                validator_address: validator,
-                amount: Some(ProtoCoin {
-                    denom: amount.denom,
-                    amount: amount.amount.to_string(),
-                }),
-            }),
-            StakingMsg::Undelegate { validator, amount } => Any::from_msg(&MsgUndelegate {
-                delegator_address,
-                validator_address: validator,
-                amount: Some(ProtoCoin {
-                    denom: amount.denom,
-                    amount: amount.amount.to_string(),
-                }),
-            }),
+            StakingMsg::Delegate { validator, amount } => {
+                Any::from_msg(&cosmos_sdk_proto::cosmos::staking::v1beta1::MsgDelegate {
+                    delegator_address,
+                    validator_address: validator,
+                    amount: Some(ProtoCoin {
+                        denom: amount.denom,
+                        amount: amount.amount.to_string(),
+                    }),
+                })
+            }
+            StakingMsg::Undelegate { validator, amount } => {
+                Any::from_msg(&cosmos_sdk_proto::cosmos::staking::v1beta1::MsgUndelegate {
+                    delegator_address,
+                    validator_address: validator,
+                    amount: Some(ProtoCoin {
+                        denom: amount.denom,
+                        amount: amount.amount.to_string(),
+                    }),
+                })
+            }
             StakingMsg::Redelegate {
                 src_validator,
                 dst_validator,
                 amount,
-            } => Any::from_msg(&MsgBeginRedelegate {
-                delegator_address,
-                validator_src_address: src_validator,
-                validator_dst_address: dst_validator,
-                amount: Some(ProtoCoin {
-                    denom: amount.denom,
-                    amount: amount.amount.to_string(),
-                }),
-            }),
+            } => Any::from_msg(
+                &cosmos_sdk_proto::cosmos::staking::v1beta1::MsgBeginRedelegate {
+                    delegator_address,
+                    validator_src_address: src_validator,
+                    validator_dst_address: dst_validator,
+                    amount: Some(ProtoCoin {
+                        denom: amount.denom,
+                        amount: amount.amount.to_string(),
+                    }),
+                },
+            ),
             _ => panic!("Unsupported StakingMsg"),
         }
     }
 
     #[cfg(feature = "staking")]
-    pub fn distribution(
-        msg: DistributionMsg,
-        delegator_address: String,
-    ) -> Result<Any, EncodeError> {
-        use cosmos_sdk_proto::cosmos::distribution::v1beta1::{
-            MsgSetWithdrawAddress, MsgWithdrawDelegatorReward,
-        };
-
+    pub fn distribution(msg: DistributionMsg, sender: String) -> Result<Any, EncodeError> {
         match msg {
-            DistributionMsg::WithdrawDelegatorReward { validator } => {
-                Any::from_msg(&MsgWithdrawDelegatorReward {
-                    delegator_address,
+            DistributionMsg::WithdrawDelegatorReward { validator } => Any::from_msg(
+                &cosmos_sdk_proto::cosmos::distribution::v1beta1::MsgWithdrawDelegatorReward {
+                    delegator_address: sender,
                     validator_address: validator,
-                })
-            }
-            DistributionMsg::SetWithdrawAddress { address } => {
-                Any::from_msg(&MsgSetWithdrawAddress {
-                    delegator_address,
+                },
+            ),
+            DistributionMsg::SetWithdrawAddress { address } => Any::from_msg(
+                &cosmos_sdk_proto::cosmos::distribution::v1beta1::MsgSetWithdrawAddress {
+                    delegator_address: sender,
                     withdraw_address: address,
-                })
-            }
+                },
+            ),
+            DistributionMsg::FundCommunityPool { amount } => Any::from_msg(
+                &cosmos_sdk_proto::cosmos::distribution::v1beta1::MsgFundCommunityPool {
+                    depositor: sender,
+                    amount: amount
+                        .into_iter()
+                        .map(|coin| ProtoCoin {
+                            denom: coin.denom,
+                            amount: coin.amount.to_string(),
+                        })
+                        .collect(),
+                },
+            ),
             _ => panic!("Unsupported DistributionMsg"),
         }
     }
@@ -351,6 +359,7 @@ mod convert_to_any {
 /// - [`CosmosMsg::Staking`] with [`cosmwasm_std::StakingMsg::Redelegate`]
 /// - [`CosmosMsg::Distribution`] with [`cosmwasm_std::DistributionMsg::WithdrawDelegatorReward`]
 /// - [`CosmosMsg::Distribution`] with [`cosmwasm_std::DistributionMsg::SetWithdrawAddress`]
+/// - [`CosmosMsg::Distribution`] with [`cosmwasm_std::DistributionMsg::FundCommunityPool`]
 #[must_use]
 pub fn convert_to_proto3json(msg: CosmosMsg, from_address: String) -> String {
     match msg {
@@ -482,18 +491,24 @@ mod convert_to_json {
     }
 
     #[cfg(feature = "staking")]
-    pub fn distribution(msg: DistributionMsg, delegator_address: String) -> String {
+    pub fn distribution(msg: DistributionMsg, sender: String) -> String {
         match msg {
             DistributionMsg::WithdrawDelegatorReward { validator } => {
                 CosmosMsgProto3JsonSerializer::WithdrawDelegatorReward {
-                    delegator_address,
+                    delegator_address: sender,
                     validator_address: validator,
                 }
             }
             DistributionMsg::SetWithdrawAddress { address } => {
                 CosmosMsgProto3JsonSerializer::SetWithdrawAddress {
-                    delegator_address,
+                    delegator_address: sender,
                     withdraw_address: address,
+                }
+            }
+            DistributionMsg::FundCommunityPool { amount } => {
+                CosmosMsgProto3JsonSerializer::FundCommunityPool {
+                    depositor: sender,
+                    amount,
                 }
             }
             _ => panic!("Unsupported DistributionMsg"),
@@ -598,6 +613,13 @@ mod convert_to_json {
         SetWithdrawAddress {
             delegator_address: String,
             withdraw_address: String,
+        },
+        /// This is a Cosmos message to fund the community pool.
+        #[cfg(feature = "staking")]
+        #[serde(rename = "/cosmos.distribution.v1beta1.MsgFundCommunityPool")]
+        FundCommunityPool {
+            depositor: String,
+            amount: Vec<Coin>,
         },
     }
 
