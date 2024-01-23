@@ -14,8 +14,8 @@ type Contract struct {
 }
 
 // NewContract creates a new Contract instance
-func NewContract(address string, codeId string, chain *cosmos.CosmosChain) Contract {
-	return Contract{
+func NewContract(address string, codeId string, chain *cosmos.CosmosChain) *Contract {
+	return &Contract{
 		Address: address,
 		CodeID:  codeId,
 		Chain:   chain,

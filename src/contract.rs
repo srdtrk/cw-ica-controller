@@ -7,8 +7,7 @@ use crate::ibc::types::stargate::channel::new_ica_channel_open_init_cosmos_msg;
 use crate::types::keys::{CONTRACT_NAME, CONTRACT_VERSION};
 use crate::types::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::types::state::{
-    CallbackCounter, ChannelState, ContractState, CALLBACK_COUNTER, CHANNEL_OPEN_INIT_OPTIONS,
-    CHANNEL_STATE, STATE,
+    ChannelState, ContractState, CHANNEL_OPEN_INIT_OPTIONS, CHANNEL_STATE, STATE,
 };
 use crate::types::ContractError;
 
@@ -33,8 +32,6 @@ pub fn instantiate(
 
     // Save the admin. Ica address is determined during handshake.
     STATE.save(deps.storage, &ContractState::new(callback_address))?;
-    // Initialize the callback counter.
-    CALLBACK_COUNTER.save(deps.storage, &CallbackCounter::default())?;
 
     // If channel open init options are provided, open the channel.
     if let Some(channel_open_init_options) = msg.channel_open_init_options {
@@ -98,7 +95,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetContractState {} => to_json_binary(&query::state(deps)?),
         QueryMsg::GetChannel {} => to_json_binary(&query::channel(deps)?),
-        QueryMsg::GetCallbackCounter {} => to_json_binary(&query::callback_counter(deps)?),
         QueryMsg::Ownership {} => to_json_binary(&cw_ownable::get_ownership(deps.storage)?),
     }
 }
@@ -247,10 +243,7 @@ mod execute {
 }
 
 mod query {
-    use super::{
-        CallbackCounter, ChannelState, ContractState, Deps, StdResult, CALLBACK_COUNTER,
-        CHANNEL_STATE, STATE,
-    };
+    use super::{ChannelState, ContractState, Deps, StdResult, CHANNEL_STATE, STATE};
 
     /// Returns the saved contract state.
     pub fn state(deps: Deps) -> StdResult<ContractState> {
@@ -260,11 +253,6 @@ mod query {
     /// Returns the saved channel state if it exists.
     pub fn channel(deps: Deps) -> StdResult<ChannelState> {
         CHANNEL_STATE.load(deps.storage)
-    }
-
-    /// Returns the saved callback counter.
-    pub fn callback_counter(deps: Deps) -> StdResult<CallbackCounter> {
-        CALLBACK_COUNTER.load(deps.storage)
     }
 }
 
@@ -322,12 +310,6 @@ mod tests {
             .owner
             .unwrap();
         assert_eq!(owner, info.sender);
-
-        // Ensure the callback counter is initialized correctly
-        let counter = CALLBACK_COUNTER.load(&deps.storage).unwrap();
-        assert_eq!(counter.success, 0);
-        assert_eq!(counter.error, 0);
-        assert_eq!(counter.timeout, 0);
 
         // Ensure that the contract name and version are saved correctly
         let contract_version = cw2::get_contract_version(&deps.storage).unwrap();

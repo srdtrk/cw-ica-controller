@@ -28,6 +28,7 @@ import (
 
 	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
+	callbackcounter "github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/callback-counter"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
 )
 
@@ -36,6 +37,8 @@ type ContractTestSuite struct {
 
 	Contract   *types.IcaContract
 	IcaAddress string
+	// CallbackContractAddress is the address of the callback counter contract
+	CallbackCounterContract *types.Contract
 }
 
 // SetupSuite calls the underlying TestSuite's SetupSuite method and initializes an empty contract
@@ -51,7 +54,15 @@ func (s *ContractTestSuite) SetupSuite(ctx context.Context, chainSpecs []*interc
 func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding string) {
 	s.SetupSuite(ctx, chainSpecs)
 
-	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
+	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/callback_counter.wasm")
+	s.Require().NoError(err)
+
+	callbackAddress, err := s.ChainA.InstantiateContract(ctx, s.UserA.KeyName(), codeId, callbackcounter.InstantiateMsg, true)
+	s.Require().NoError(err)
+
+	s.CallbackCounterContract = types.NewContract(callbackAddress, codeId, s.ChainA)
+
+	codeId, err = s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
 
 	// Instantiate the contract with channel:
@@ -63,7 +74,7 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding
 			CounterpartyPortId:       nil,
 			TxEncoding:               &encoding,
 		},
-		SendCallbacksTo: nil,
+		SendCallbacksTo: &callbackAddress,
 	}
 
 	err = s.Contract.Instantiate(ctx, s.UserA.KeyName(), s.ChainA, codeId, instantiateMsg, "--gas", "500000")
@@ -442,7 +453,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryAnyMsg[icacontroller.CallbackCounter](ctx, &s.Contract.Contract, icacontroller.GetCallbackCounterRequest)
+		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)
@@ -501,7 +512,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
-		callbackCounter, err := types.QueryAnyMsg[icacontroller.CallbackCounter](ctx, &s.Contract.Contract, icacontroller.GetCallbackCounterRequest)
+		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(2), callbackCounter.Success)
@@ -550,7 +561,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryAnyMsg[icacontroller.CallbackCounter](ctx, &s.Contract.Contract, icacontroller.GetCallbackCounterRequest)
+		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 		s.Require().Equal(uint64(2), callbackCounter.Success)
 		s.Require().Equal(uint64(1), callbackCounter.Error)
@@ -632,7 +643,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryAnyMsg[icacontroller.CallbackCounter](ctx, &s.Contract.Contract, icacontroller.GetCallbackCounterRequest)
+		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)
@@ -700,7 +711,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
-		callbackCounter, err := types.QueryAnyMsg[icacontroller.CallbackCounter](ctx, &s.Contract.Contract, icacontroller.GetCallbackCounterRequest)
+		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(2), callbackCounter.Success)
@@ -779,7 +790,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
-		callbackCounter, err := types.QueryAnyMsg[icacontroller.CallbackCounter](ctx, &s.Contract.Contract, icacontroller.GetCallbackCounterRequest)
+		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 		s.Require().Equal(uint64(3), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
@@ -862,7 +873,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		s.Require().Equal(channeltypes.CLOSED.String(), simdChannels[0].State)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryAnyMsg[icacontroller.CallbackCounter](ctx, &s.Contract.Contract, icacontroller.GetCallbackCounterRequest)
+		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 		s.Require().Equal(uint64(0), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
@@ -925,7 +936,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
 		s.Require().Equal(s.IcaAddress, contractState.IcaInfo.IcaAddress)
 
-		callbackCounter, err := types.QueryAnyMsg[icacontroller.CallbackCounter](ctx, &s.Contract.Contract, icacontroller.GetCallbackCounterRequest)
+		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(0), callbackCounter.Success)
@@ -958,7 +969,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		s.Require().Equal(sdkmath.NewInt(1000000000-100), icaBalance)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryAnyMsg[icacontroller.CallbackCounter](ctx, &s.Contract.Contract, icacontroller.GetCallbackCounterRequest)
+		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)
