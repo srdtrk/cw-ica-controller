@@ -16,6 +16,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
@@ -500,10 +501,21 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 			},
 		}
 
+		fundPoolCosmosMsg := icacontroller.ContractCosmosMsg{
+			Distribution: &icacontroller.DistributionCosmosMsg{
+				FundCommunityPool: &icacontroller.DistributionFundCommunityPoolCosmosMsg{
+					Amount: []icacontroller.Coin{{
+						Denom:  simd.Config().Denom,
+						Amount: "10000000",
+					}},
+				},
+			},
+		}
+
 		// Execute the contract:
 		sendCosmosMsgsExecMsg := icacontroller.ExecuteMsg{
 			SendCosmosMsgs: &icacontroller.ExecuteMsg_SendCosmosMsgs{
-				Messages: []icacontroller.ContractCosmosMsg{stakeCosmosMsg, voteCosmosMsg},
+				Messages: []icacontroller.ContractCosmosMsg{stakeCosmosMsg, voteCosmosMsg, fundPoolCosmosMsg},
 			},
 		}
 		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCosmosMsgsExecMsg)
@@ -521,7 +533,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		// Check if the delegation was successful:
 		postBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
-		s.Require().Equal(intialBalance.Sub(sdkmath.NewInt(10_000_000)), postBalance)
+		s.Require().Equal(intialBalance.Sub(sdkmath.NewInt(20_000_000)), postBalance)
 
 		delegationsQuerier := mysuite.NewGRPCQuerier[stakingtypes.QueryDelegationResponse](s.T(), simd, "/cosmos.staking.v1beta1.Query/Delegation")
 
@@ -545,6 +557,14 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		s.Require().Len(voteResp.Vote.Options, 1)
 		s.Require().Equal(govtypes.OptionYes, voteResp.Vote.Options[0].Option)
 		s.Require().Equal(sdkmath.LegacyNewDec(1), voteResp.Vote.Options[0].Weight)
+
+		// Check if the community pool was funded:
+		communityPoolQuerier := mysuite.NewGRPCQuerier[distributiontypes.QueryCommunityPoolResponse](s.T(), simd, "/cosmos.distribution.v1beta1.Query/CommunityPool")
+
+		communityPoolRequest := distributiontypes.QueryCommunityPoolRequest{}
+		communityPoolResp, err := communityPoolQuerier.GRPCQuery(ctx, &communityPoolRequest)
+		s.Require().NoError(err)
+		s.Require().Equal(sdkmath.NewInt(10_000_000), communityPoolResp.Pool[0].Amount)
 	})
 
 	s.Run(fmt.Sprintf("TestSendCustomIcaMessagesError-%s", encoding), func() {
