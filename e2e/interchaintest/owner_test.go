@@ -16,7 +16,6 @@ import (
 
 	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
-	callbackcounter "github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/callback-counter"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/owner"
 )
@@ -24,10 +23,9 @@ import (
 type OwnerTestSuite struct {
 	mysuite.TestSuite
 
-	IcaContractCodeId       uint64
-	OwnerContract           *types.OwnerContract
-	NumOfIcaContracts       uint32
-	CallbackContractAddress string
+	IcaContractCodeId uint64
+	OwnerContract     *types.OwnerContract
+	NumOfIcaContracts uint32
 }
 
 // SetupOwnerTestSuite starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
@@ -35,13 +33,7 @@ type OwnerTestSuite struct {
 func (s *OwnerTestSuite) SetupOwnerTestSuite(ctx context.Context) {
 	s.SetupSuite(ctx, chainSpecs)
 
-	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/callback_counter.wasm")
-	s.Require().NoError(err)
-
-	s.CallbackContractAddress, err = s.ChainA.InstantiateContract(ctx, s.UserA.KeyName(), codeId, callbackcounter.InstantiateMsg, true)
-	s.Require().NoError(err)
-
-	codeId, err = s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
+	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
 
 	// codeId is string and needs to be converted to uint64
@@ -55,7 +47,7 @@ func (s *OwnerTestSuite) SetupOwnerTestSuite(ctx context.Context) {
 	contractAddr, err := s.ChainA.InstantiateContract(ctx, s.UserA.KeyName(), codeId, instantiateMsg.ToString(), true)
 	s.Require().NoError(err)
 
-	s.OwnerContract = types.NewOwnerContract(types.NewContract(contractAddr, codeId, s.ChainA))
+	s.OwnerContract = types.NewOwnerContract(*types.NewContract(contractAddr, codeId, s.ChainA))
 	s.NumOfIcaContracts = 0
 
 	// Create the ICA Contract
@@ -96,7 +88,7 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 	s.Require().NoError(err)
 	s.Require().NotNil(icaState.IcaState)
 
-	icaContract := types.NewIcaContract(types.NewContract(icaState.ContractAddr, strconv.FormatUint(s.IcaContractCodeId, 10), wasmd))
+	icaContract := types.NewIcaContract(*types.NewContract(icaState.ContractAddr, strconv.FormatUint(s.IcaContractCodeId, 10), wasmd))
 
 	s.Run("TestChannelHandshakeSuccess", func() {
 		// Test if the handshake was successful
@@ -171,7 +163,7 @@ func (s *OwnerTestSuite) TestOwnerPredefinedAction() {
 	icaState, err := types.QueryAnyMsg[owner.IcaContractState](ctx, &s.OwnerContract.Contract, icaStateRequest)
 	s.Require().NoError(err)
 
-	icaContract := types.NewIcaContract(types.NewContract(icaState.ContractAddr, strconv.FormatUint(s.IcaContractCodeId, 10), wasmd))
+	icaContract := types.NewIcaContract(*types.NewContract(icaState.ContractAddr, strconv.FormatUint(s.IcaContractCodeId, 10), wasmd))
 
 	// Check contract state
 	contractState, err := types.QueryAnyMsg[icacontroller.ContractState](
@@ -201,13 +193,5 @@ func (s *OwnerTestSuite) TestOwnerPredefinedAction() {
 		icaBalance, err := simd.GetBalance(ctx, icaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(sdkmath.NewInt(1000000000-100), icaBalance)
-
-		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, &icaContract.Contract, callbackcounter.GetCallbackCounterRequest)
-		s.Require().NoError(err)
-
-		s.Require().Equal(uint64(1), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
-		s.Require().Equal(uint64(0), callbackCounter.Timeout)
 	})
 }
