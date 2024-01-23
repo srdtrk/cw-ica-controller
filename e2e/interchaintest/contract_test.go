@@ -564,7 +564,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		communityPoolRequest := distributiontypes.QueryCommunityPoolRequest{}
 		communityPoolResp, err := communityPoolQuerier.GRPCQuery(ctx, &communityPoolRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(sdkmath.NewInt(10_000_000), communityPoolResp.Pool[0].Amount)
+		s.Require().Equal(sdkmath.LegacyNewDec(10_000_000), communityPoolResp.Pool[0].Amount)
 	})
 
 	s.Run(fmt.Sprintf("TestSendCustomIcaMessagesError-%s", encoding), func() {
