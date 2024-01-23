@@ -284,7 +284,7 @@ If the ICA channel is closed, for example, due to a timed out packet. (This is b
 
 This project was used in the Injective Illuminate hackathon winner project [Tokenized Interchain Accounts](https://dorahacks.io/buidl/8513) where each NFT controls an interchain account. The following is a demo of the project:
 
-https://www.loom.com/share/4e85206379354f5182d21d8e384aba74?sid=e03e6ab0-39f5-4066-9fc4-181389358386
+https://www.loom.com/share/4e85206379354f5182d21d8e384aba74
 
 ## Testing
 
