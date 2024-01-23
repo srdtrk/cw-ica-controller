@@ -880,7 +880,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		s.Require().Equal(uint64(1), callbackCounter.Timeout)
 
 		// Check if contract channel state was updated:
-		contractChannelState, err := types.QueryAnyMsg[icacontroller.ContractChannelState](ctx, s.CallbackCounterContract, icacontroller.GetChannelRequest)
+		contractChannelState, err := types.QueryAnyMsg[icacontroller.ContractChannelState](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
 		s.Require().NoError(err)
 		s.Require().Equal(channeltypes.CLOSED.String(), contractChannelState.ChannelStatus)
 	})
