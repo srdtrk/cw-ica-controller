@@ -31,14 +31,6 @@ pub fn instantiate(
     // Save the admin. Ica address is determined during handshake.
     state::STATE.save(deps.storage, &ContractState::new(callback_address))?;
 
-    if let Some(create_channel_whitelist) = msg.create_channel_whitelist {
-        let create_channel_whitelist = create_channel_whitelist
-            .into_iter()
-            .map(|addr| deps.api.addr_validate(&addr))
-            .collect::<StdResult<Vec<_>>>()?;
-        state::CREATE_CHANNEL_WHITELIST.save(deps.storage, &create_channel_whitelist)?;
-    }
-
     state::CHANNEL_OPEN_INIT_OPTIONS.save(deps.storage, &msg.channel_open_init_options)?;
 
     let ica_channel_open_init_msg = new_ica_channel_open_init_cosmos_msg(
@@ -133,17 +125,7 @@ mod execute {
         info: MessageInfo,
         options: Option<ChannelOpenInitOptions>,
     ) -> Result<Response, ContractError> {
-        // This returns an error if the sender is not the contract owner or a whitelisted address.
-        // It also returns an error if the sender is not the owner and the options are not `None`.
-        if !cw_ownable::is_owner(deps.storage, &info.sender)?
-            && (!state::CREATE_CHANNEL_WHITELIST
-                .may_load(deps.storage)?
-                .unwrap_or_default()
-                .contains(&info.sender)
-                || options.is_some())
-        {
-            return Err(ContractError::Unauthorized);
-        }
+        cw_ownable::assert_owner(deps.storage, &info.sender)?;
 
         state::STATE.update(deps.storage, |mut state| -> StdResult<_> {
             state.enable_channel_open_init();
@@ -319,12 +301,29 @@ mod tests {
             owner: None,
             channel_open_init_options: channel_open_init_options.clone(),
             send_callbacks_to: None,
-            create_channel_whitelist: None,
         };
 
+        let res = instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+
+        // Ensure that the channel open init options are saved correctly
+        assert_eq!(
+            state::CHANNEL_OPEN_INIT_OPTIONS
+                .load(deps.as_ref().storage)
+                .unwrap(),
+            channel_open_init_options
+        );
+
         // Ensure the contract is instantiated successfully
-        let res = instantiate(deps.as_mut(), env, info.clone(), msg).unwrap();
-        assert_eq!(0, res.messages.len());
+        assert_eq!(1, res.messages.len());
+
+        let expected_msg = new_ica_channel_open_init_cosmos_msg(
+            env.contract.address.to_string(),
+            channel_open_init_options.connection_id,
+            channel_open_init_options.counterparty_port_id,
+            channel_open_init_options.counterparty_connection_id,
+            channel_open_init_options.tx_encoding,
+        );
+        assert_eq!(res.messages[0], SubMsg::new(expected_msg));
 
         // Ensure the admin is saved correctly
         let owner = cw_ownable::get_ownership(&deps.storage)
@@ -337,14 +336,6 @@ mod tests {
         let contract_version = cw2::get_contract_version(&deps.storage).unwrap();
         assert_eq!(contract_version.contract, keys::CONTRACT_NAME);
         assert_eq!(contract_version.version, keys::CONTRACT_VERSION);
-
-        // Ensure that the channel open init options are saved correctly
-        assert_eq!(
-            state::CHANNEL_OPEN_INIT_OPTIONS
-                .load(deps.as_ref().storage)
-                .unwrap(),
-            channel_open_init_options
-        );
     }
 
     #[test]
@@ -370,7 +361,6 @@ mod tests {
                 owner: None,
                 channel_open_init_options,
                 send_callbacks_to: None,
-                create_channel_whitelist: None,
             },
         )
         .unwrap();
@@ -440,7 +430,6 @@ mod tests {
                 owner: None,
                 channel_open_init_options,
                 send_callbacks_to: None,
-                create_channel_whitelist: None,
             },
         )
         .unwrap();
@@ -497,7 +486,6 @@ mod tests {
                 owner: None,
                 channel_open_init_options,
                 send_callbacks_to: None,
-                create_channel_whitelist: None,
             },
         )
         .unwrap();

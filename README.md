@@ -43,14 +43,14 @@ The following is a brief overview of the contract's functionality. (You can also
 
 This contract provides two ways to create an interchain account:
 
-1. Using `InstantiateMsg` and/or `ExecuteMsg::CreateChannel` (recommended)
-2. Using the relayer
+1. Using `InstantiateMsg`
+2. Using `ExecuteMsg::CreateChannel`
 
-#### Using `InstantiateMsg` and/or `ExecuteMsg::CreateChannel`
+#### Using `InstantiateMsg`
 
-**This contract only accepts the first `MsgChannelOpenInit` message that is submitted to it which may be the one that is submitted by the contract itself.**
+**This contract only accepts `MsgChannelOpenInit` messages sent by itself. Relayers can never initiate a channel handshake with this contract.**
 
-`InstantiateMsg` is the recommended way to initiate the ICS-27 channel handshake since it would not allow any relayer to front run the first `MsgChannelOpenInit` that the contract allows. If the `channel_open_init_options` field is not specified in `InstantiateMsg`, then the IBC channel is not initialized at contract instantiation. Then a relayer can start the channel handshake on the contract's chain or you must submit an `ExecuteMsg::CreateChannel`.
+`InstantiateMsg` always initiates the channel handshake and this is why `channel_open_init_options` field is not optional.
 
 ```rust, ignore
 /// The message to instantiate the ICA controller contract.
@@ -61,9 +61,7 @@ pub struct InstantiateMsg {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub owner: Option<String>,
     /// The options to initialize the IBC channel upon contract instantiation.
-    /// If not specified, the IBC channel is not initialized, and the relayer must.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub channel_open_init_options: Option<options::ChannelOpenInitOptions>,
+    pub channel_open_init_options: options::ChannelOpenInitOptions,
     /// The contract address that the channel and packet lifecycle callbacks are sent to.
     /// If not specified, then no callbacks are sent.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -71,11 +69,30 @@ pub struct InstantiateMsg {
 }
 ```
 
-#### Using the Relayer
+#### Using `ExecuteMsg::CreateChannel`
 
-Assuming that the contract was not initialized with `channel_open_init_options`, then the relayer can start the channel handshake on the contract's chain.
+If the `channel_open_init_options` field in `InstantiateMsg` was malformed in a way that prevents the channel handshake from succeeding, the contract owner can submit a `ExecuteMsg::CreateChannel` with a new `channel_open_init_options`.
 
-To create an interchain account, the relayer must start the channel handshake on the contract's chain. See end to end tests for an example of how to do this. Unfortunately, you cannot initialize the channel handshake with an empty string as the version, this is due to a limitation of the IBCModule interface provided by ibc-go, see issue [#3942](https://github.com/cosmos/ibc-go/issues/3942). (The contract can now be initialized with an empty version string if the chain supports stargate queries, but this is not the case for the end to end tests and is not recommended.) The version string we are using for the end to end tests is: `{"version":"ics27-1","controller_connection_id":"connection-0","host_connection_id":"connection-0","address":"","encoding":"proto3json","tx_type":"sdk_multi_msg"}` (encoding is replaced with `"proto3"` to test protobuf encoding/decoding). You can see all this in the [end to end tests](./e2e/).
+```rust, ignore
+pub enum ExecuteMsg {
+    /// `CreateChannel` makes the contract submit a stargate MsgChannelOpenInit to the chain.
+    /// This is a wrapper around [`options::ChannelOpenInitOptions`] and thus requires the
+    /// same fields. If not specified, then the options specified in the contract instantiation
+    /// are used.
+    CreateChannel {
+        /// The options to initialize the IBC channel.
+        /// If not specified, the options specified in the contract instantiation are used.
+        /// Must be `None` if the sender is not the owner.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        channel_open_init_options: Option<options::ChannelOpenInitOptions>,
+    },
+
+    // ...
+}
+```
+
+In case the channel was closed due to a timeout, the contract owner can submit a `ExecuteMsg::CreateChannel` with `channel_open_init_options: None` to create a channel with the same `channel_open_init_options` as the last channel opening.
+Learn more about channel closing and reopening [here](#channel-closing-and-reopening).
 
 ### Execute an interchain account transaction
 
@@ -278,7 +295,7 @@ cw-ica-controller = { version = "0.3.0", default-features = false }
 
 ### Channel Closing and Reopening
 
-If the ICA channel is closed, for example, due to a timed out packet. (This is because the semantics of ordered channels in IBC is that any timeout will cause the channel to be closed.) The contract is then able to create a new channel with the same interchain account address, and continue to use the same interchain account. To do this, you submit a `ExecuteMsg::CreateChannel`. This can also be seen in the end to end tests.
+If the ICA channel is closed, for example, due to a timed out packet. (This is because the semantics of ordered channels in IBC requires that any timeout will cause the channel to be closed.) The contract is then able to create a new channel with the same interchain account address, and continue to use the same interchain account. To do this, you submit a `ExecuteMsg::CreateChannel`. This can also be seen in the end to end tests.
 
 ## Demo
 
