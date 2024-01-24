@@ -527,7 +527,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 			DelegatorAddr: s.IcaAddress,
 			ValidatorAddr: validator,
 		}
-		delResp, err := mysuite.GRPCQuery[stakingtypes.QueryDelegationResponse](ctx, simd, &delRequest, "/cosmos.staking.v1beta1.Query/Delegation")
+		delResp, err := mysuite.GRPCQuery[stakingtypes.QueryDelegationResponse](ctx, simd, &delRequest)
 		s.Require().NoError(err)
 		s.Require().Equal(sdkmath.NewInt(10_000_000), delResp.DelegationResponse.Balance.Amount)
 
@@ -536,7 +536,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 			ProposalId: 1,
 			Voter:      s.IcaAddress,
 		}
-		voteResp, err := mysuite.GRPCQuery[govtypes.QueryVoteResponse](ctx, simd, &voteRequest, "/cosmos.gov.v1beta1.Query/Vote")
+		voteResp, err := mysuite.GRPCQuery[govtypes.QueryVoteResponse](ctx, simd, &voteRequest)
 		s.Require().NoError(err)
 		s.Require().Len(voteResp.Vote.Options, 1)
 		s.Require().Equal(govtypes.OptionYes, voteResp.Vote.Options[0].Option)
@@ -735,7 +735,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 			DelegatorAddr: s.IcaAddress,
 			ValidatorAddr: validator,
 		}
-		delResp, err := mysuite.GRPCQuery[stakingtypes.QueryDelegationResponse](ctx, simd, &delRequest, "/cosmos.staking.v1beta1.Query/Delegation")
+		delResp, err := mysuite.GRPCQuery[stakingtypes.QueryDelegationResponse](ctx, simd, &delRequest)
 		s.Require().NoError(err)
 		s.Require().Equal(sdkmath.NewInt(10_000_000), delResp.DelegationResponse.Balance.Amount)
 
@@ -744,7 +744,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 			ProposalId: 1,
 			Voter:      s.IcaAddress,
 		}
-		voteResp, err := mysuite.GRPCQuery[govtypes.QueryVoteResponse](ctx, simd, &voteRequest, "/cosmos.gov.v1beta1.Query/Vote")
+		voteResp, err := mysuite.GRPCQuery[govtypes.QueryVoteResponse](ctx, simd, &voteRequest)
 		s.Require().NoError(err)
 		s.Require().Len(voteResp.Vote.Options, 2)
 		s.Require().Equal(govtypes.OptionYes, voteResp.Vote.Options[0].Option)
