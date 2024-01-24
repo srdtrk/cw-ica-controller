@@ -20,11 +20,11 @@ pub struct InstantiateMsg {
     /// If not specified, then no callbacks are sent.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub send_callbacks_to: Option<String>,
-    /// The list of addresses that are allowed to call `channel_open_init`.
-    /// The contract's own address is **always** allowed to call `channel_open_init`.
-    /// A user may add trusted relayer addresses to this list for convenience.
+    /// The list of addresses that are allowed to call [`ExecuteMsg::CreateChannel`].
+    /// The contract owner is always allowed to call [`ExecuteMsg::CreateChannel`].
+    /// Only the owner can include `channel_open_init_options` in [`ExecuteMsg::CreateChannel`].
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub channel_open_init_whitelist: Option<Vec<String>>,
+    pub create_channel_whitelist: Option<Vec<String>>,
 }
 
 /// The messages to execute the ICA controller contract.
@@ -38,6 +38,7 @@ pub enum ExecuteMsg {
     CreateChannel {
         /// The options to initialize the IBC channel.
         /// If not specified, the options specified in the contract instantiation are used.
+        /// Must be `None` if the sender is not the owner.
         #[serde(skip_serializing_if = "Option::is_none")]
         channel_open_init_options: Option<options::ChannelOpenInitOptions>,
     },

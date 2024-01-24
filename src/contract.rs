@@ -31,12 +31,12 @@ pub fn instantiate(
     // Save the admin. Ica address is determined during handshake.
     state::STATE.save(deps.storage, &ContractState::new(callback_address))?;
 
-    if let Some(chan_open_init_whitelist) = msg.channel_open_init_whitelist {
-        let chan_open_init_whitelist = chan_open_init_whitelist
+    if let Some(create_channel_whitelist) = msg.create_channel_whitelist {
+        let create_channel_whitelist = create_channel_whitelist
             .into_iter()
             .map(|addr| deps.api.addr_validate(&addr))
             .collect::<StdResult<Vec<_>>>()?;
-        state::CHANNEL_OPEN_INIT_WHITELIST.save(deps.storage, &chan_open_init_whitelist)?;
+        state::CREATE_CHANNEL_WHITELIST.save(deps.storage, &create_channel_whitelist)?;
     }
 
     // If channel open init options are provided, open the channel.
@@ -129,6 +129,8 @@ mod execute {
     };
 
     /// Submits a stargate `MsgChannelOpenInit` to the chain.
+    /// Can only be called by the contract owner or a whitelisted address.
+    /// Only the contract owner can include the channel open init options.
     #[allow(clippy::needless_pass_by_value)]
     pub fn create_channel(
         deps: DepsMut,
@@ -136,7 +138,17 @@ mod execute {
         info: MessageInfo,
         options: Option<ChannelOpenInitOptions>,
     ) -> Result<Response, ContractError> {
-        cw_ownable::assert_owner(deps.storage, &info.sender)?;
+        // This returns an error if the sender is not the contract owner or a whitelisted address.
+        // It also returns an error if the sender is not the owner and the options are not `None`.
+        if !cw_ownable::is_owner(deps.storage, &info.sender)?
+            && (!state::CREATE_CHANNEL_WHITELIST
+                .may_load(deps.storage)?
+                .unwrap_or_default()
+                .contains(&info.sender)
+                || options.is_some())
+        {
+            return Err(ContractError::Unauthorized);
+        }
 
         state::STATE.update(deps.storage, |mut state| -> StdResult<_> {
             state.enable_channel_open_init();
@@ -304,7 +316,7 @@ mod tests {
             owner: None,
             channel_open_init_options: None,
             send_callbacks_to: None,
-            channel_open_init_whitelist: None,
+            create_channel_whitelist: None,
         };
 
         // Ensure the contract is instantiated successfully
@@ -340,7 +352,7 @@ mod tests {
                 owner: None,
                 channel_open_init_options: None,
                 send_callbacks_to: None,
-                channel_open_init_whitelist: None,
+                create_channel_whitelist: None,
             },
         )
         .unwrap();
@@ -403,7 +415,7 @@ mod tests {
                 owner: None,
                 channel_open_init_options: None,
                 send_callbacks_to: None,
-                channel_open_init_whitelist: None,
+                create_channel_whitelist: None,
             },
         )
         .unwrap();
@@ -453,7 +465,7 @@ mod tests {
                 owner: None,
                 channel_open_init_options: None,
                 send_callbacks_to: None,
-                channel_open_init_whitelist: None,
+                create_channel_whitelist: None,
             },
         )
         .unwrap();

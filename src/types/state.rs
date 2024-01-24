@@ -21,9 +21,9 @@ pub const CHANNEL_STATE: Item<ChannelState> = Item::new("ica_channel");
 pub const CHANNEL_OPEN_INIT_OPTIONS: Item<ChannelOpenInitOptions> =
     Item::new("channel_open_init_options");
 
-/// The item used to store the addresses allowed to call `channel_open_init`.
+/// The item used to store the addresses allowed to call [`super::msg::ExecuteMsg::CreateChannel`].
 /// This is stored as an item since we don't expect it to be large.
-pub const CHANNEL_OPEN_INIT_WHITELIST: Item<Vec<Addr>> = Item::new("channel_open_init_whitelist");
+pub const CREATE_CHANNEL_WHITELIST: Item<Vec<Addr>> = Item::new("channel_open_init_whitelist");
 
 mod contract {
     use crate::ibc::types::metadata::TxEncoding;
