@@ -15,10 +15,10 @@
 pub mod channel {
     use cosmwasm_std::CosmosMsg;
 
-    use cosmos_sdk_proto::traits::Message;
     use cosmos_sdk_proto::ibc::core::channel::v1::{
         Channel, Counterparty, MsgChannelOpenInit, Order, State,
     };
+    use cosmos_sdk_proto::traits::Message;
 
     use super::super::{keys, metadata};
 

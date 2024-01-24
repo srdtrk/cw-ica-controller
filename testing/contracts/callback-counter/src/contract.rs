@@ -5,7 +5,7 @@ use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Resp
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{CALLBACK_COUNTER, CallbackCounter};
+use crate::state::{CallbackCounter, CALLBACK_COUNTER};
 
 /*
 // version info for migration info
