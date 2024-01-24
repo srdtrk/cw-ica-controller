@@ -68,7 +68,7 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding
 	// Instantiate the contract with channel:
 	instantiateMsg := icacontroller.InstantiateMsg{
 		Owner: nil,
-		ChannelOpenInitOptions: &icacontroller.ChannelOpenInitOptions{
+		ChannelOpenInitOptions: icacontroller.ChannelOpenInitOptions{
 			ConnectionId:             s.ChainAConnID,
 			CounterpartyConnectionId: s.ChainBConnID,
 			CounterpartyPortId:       nil,
@@ -168,12 +168,13 @@ func (s *ContractTestSuite) TestIcaContractChannelHandshake() {
 	})
 }
 
+// This tests that the relayer cannot create a channel with the contract's port.
 func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, and creates the ibc clients and connections.
 	s.SetupSuite(ctx, chainSpecs)
-	wasmd, simd := s.ChainA, s.ChainB
+	wasmd := s.ChainA
 	wasmdUser := s.UserA
 
 	var err error
@@ -207,75 +208,7 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 		// cannot use an empty version here, see README
 		Version: version,
 	})
-	s.Require().NoError(err)
-
-	// Wait for the channel to get set up
-	err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
-	s.Require().NoError(err)
-
-	contractState, err = types.QueryAnyMsg[icacontroller.ContractState](
-		ctx, &s.Contract.Contract,
-		icacontroller.GetContractStateRequest,
-	)
-	s.Require().NoError(err)
-	s.Require().Equal(false, contractState.AllowChannelOpenInit)
-
-	s.IcaAddress = contractState.IcaInfo.IcaAddress
-	s.Contract.SetIcaAddress(s.IcaAddress)
-
-	s.Run("TestChannelHandshakeSuccess", func() {
-		// Test if the handshake was successful
-		wasmdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, wasmd.Config().ChainID)
-		s.Require().NoError(err)
-		s.Require().Equal(1, len(wasmdChannels))
-
-		wasmdChannel := wasmdChannels[0]
-		s.T().Logf("wasmd channel: %s", toJSONString(wasmdChannel))
-		s.Require().Equal(s.Contract.Port(), wasmdChannel.PortID)
-		s.Require().Equal(icatypes.HostPortID, wasmdChannel.Counterparty.PortID)
-		s.Require().Equal(channeltypes.OPEN.String(), wasmdChannel.State)
-
-		simdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, simd.Config().ChainID)
-		s.Require().NoError(err)
-		// I don't know why sometimes an extra channel is created in simd.
-		// this is not related to the localhost connection, and is a failed
-		// clone of the successful channel at index 0. I will log it for now.
-		s.Require().Greater(len(simdChannels), 0)
-		if len(simdChannels) > 1 {
-			s.T().Logf("extra simd channels detected: %s", toJSONString(simdChannels))
-		}
-
-		simdChannel := simdChannels[0]
-		s.T().Logf("simd channel state: %s", toJSONString(simdChannel.State))
-		s.Require().Equal(icatypes.HostPortID, simdChannel.PortID)
-		s.Require().Equal(s.Contract.Port(), simdChannel.Counterparty.PortID)
-		s.Require().Equal(channeltypes.OPEN.String(), simdChannel.State)
-
-		// Check contract's channel state
-		contractChannelState, err := types.QueryAnyMsg[icacontroller.ContractChannelState](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
-		s.Require().NoError(err)
-
-		s.T().Logf("contract's channel store after handshake: %s", toJSONString(contractChannelState))
-
-		s.Require().Equal(wasmdChannel.State, contractChannelState.ChannelStatus)
-		s.Require().Equal(wasmdChannel.Version, contractChannelState.Channel.Version)
-		s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionID)
-		s.Require().Equal(wasmdChannel.ChannelID, contractChannelState.Channel.Endpoint.ChannelID)
-		s.Require().Equal(wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortID)
-		s.Require().Equal(wasmdChannel.Counterparty.ChannelID, contractChannelState.Channel.CounterpartyEndpoint.ChannelID)
-		s.Require().Equal(wasmdChannel.Counterparty.PortID, contractChannelState.Channel.CounterpartyEndpoint.PortID)
-		s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
-
-		// Check contract state
-		contractState, err = types.QueryAnyMsg[icacontroller.ContractState](
-			ctx, &s.Contract.Contract,
-			icacontroller.GetContractStateRequest,
-		)
-		s.Require().NoError(err)
-
-		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
-		s.Require().Equal(false, contractState.AllowChannelOpenInit)
-	})
+	s.Require().Error(err)
 }
 
 func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake() {
@@ -292,7 +225,7 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 		// Instantiate the contract with channel:
 		instantiateMsg := icacontroller.InstantiateMsg{
 			Owner: nil,
-			ChannelOpenInitOptions: &icacontroller.ChannelOpenInitOptions{
+			ChannelOpenInitOptions: icacontroller.ChannelOpenInitOptions{
 				ConnectionId:             "invalid",
 				CounterpartyConnectionId: s.ChainBConnID,
 				CounterpartyPortId:       nil,
@@ -309,7 +242,7 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 		// Instantiate the contract with channel:
 		instantiateMsg := icacontroller.InstantiateMsg{
 			Owner: nil,
-			ChannelOpenInitOptions: &icacontroller.ChannelOpenInitOptions{
+			ChannelOpenInitOptions: icacontroller.ChannelOpenInitOptions{
 				ConnectionId:             s.ChainAConnID,
 				CounterpartyConnectionId: "connection-123",
 				CounterpartyPortId:       nil,

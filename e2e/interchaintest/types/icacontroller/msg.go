@@ -8,7 +8,7 @@ type InstantiateMsg struct {
 	Owner *string `json:"owner,omitempty"`
 	// The options to initialize the IBC channel upon contract instantiation.
 	// If not specified, the IBC channel is not initialized, and the relayer must.
-	ChannelOpenInitOptions *ChannelOpenInitOptions `json:"channel_open_init_options,omitempty"`
+	ChannelOpenInitOptions ChannelOpenInitOptions `json:"channel_open_init_options"`
 	// The contract address that the channel and packet lifecycle callbacks are sent to.
 	// If not specified, then no callbacks are sent.
 	SendCallbacksTo *string `json:"send_callbacks_to,omitempty"`

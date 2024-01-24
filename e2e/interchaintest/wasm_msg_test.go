@@ -67,7 +67,7 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding str
 	// Instantiate the contract with channel:
 	instantiateMsg := icacontroller.InstantiateMsg{
 		Owner: nil,
-		ChannelOpenInitOptions: &icacontroller.ChannelOpenInitOptions{
+		ChannelOpenInitOptions: icacontroller.ChannelOpenInitOptions{
 			ConnectionId:             s.ChainAConnID,
 			CounterpartyConnectionId: s.ChainBConnID,
 			CounterpartyPortId:       nil,
