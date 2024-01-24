@@ -182,23 +182,27 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 	codeId, err := wasmd.StoreContract(ctx, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
 
-	contractAddr, err := wasmd.InstantiateContract(ctx, wasmdUser.KeyName(), codeId, "{}", true)
-	s.Require().NoError(err)
-
-	contract := types.Contract{
-		Address: contractAddr,
-		CodeID:  codeId,
-		Chain:   wasmd,
+	// Instantiate the contract with incorrect counterparty connection id:
+	instantiateMsg := icacontroller.InstantiateMsg{
+		Owner: nil,
+		ChannelOpenInitOptions: icacontroller.ChannelOpenInitOptions{
+			ConnectionId:             s.ChainAConnID,
+			CounterpartyConnectionId: "connection-123",
+			CounterpartyPortId:       nil,
+			TxEncoding:               nil,
+		},
+		SendCallbacksTo: nil,
 	}
 
-	s.Contract = types.NewIcaContract(contract)
+	err = s.Contract.Instantiate(ctx, wasmdUser.KeyName(), wasmd, codeId, instantiateMsg, "--gas", "500000")
+	s.Require().NoError(err)
 
 	contractState, err := types.QueryAnyMsg[icacontroller.ContractState](
 		ctx, &s.Contract.Contract,
 		icacontroller.GetContractStateRequest,
 	)
 	s.Require().NoError(err)
-	s.Require().Equal(true, contractState.AllowChannelOpenInit)
+	s.Require().Equal(false, contractState.AllowChannelOpenInit)
 
 	version := fmt.Sprintf(`{"version":"%s","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"%s","tx_type":"%s"}`, icatypes.Version, s.ChainAConnID, s.ChainBConnID, icatypes.EncodingProtobuf, icatypes.TxTypeSDKMultiMsg)
 	err = s.Relayer.CreateChannel(ctx, s.ExecRep, s.PathName, ibc.CreateChannelOptions{
