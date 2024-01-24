@@ -92,8 +92,7 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding str
 	ownershipResponse, err := types.QueryAnyMsg[icacontroller.OwnershipResponse](ctx, &s.Contract.Contract, icacontroller.OwnershipRequest)
 	s.Require().NoError(err)
 
-	s.Contract.IcaAddress = contractState.IcaInfo.IcaAddress
-	s.Contract.SetIcaAddress(s.Contract.IcaAddress)
+	s.Contract.SetIcaAddress(contractState.IcaInfo.IcaAddress)
 
 	s.Require().Equal(s.UserA.FormattedAddress(), ownershipResponse.Owner)
 	s.Require().Nil(ownershipResponse.PendingOwner)

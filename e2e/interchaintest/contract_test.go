@@ -35,7 +35,7 @@ import (
 type ContractTestSuite struct {
 	mysuite.TestSuite
 
-	Contract   *types.IcaContract
+	Contract *types.IcaContract
 	// CallbackCounterContract is the address of the callback counter contract
 	CallbackCounterContract *types.Contract
 }
@@ -92,8 +92,7 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding
 	ownershipResponse, err := types.QueryAnyMsg[icacontroller.OwnershipResponse](ctx, &s.Contract.Contract, icacontroller.OwnershipRequest)
 	s.Require().NoError(err)
 
-	s.Contract.IcaAddress = contractState.IcaInfo.IcaAddress
-	s.Contract.SetIcaAddress(s.Contract.IcaAddress)
+	s.Contract.SetIcaAddress(contractState.IcaInfo.IcaAddress)
 
 	s.Require().Equal(s.UserA.FormattedAddress(), ownershipResponse.Owner)
 	s.Require().Nil(ownershipResponse.PendingOwner)
