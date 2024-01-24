@@ -165,7 +165,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		contractByCodeRequest := wasmtypes.QueryContractsByCodeRequest{
 			CodeId: counterCodeID,
 		}
-		contractByCodeResp, err := mysuite.GRPCQuery[wasmtypes.QueryContractsByCodeResponse](ctx, wasmd2, &contractByCodeRequest, "/cosmwasm.wasm.v1.Query/ContractsByCode")
+		contractByCodeResp, err := mysuite.GRPCQuery[wasmtypes.QueryContractsByCodeResponse](ctx, wasmd2, &contractByCodeRequest)
 		s.Require().NoError(err)
 		s.Require().Len(contractByCodeResp.Contracts, 1)
 
@@ -242,7 +242,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		contractInfoRequest := wasmtypes.QueryContractInfoRequest{
 			Address: counterContract.Address,
 		}
-		contractInfoResp, err := mysuite.GRPCQuery[wasmtypes.QueryContractInfoResponse](ctx, wasmd2, &contractInfoRequest, "/cosmwasm.wasm.v1.Query/ContractInfo")
+		contractInfoResp, err := mysuite.GRPCQuery[wasmtypes.QueryContractInfoResponse](ctx, wasmd2, &contractInfoRequest)
 		s.Require().NoError(err)
 
 		s.Require().Equal("", contractInfoResp.ContractInfo.Admin)
@@ -250,7 +250,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		contractByCodeRequest := wasmtypes.QueryContractsByCodeRequest{
 			CodeId: counterCodeID,
 		}
-		contractByCodeResp, err := mysuite.GRPCQuery[wasmtypes.QueryContractsByCodeResponse](ctx, wasmd2, &contractByCodeRequest, "/cosmwasm.wasm.v1.Query/ContractsByCode")
+		contractByCodeResp, err := mysuite.GRPCQuery[wasmtypes.QueryContractsByCodeResponse](ctx, wasmd2, &contractByCodeRequest)
 		s.Require().NoError(err)
 		s.Require().Len(contractByCodeResp.Contracts, 2)
 
@@ -309,7 +309,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		contractInfoRequest := wasmtypes.QueryContractInfoRequest{
 			Address: counter2Contract.Address,
 		}
-		contractInfoResp, err := mysuite.GRPCQuery[wasmtypes.QueryContractInfoResponse](ctx, wasmd2, &contractInfoRequest, "/cosmwasm.wasm.v1.Query/ContractInfo")
+		contractInfoResp, err := mysuite.GRPCQuery[wasmtypes.QueryContractInfoResponse](ctx, wasmd2, &contractInfoRequest)
 		s.Require().NoError(err)
 
 		s.Require().Equal(counterCodeID+1, contractInfoResp.ContractInfo.CodeID)
