@@ -36,8 +36,7 @@ type ContractTestSuite struct {
 	mysuite.TestSuite
 
 	Contract   *types.IcaContract
-	IcaAddress string
-	// CallbackContractAddress is the address of the callback counter contract
+	// CallbackCounterContract is the address of the callback counter contract
 	CallbackCounterContract *types.Contract
 }
 
@@ -93,8 +92,8 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding
 	ownershipResponse, err := types.QueryAnyMsg[icacontroller.OwnershipResponse](ctx, &s.Contract.Contract, icacontroller.OwnershipRequest)
 	s.Require().NoError(err)
 
-	s.IcaAddress = contractState.IcaInfo.IcaAddress
-	s.Contract.SetIcaAddress(s.IcaAddress)
+	s.Contract.IcaAddress = contractState.IcaInfo.IcaAddress
+	s.Contract.SetIcaAddress(s.Contract.IcaAddress)
 
 	s.Require().Equal(s.UserA.FormattedAddress(), ownershipResponse.Owner)
 	s.Require().Nil(ownershipResponse.PendingOwner)
@@ -349,7 +348,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 	wasmdUser := s.UserA
 
 	// Fund the ICA address:
-	s.FundAddressChainB(ctx, s.IcaAddress)
+	s.FundAddressChainB(ctx, s.Contract.IcaAddress)
 
 	s.Run(fmt.Sprintf("TestSendCustomIcaMessagesSuccess-%s", encoding), func() {
 		// Send custom ICA messages through the contract:
@@ -363,17 +362,17 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		proposalMsg := &govtypes.MsgSubmitProposal{
 			Content:        protoAny,
 			InitialDeposit: sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(5_000))),
-			Proposer:       s.IcaAddress,
+			Proposer:       s.Contract.IcaAddress,
 		}
 
 		// Create deposit message:
 		depositMsg := &govtypes.MsgDeposit{
 			ProposalId: 1,
-			Depositor:  s.IcaAddress,
+			Depositor:  s.Contract.IcaAddress,
 			Amount:     sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10_000_000))),
 		}
 
-		intialBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
+		intialBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 
 		// Execute the contract:
@@ -402,13 +401,13 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		s.Require().Equal(fmt.Sprint(10_000_000+5_000), proposal.TotalDeposit[0].Amount)
 		// We do not check title and description of the proposal because this is a legacy proposal.
 
-		postBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
+		postBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(intialBalance.Sub(sdkmath.NewInt(10_000_000+5_000)), postBalance)
 	})
 
 	s.Run(fmt.Sprintf("TestSendCosmosMsgsSuccess-%s", encoding), func() {
-		intialBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
+		intialBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 
 		validator, err := simd.Validators[0].KeyBech32(ctx, "validator", "val")
@@ -455,14 +454,14 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 
 		// Check if the delegation was successful:
-		postBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
+		postBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(intialBalance.Sub(sdkmath.NewInt(10_000_000)), postBalance)
 
 		delegationsQuerier := mysuite.NewGRPCQuerier[stakingtypes.QueryDelegationResponse](s.T(), simd, "/cosmos.staking.v1beta1.Query/Delegation")
 
 		delRequest := stakingtypes.QueryDelegationRequest{
-			DelegatorAddr: s.IcaAddress,
+			DelegatorAddr: s.Contract.IcaAddress,
 			ValidatorAddr: validator,
 		}
 		delResp, err := delegationsQuerier.GRPCQuery(ctx, &delRequest)
@@ -474,7 +473,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 
 		voteRequest := govtypes.QueryVoteRequest{
 			ProposalId: 1,
-			Voter:      s.IcaAddress,
+			Voter:      s.Contract.IcaAddress,
 		}
 		voteResp, err := votesQuerier.GRPCQuery(ctx, &voteRequest)
 		s.Require().NoError(err)
@@ -532,7 +531,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 	simdUser := s.UserB
 
 	// Fund the ICA address:
-	s.FundAddressChainB(ctx, s.IcaAddress)
+	s.FundAddressChainB(ctx, s.Contract.IcaAddress)
 
 	s.Run(fmt.Sprintf("TestStargate-%s", encoding), func() {
 		// Send custom ICA messages through the contract:
@@ -546,17 +545,17 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		proposalMsg := &govtypes.MsgSubmitProposal{
 			Content:        protoAny,
 			InitialDeposit: sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(5_000))),
-			Proposer:       s.IcaAddress,
+			Proposer:       s.Contract.IcaAddress,
 		}
 
 		// Create deposit message:
 		depositMsg := &govtypes.MsgDeposit{
 			ProposalId: 1,
-			Depositor:  s.IcaAddress,
+			Depositor:  s.Contract.IcaAddress,
 			Amount:     sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10_000_000))),
 		}
 
-		initialBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
+		initialBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 
 		if encoding == icatypes.EncodingProtobuf {
@@ -593,13 +592,13 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		s.Require().Equal(fmt.Sprint(10_000_000+5_000), proposal.TotalDeposit[0].Amount)
 		// We do not check title and description of the proposal because this is a legacy proposal.
 
-		postBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
+		postBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(initialBalance.Sub(sdkmath.NewInt(10_000_000+5_000)), postBalance)
 	})
 
 	s.Run(fmt.Sprintf("TestDelegateAndVoteWeightedAndCommunityPool-%s", encoding), func() {
-		intialBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
+		intialBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 
 		validator, err := simd.Validators[0].KeyBech32(ctx, "validator", "val")
@@ -667,14 +666,14 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 
 		// Check if the delegation was successful:
-		postBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
+		postBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(intialBalance.Sub(sdkmath.NewInt(20_000_000)), postBalance)
 
 		delegationsQuerier := mysuite.NewGRPCQuerier[stakingtypes.QueryDelegationResponse](s.T(), simd, "/cosmos.staking.v1beta1.Query/Delegation")
 
 		delRequest := stakingtypes.QueryDelegationRequest{
-			DelegatorAddr: s.IcaAddress,
+			DelegatorAddr: s.Contract.IcaAddress,
 			ValidatorAddr: validator,
 		}
 		delResp, err := delegationsQuerier.GRPCQuery(ctx, &delRequest)
@@ -686,7 +685,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 
 		voteRequest := govtypes.QueryVoteRequest{
 			ProposalId: 1,
-			Voter:      s.IcaAddress,
+			Voter:      s.Contract.IcaAddress,
 		}
 		voteResp, err := votesQuerier.GRPCQuery(ctx, &voteRequest)
 		s.Require().NoError(err)
@@ -700,7 +699,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 	})
 
 	s.Run(fmt.Sprintf("TestSendAndSetWithdrawAddress-%s", encoding), func() {
-		initialBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
+		initialBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 
 		// Send some tokens to the simdUser from the ICA address
@@ -745,7 +744,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 
 		// Check if the send was successful:
-		postBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
+		postBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(sdkmath.NewInt(1_000_000), initialBalance.Sub(postBalance))
 	})
@@ -761,7 +760,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 	wasmdUser, _ := s.UserA, s.UserB
 
 	// Fund the ICA address:
-	s.FundAddressChainB(ctx, s.IcaAddress)
+	s.FundAddressChainB(ctx, s.Contract.IcaAddress)
 
 	contractState, err := types.QueryAnyMsg[icacontroller.ContractState](
 		ctx, &s.Contract.Contract,
@@ -868,8 +867,6 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		contractChannelState, err := types.QueryAnyMsg[icacontroller.ContractChannelState](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
 		s.Require().NoError(err)
 		s.Require().Equal(channeltypes.OPEN.String(), contractChannelState.ChannelStatus)
-		// The version string is wrapped by the fee middleware. We we cannot check it directly here.
-		// s.Require().Equal(wasmdChannel.Version, contractChannelState.Channel.Version)
 		s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionID)
 		s.Require().Equal(wasmdChannel.ChannelID, contractChannelState.Channel.Endpoint.ChannelID)
 		s.Require().Equal(wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortID)
@@ -883,7 +880,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		)
 		s.Require().NoError(err)
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
-		s.Require().Equal(s.IcaAddress, contractState.IcaInfo.IcaAddress)
+		s.Require().Equal(s.Contract.IcaAddress, contractState.IcaInfo.IcaAddress)
 
 		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
 		s.Require().NoError(err)
@@ -896,7 +893,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 	s.Run("TestSendCustomIcaMessagesAfterReopen", func() {
 		// Send custom ICA message through the contract:
 		sendMsg := &banktypes.MsgSend{
-			FromAddress: s.IcaAddress,
+			FromAddress: s.Contract.IcaAddress,
 			ToAddress:   s.UserB.FormattedAddress(),
 			Amount:      sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(100))),
 		}
@@ -913,7 +910,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
 		err = testutil.WaitForBlocks(ctx, 10, wasmd, simd)
 		s.Require().NoError(err)
 
-		icaBalance, err := simd.GetBalance(ctx, s.IcaAddress, simd.Config().Denom)
+		icaBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(sdkmath.NewInt(1000000000-100), icaBalance)
 
