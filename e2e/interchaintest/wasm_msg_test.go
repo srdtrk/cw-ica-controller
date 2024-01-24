@@ -162,12 +162,10 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		s.Require().Equal(uint64(1), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 
-		contractByCodeQuerier := mysuite.NewGRPCQuerier[wasmtypes.QueryContractsByCodeResponse](s.T(), wasmd2, "/cosmwasm.wasm.v1.Query/ContractsByCode")
-
 		contractByCodeRequest := wasmtypes.QueryContractsByCodeRequest{
 			CodeId: counterCodeID,
 		}
-		contractByCodeResp, err := contractByCodeQuerier.GRPCQuery(ctx, &contractByCodeRequest)
+		contractByCodeResp, err := mysuite.GRPCQuery[wasmtypes.QueryContractsByCodeResponse](ctx, wasmd2, &contractByCodeRequest, "/cosmwasm.wasm.v1.Query/ContractsByCode")
 		s.Require().NoError(err)
 		s.Require().Len(contractByCodeResp.Contracts, 1)
 
@@ -241,22 +239,18 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 
 		s.Require().Equal(int64(1), counterState.Count)
 
-		contractInfoQuerier := mysuite.NewGRPCQuerier[wasmtypes.QueryContractInfoResponse](s.T(), wasmd2, "/cosmwasm.wasm.v1.Query/ContractInfo")
-
 		contractInfoRequest := wasmtypes.QueryContractInfoRequest{
 			Address: counterContract.Address,
 		}
-		contractInfoResp, err := contractInfoQuerier.GRPCQuery(ctx, &contractInfoRequest)
+		contractInfoResp, err := mysuite.GRPCQuery[wasmtypes.QueryContractInfoResponse](ctx, wasmd2, &contractInfoRequest, "/cosmwasm.wasm.v1.Query/ContractInfo")
 		s.Require().NoError(err)
 
 		s.Require().Equal("", contractInfoResp.ContractInfo.Admin)
 
-		contractByCodeQuerier := mysuite.NewGRPCQuerier[wasmtypes.QueryContractsByCodeResponse](s.T(), wasmd2, "/cosmwasm.wasm.v1.Query/ContractsByCode")
-
 		contractByCodeRequest := wasmtypes.QueryContractsByCodeRequest{
 			CodeId: counterCodeID,
 		}
-		contractByCodeResp, err := contractByCodeQuerier.GRPCQuery(ctx, &contractByCodeRequest)
+		contractByCodeResp, err := mysuite.GRPCQuery[wasmtypes.QueryContractsByCodeResponse](ctx, wasmd2, &contractByCodeRequest, "/cosmwasm.wasm.v1.Query/ContractsByCode")
 		s.Require().NoError(err)
 		s.Require().Len(contractByCodeResp.Contracts, 2)
 
@@ -312,12 +306,10 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 
 		s.Require().Equal(int64(0), counterState.Count)
 
-		contractInfoQuerier := mysuite.NewGRPCQuerier[wasmtypes.QueryContractInfoResponse](s.T(), wasmd2, "/cosmwasm.wasm.v1.Query/ContractInfo")
-
 		contractInfoRequest := wasmtypes.QueryContractInfoRequest{
 			Address: counter2Contract.Address,
 		}
-		contractInfoResp, err := contractInfoQuerier.GRPCQuery(ctx, &contractInfoRequest)
+		contractInfoResp, err := mysuite.GRPCQuery[wasmtypes.QueryContractInfoResponse](ctx, wasmd2, &contractInfoRequest, "/cosmwasm.wasm.v1.Query/ContractInfo")
 		s.Require().NoError(err)
 
 		s.Require().Equal(counterCodeID+1, contractInfoResp.ContractInfo.CodeID)
