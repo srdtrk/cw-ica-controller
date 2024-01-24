@@ -272,7 +272,7 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 		s.Require().NoError(err)
 
 		// Wait for the channel to get set up
-		err = testutil.WaitForBlocks(ctx, 8, s.ChainA, s.ChainB)
+		err = testutil.WaitForBlocks(ctx, 9, s.ChainA, s.ChainB)
 		s.Require().NoError(err)
 
 		// Test if the handshake was successful
