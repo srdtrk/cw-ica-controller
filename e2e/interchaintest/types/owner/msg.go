@@ -18,8 +18,8 @@ type ExecuteMsg struct {
 }
 
 type ExecuteMsg_CreateIcaContract struct {
-	Salt                   *string                               `json:"salt,omitempty"`
-	ChannelOpenInitOptions *icacontroller.ChannelOpenInitOptions `json:"channel_open_init_options,omitempty"`
+	Salt                   *string                              `json:"salt,omitempty"`
+	ChannelOpenInitOptions icacontroller.ChannelOpenInitOptions `json:"channel_open_init_options,omitempty"`
 }
 
 type ExecuteMsg_SendPredefinedAction struct {

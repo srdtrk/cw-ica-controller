@@ -54,7 +54,7 @@ func (s *OwnerTestSuite) SetupOwnerTestSuite(ctx context.Context) {
 	createMsg := owner.ExecuteMsg{
 		CreateIcaContract: &owner.ExecuteMsg_CreateIcaContract{
 			Salt: nil,
-			ChannelOpenInitOptions: &icacontroller.ChannelOpenInitOptions{
+			ChannelOpenInitOptions: icacontroller.ChannelOpenInitOptions{
 				ConnectionId:             s.ChainAConnID,
 				CounterpartyConnectionId: s.ChainBConnID,
 			},
