@@ -523,24 +523,20 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		s.Require().NoError(err)
 		s.Require().Equal(intialBalance.Sub(sdkmath.NewInt(10_000_000)), postBalance)
 
-		delegationsQuerier := mysuite.NewGRPCQuerier[stakingtypes.QueryDelegationResponse](s.T(), simd, "/cosmos.staking.v1beta1.Query/Delegation")
-
 		delRequest := stakingtypes.QueryDelegationRequest{
 			DelegatorAddr: s.IcaAddress,
 			ValidatorAddr: validator,
 		}
-		delResp, err := delegationsQuerier.GRPCQuery(ctx, &delRequest)
+		delResp, err := mysuite.GRPCQuery[stakingtypes.QueryDelegationResponse](ctx, simd, &delRequest, "/cosmos.staking.v1beta1.Query/Delegation")
 		s.Require().NoError(err)
 		s.Require().Equal(sdkmath.NewInt(10_000_000), delResp.DelegationResponse.Balance.Amount)
 
 		// Check if the vote was successful:
-		votesQuerier := mysuite.NewGRPCQuerier[govtypes.QueryVoteResponse](s.T(), simd, "/cosmos.gov.v1beta1.Query/Vote")
-
 		voteRequest := govtypes.QueryVoteRequest{
 			ProposalId: 1,
 			Voter:      s.IcaAddress,
 		}
-		voteResp, err := votesQuerier.GRPCQuery(ctx, &voteRequest)
+		voteResp, err := mysuite.GRPCQuery[govtypes.QueryVoteResponse](ctx, simd, &voteRequest, "/cosmos.gov.v1beta1.Query/Vote")
 		s.Require().NoError(err)
 		s.Require().Len(voteResp.Vote.Options, 1)
 		s.Require().Equal(govtypes.OptionYes, voteResp.Vote.Options[0].Option)
@@ -735,24 +731,20 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		s.Require().NoError(err)
 		s.Require().Equal(intialBalance.Sub(sdkmath.NewInt(20_000_000)), postBalance)
 
-		delegationsQuerier := mysuite.NewGRPCQuerier[stakingtypes.QueryDelegationResponse](s.T(), simd, "/cosmos.staking.v1beta1.Query/Delegation")
-
 		delRequest := stakingtypes.QueryDelegationRequest{
 			DelegatorAddr: s.IcaAddress,
 			ValidatorAddr: validator,
 		}
-		delResp, err := delegationsQuerier.GRPCQuery(ctx, &delRequest)
+		delResp, err := mysuite.GRPCQuery[stakingtypes.QueryDelegationResponse](ctx, simd, &delRequest, "/cosmos.staking.v1beta1.Query/Delegation")
 		s.Require().NoError(err)
 		s.Require().Equal(sdkmath.NewInt(10_000_000), delResp.DelegationResponse.Balance.Amount)
 
 		// Check if the vote was successful:
-		votesQuerier := mysuite.NewGRPCQuerier[govtypes.QueryVoteResponse](s.T(), simd, "/cosmos.gov.v1beta1.Query/Vote")
-
 		voteRequest := govtypes.QueryVoteRequest{
 			ProposalId: 1,
 			Voter:      s.IcaAddress,
 		}
-		voteResp, err := votesQuerier.GRPCQuery(ctx, &voteRequest)
+		voteResp, err := mysuite.GRPCQuery[govtypes.QueryVoteResponse](ctx, simd, &voteRequest, "/cosmos.gov.v1beta1.Query/Vote")
 		s.Require().NoError(err)
 		s.Require().Len(voteResp.Vote.Options, 2)
 		s.Require().Equal(govtypes.OptionYes, voteResp.Vote.Options[0].Option)
