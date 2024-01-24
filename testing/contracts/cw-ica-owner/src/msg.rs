@@ -12,7 +12,7 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     CreateIcaContract {
         salt: Option<String>,
-        channel_open_init_options: Option<ChannelOpenInitOptions>,
+        channel_open_init_options: ChannelOpenInitOptions,
     },
     /// SendPredefinedAction sends a predefined action from the ICA controller to the ICA host.
     /// This demonstration is useful for contracts that have predefined actions such as DAOs.

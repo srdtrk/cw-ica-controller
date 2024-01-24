@@ -67,7 +67,7 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding str
 	// Instantiate the contract with channel:
 	instantiateMsg := icacontroller.InstantiateMsg{
 		Owner: nil,
-		ChannelOpenInitOptions: &icacontroller.ChannelOpenInitOptions{
+		ChannelOpenInitOptions: icacontroller.ChannelOpenInitOptions{
 			ConnectionId:             s.ChainAConnID,
 			CounterpartyConnectionId: s.ChainBConnID,
 			CounterpartyPortId:       nil,
@@ -92,8 +92,7 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding str
 	ownershipResponse, err := types.QueryAnyMsg[icacontroller.OwnershipResponse](ctx, &s.Contract.Contract, icacontroller.OwnershipRequest)
 	s.Require().NoError(err)
 
-	s.IcaAddress = contractState.IcaInfo.IcaAddress
-	s.Contract.SetIcaAddress(s.IcaAddress)
+	s.Contract.SetIcaAddress(contractState.IcaInfo.IcaAddress)
 
 	s.Require().Equal(s.UserA.FormattedAddress(), ownershipResponse.Owner)
 	s.Require().Nil(ownershipResponse.PendingOwner)
@@ -126,7 +125,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 	wasmdUser, wasmd2User := s.UserA, s.UserB
 
 	// Fund the ICA address:
-	s.FundAddressChainB(ctx, s.IcaAddress)
+	s.FundAddressChainB(ctx, s.Contract.IcaAddress)
 
 	var counterContract *types.Contract
 	s.Run(fmt.Sprintf("TestInstantiate-%s", encoding), func() {
@@ -134,7 +133,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		instantiateMsg := icacontroller.ContractCosmosMsg{
 			Wasm: &icacontroller.WasmCosmosMsg{
 				Instantiate: &icacontroller.WasmInstantiateCosmosMsg{
-					Admin:  s.IcaAddress,
+					Admin:  s.Contract.IcaAddress,
 					CodeID: counterCodeID,
 					Label:  "counter",
 					Msg:    toBase64(`{"count": 0}`),
@@ -205,7 +204,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding string) {
 		instantiate2Msg := icacontroller.ContractCosmosMsg{
 			Wasm: &icacontroller.WasmCosmosMsg{
 				Instantiate2: &icacontroller.WasmInstantiate2CosmosMsg{
-					Admin:  s.IcaAddress,
+					Admin:  s.Contract.IcaAddress,
 					CodeID: counterCodeID,
 					Label:  "counter2",
 					Msg:    toBase64(`{"count": 0}`),

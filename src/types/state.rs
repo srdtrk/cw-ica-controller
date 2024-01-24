@@ -190,6 +190,10 @@ mod channel {
 mod tests {
     use super::*;
 
+    use cw_ica_controller_v0_1_3::types::state as v0_1_3;
+    use cw_ica_controller_v0_2_0::types::state as v0_2_0;
+    use cw_ica_controller_v0_3_0::types::state as v0_3_0;
+
     mod v0_1_2 {
         use super::*;
 
@@ -202,45 +206,6 @@ mod tests {
             /// This is set during the handshake.
             #[serde(skip_serializing_if = "Option::is_none")]
             pub ica_info: Option<contract::IcaInfo>,
-        }
-    }
-
-    mod v0_1_3 {
-        use super::*;
-
-        /// This is the contract state at version 0.1.3.
-        #[cw_serde]
-        pub struct ContractState {
-            /// The address of the admin of the IBC application.
-            pub admin: Addr,
-            /// The Interchain Account (ICA) info needed to send packets.
-            /// This is set during the handshake.
-            #[serde(skip_serializing_if = "Option::is_none")]
-            pub ica_info: Option<contract::IcaInfo>,
-            /// If true, the IBC application will accept `MsgChannelOpenInit` messages.
-            #[serde(default)]
-            pub allow_channel_open_init: bool,
-        }
-    }
-
-    mod v0_2_0 {
-        use super::*;
-
-        /// This is the contract state at version 0.2.0.
-        #[cw_serde]
-        pub struct ContractState {
-            /// The address of the admin of the IBC application.
-            pub admin: Addr,
-            /// The Interchain Account (ICA) info needed to send packets.
-            /// This is set during the handshake.
-            #[serde(default)]
-            pub ica_info: Option<contract::IcaInfo>,
-            /// If true, the IBC application will accept `MsgChannelOpenInit` messages.
-            #[serde(default)]
-            pub allow_channel_open_init: bool,
-            /// The address of the callback contract.
-            #[serde(default)]
-            pub callback_address: Option<Addr>,
         }
     }
 
@@ -297,9 +262,9 @@ mod tests {
 
         let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
 
-        let deserialized: ContractState = cosmwasm_std::from_json(serialized).unwrap();
+        let deserialized: v0_3_0::ContractState = cosmwasm_std::from_json(serialized).unwrap();
 
-        let exp_state = ContractState {
+        let exp_state = v0_3_0::ContractState {
             ica_info: None,
             allow_channel_open_init: false,
             callback_address: Some(Addr::unchecked("callback")),

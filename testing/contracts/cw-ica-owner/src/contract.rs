@@ -90,7 +90,7 @@ mod execute {
         env: Env,
         info: MessageInfo,
         salt: Option<String>,
-        channel_open_init_options: Option<ChannelOpenInitOptions>,
+        channel_open_init_options: ChannelOpenInitOptions,
     ) -> Result<Response, ContractError> {
         let state = STATE.load(deps.storage)?;
         if state.admin != info.sender {

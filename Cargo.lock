@@ -241,12 +241,70 @@ dependencies = [
 
 [[package]]
 name = "cw-ica-controller"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bcd5af76ac0cb5ea40a715191028cbddeb0f682c9771f7d1c57ea24f42dec704"
+dependencies = [
+ "cosmos-sdk-proto",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw2",
+ "schemars",
+ "semver",
+ "serde",
+ "serde-json-wasm 0.5.1",
+ "thiserror",
+]
+
+[[package]]
+name = "cw-ica-controller"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "83994aa638a9943eb0eca4fd82a21d9261c61763b609f2685a5fb01dff24aaa4"
+dependencies = [
+ "cosmos-sdk-proto",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw2",
+ "schemars",
+ "semver",
+ "serde",
+ "serde-json-wasm 1.0.0",
+ "thiserror",
+]
+
+[[package]]
+name = "cw-ica-controller"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b62b41020a146c640e6411ca43f43bc5857b8a8ba818099c40ae090cfae71c49"
+dependencies = [
+ "cosmos-sdk-proto",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-ownable",
+ "cw-storage-plus",
+ "cw2",
+ "schemars",
+ "semver",
+ "serde",
+ "serde-json-wasm 1.0.0",
+ "thiserror",
+]
+
+[[package]]
+name = "cw-ica-controller"
 version = "0.4.0"
 dependencies = [
  "base64 0.13.1",
  "cosmos-sdk-proto",
  "cosmwasm-schema",
  "cosmwasm-std",
+ "cw-ica-controller 0.1.3",
+ "cw-ica-controller 0.2.0",
+ "cw-ica-controller 0.3.0",
  "cw-ownable",
  "cw-storage-plus",
  "cw2",
