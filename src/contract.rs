@@ -39,22 +39,17 @@ pub fn instantiate(
         state::CREATE_CHANNEL_WHITELIST.save(deps.storage, &create_channel_whitelist)?;
     }
 
-    // If channel open init options are provided, open the channel.
-    if let Some(channel_open_init_options) = msg.channel_open_init_options {
-        state::CHANNEL_OPEN_INIT_OPTIONS.save(deps.storage, &channel_open_init_options)?;
+    state::CHANNEL_OPEN_INIT_OPTIONS.save(deps.storage, &msg.channel_open_init_options)?;
 
-        let ica_channel_open_init_msg = new_ica_channel_open_init_cosmos_msg(
-            env.contract.address.to_string(),
-            channel_open_init_options.connection_id,
-            channel_open_init_options.counterparty_port_id,
-            channel_open_init_options.counterparty_connection_id,
-            channel_open_init_options.tx_encoding,
-        );
+    let ica_channel_open_init_msg = new_ica_channel_open_init_cosmos_msg(
+        env.contract.address.to_string(),
+        msg.channel_open_init_options.connection_id,
+        msg.channel_open_init_options.counterparty_port_id,
+        msg.channel_open_init_options.counterparty_connection_id,
+        msg.channel_open_init_options.tx_encoding,
+    );
 
-        Ok(Response::new().add_message(ica_channel_open_init_msg))
-    } else {
-        Ok(Response::default())
-    }
+    Ok(Response::new().add_message(ica_channel_open_init_msg))
 }
 
 /// Handles the execution of the contract.
@@ -301,6 +296,7 @@ mod migrate {
 #[cfg(test)]
 mod tests {
     use crate::ibc::types::{metadata::TxEncoding, packet::IcaPacketData};
+    use crate::types::msg::options::ChannelOpenInitOptions;
 
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
@@ -312,9 +308,16 @@ mod tests {
         let env = mock_env();
         let info = mock_info("creator", &[]);
 
+        let channel_open_init_options = ChannelOpenInitOptions {
+            connection_id: "connection-0".to_string(),
+            counterparty_connection_id: "connection-1".to_string(),
+            counterparty_port_id: None,
+            tx_encoding: None,
+        };
+
         let msg = InstantiateMsg {
             owner: None,
-            channel_open_init_options: None,
+            channel_open_init_options: channel_open_init_options.clone(),
             send_callbacks_to: None,
             create_channel_whitelist: None,
         };
@@ -334,6 +337,14 @@ mod tests {
         let contract_version = cw2::get_contract_version(&deps.storage).unwrap();
         assert_eq!(contract_version.contract, keys::CONTRACT_NAME);
         assert_eq!(contract_version.version, keys::CONTRACT_VERSION);
+
+        // Ensure that the channel open init options are saved correctly
+        assert_eq!(
+            state::CHANNEL_OPEN_INIT_OPTIONS
+                .load(deps.as_ref().storage)
+                .unwrap(),
+            channel_open_init_options
+        );
     }
 
     #[test]
@@ -343,6 +354,13 @@ mod tests {
         let env = mock_env();
         let info = mock_info("creator", &[]);
 
+        let channel_open_init_options = ChannelOpenInitOptions {
+            connection_id: "connection-0".to_string(),
+            counterparty_connection_id: "connection-1".to_string(),
+            counterparty_port_id: None,
+            tx_encoding: None,
+        };
+
         // Instantiate the contract
         let _res = instantiate(
             deps.as_mut(),
@@ -350,7 +368,7 @@ mod tests {
             info.clone(),
             InstantiateMsg {
                 owner: None,
-                channel_open_init_options: None,
+                channel_open_init_options,
                 send_callbacks_to: None,
                 create_channel_whitelist: None,
             },
@@ -406,6 +424,13 @@ mod tests {
         let env = mock_env();
         let info = mock_info("creator", &[]);
 
+        let channel_open_init_options = ChannelOpenInitOptions {
+            connection_id: "connection-0".to_string(),
+            counterparty_connection_id: "connection-1".to_string(),
+            counterparty_port_id: None,
+            tx_encoding: None,
+        };
+
         // Instantiate the contract
         let _res = instantiate(
             deps.as_mut(),
@@ -413,7 +438,7 @@ mod tests {
             info.clone(),
             InstantiateMsg {
                 owner: None,
-                channel_open_init_options: None,
+                channel_open_init_options,
                 send_callbacks_to: None,
                 create_channel_whitelist: None,
             },
@@ -456,6 +481,13 @@ mod tests {
 
         let info = mock_info("creator", &[]);
 
+        let channel_open_init_options = ChannelOpenInitOptions {
+            connection_id: "connection-0".to_string(),
+            counterparty_connection_id: "connection-1".to_string(),
+            counterparty_port_id: None,
+            tx_encoding: None,
+        };
+
         // Instantiate the contract
         let _res = instantiate(
             deps.as_mut(),
@@ -463,7 +495,7 @@ mod tests {
             info,
             InstantiateMsg {
                 owner: None,
-                channel_open_init_options: None,
+                channel_open_init_options,
                 send_callbacks_to: None,
                 create_channel_whitelist: None,
             },

@@ -14,8 +14,7 @@ pub struct InstantiateMsg {
     pub owner: Option<String>,
     /// The options to initialize the IBC channel upon contract instantiation.
     /// If not specified, the IBC channel is not initialized, and the relayer must.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub channel_open_init_options: Option<options::ChannelOpenInitOptions>,
+    pub channel_open_init_options: options::ChannelOpenInitOptions,
     /// The contract address that the channel and packet lifecycle callbacks are sent to.
     /// If not specified, then no callbacks are sent.
     #[serde(skip_serializing_if = "Option::is_none")]

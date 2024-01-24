@@ -11,19 +11,14 @@
 //! This module is not tested in the end-to-end tests as the default wasmd docker image does not support
 //! stargate queries. It is tested anecdotally, so use it at your own risk.
 
-use cosmos_sdk_proto::traits::Message;
-
-use cosmwasm_std::Binary;
-
 /// Contains the stargate channel lifecycle helper methods.
 pub mod channel {
-    use super::{Binary, Message};
+    use cosmwasm_std::CosmosMsg;
 
+    use cosmos_sdk_proto::traits::Message;
     use cosmos_sdk_proto::ibc::core::channel::v1::{
         Channel, Counterparty, MsgChannelOpenInit, Order, State,
     };
-
-    use cosmwasm_std::CosmosMsg;
 
     use super::super::{keys, metadata};
 
@@ -57,7 +52,7 @@ pub mod channel {
 
         CosmosMsg::Stargate {
             type_url: "/ibc.core.channel.v1.MsgChannelOpenInit".into(),
-            value: Binary(msg_channel_open_init.encode_to_vec()),
+            value: msg_channel_open_init.encode_to_vec().into(),
         }
     }
 
