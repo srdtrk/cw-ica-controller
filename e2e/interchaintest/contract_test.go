@@ -209,8 +209,7 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 		SourcePortName: s.Contract.Port(),
 		DestPortName:   icatypes.HostPortID,
 		Order:          ibc.Ordered,
-		// cannot use an empty version here, see README
-		Version: version,
+		Version:        version,
 	})
 	s.Require().Error(err)
 }
