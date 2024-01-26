@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.4.0 (2024-01-26)
+## v0.4.0 (2024-01-27)
 
 ### Features
 
@@ -12,6 +12,7 @@
 - `CallbackCounter` is removed. (https://github.com/srdtrk/cw-ica-controller/pull/44)
 - Relayers cannot open channels anymore. (https://github.com/srdtrk/cw-ica-controller/pull/53)
 - Minimum compatible CosmWasm version is now `v1.3`. (https://github.com/srdtrk/cw-ica-controller/pull/46)
+- Improved the `instantiate2` helper function. (https://github.com/srdtrk/cw-ica-controller/pull/57)
 
 ## v0.3.0 (2023-12-30)
 
