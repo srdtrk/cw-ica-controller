@@ -34,6 +34,6 @@ Such as CosmosHub, Osmosis, etc.
 
 :::
 
-Then the rest of the ICS-27 handshake is completed by the relayers. Both the hermes relayer and the go relayer
-support `ICS-27` interchain accounts. Once the handshake is complete, the `cw-ica-controller` contract makes a
-callback to the caller contract if the caller contract requested a callback during instantiation.
+Then the rest of the ICS-27 handshake is completed by the relayers automatically. Both the hermes relayer and the
+go relayer support `ICS-27` interchain accounts. Once the handshake is complete, the `cw-ica-controller` contract
+makes a callback to the callback contract if one was provided during instantiation.
