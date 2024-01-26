@@ -11,31 +11,31 @@ type FeatureItem = {
 const FeatureList: FeatureItem[] = [
   {
     title: 'Easy to Use',
-    Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
+    Svg: require('@site/static/img/easy_deploy.svg').default,
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        Create an interchain account (ICA) with a single instantiate call. No contracts are needed
+        on the counterparty chain. Send ICA transactions as `CosmosMsg`s and receive callbacks.
+      </>
+    ),
+  },
+  {
+    title: 'Universal CosmWasm Support',
+    Svg: require('@site/static/img/universal_support.svg').default,
+    description: (
+      <>
+        CosmWasm ICA Controller can be deployed on all IBC enabled CosmWasm chains. There is no need
+        for custom chain bindings or even the interchain accounts module.
       </>
     ),
   },
   {
     title: 'Focus on What Matters',
-    Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
+    Svg: require('@site/static/img/focus.svg').default,
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
-      </>
-    ),
-  },
-  {
-    title: 'Powered by React',
-    Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
-    description: (
-      <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
+        CosmWasm ICA Controller lets you focus on your application, and we&apos;ll do the IBC chores
+        in the background. Go ahead and build your cross-chain application.
       </>
     ),
   },
