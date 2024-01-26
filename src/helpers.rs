@@ -4,7 +4,10 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{to_json_binary, Addr, Binary, CosmosMsg, QuerierWrapper, StdResult, WasmMsg};
+use cosmwasm_std::{
+    instantiate2_address, to_json_binary, Addr, Api, CosmosMsg, Env, QuerierWrapper, StdError,
+    StdResult, WasmMsg,
+};
 
 use crate::types::{msg, state};
 
@@ -137,27 +140,45 @@ impl CwIcaControllerCode {
         .into())
     }
 
-    /// `instantiate2` creates a [`WasmMsg::Instantiate2`] message targeting this code
+    /// `instantiate2` returns a [`WasmMsg::Instantiate2`] message targeting this code
+    /// and the contract address.
+    ///
+    /// **Warning**: This function won't work on chains which have substantially changed
+    /// address generation such as Injective, test carefully.
     ///
     /// # Errors
     ///
-    /// This function returns an error if the given message cannot be serialized
+    /// This function returns an error if the given message cannot be serialized or
+    /// if the contract address cannot be calculated.
+    #[allow(clippy::too_many_arguments)]
     pub fn instantiate2(
         &self,
+        api: &dyn Api,
+        querier: QuerierWrapper,
+        env: &Env,
         msg: impl Into<msg::InstantiateMsg>,
         label: impl Into<String>,
         admin: Option<impl Into<String>>,
-        salt: impl Into<Binary>,
-    ) -> StdResult<CosmosMsg> {
-        let msg = to_json_binary(&msg.into())?;
-        Ok(WasmMsg::Instantiate2 {
+        salt: impl Into<String>,
+    ) -> StdResult<(CosmosMsg, Addr)> {
+        let salt = salt.into();
+        let code_info = querier.query_wasm_code_info(self.code_id())?;
+        let creator_cannonical = api.addr_canonicalize(env.contract.address.as_str())?;
+
+        let contract_addr = api.addr_humanize(
+            &instantiate2_address(&code_info.checksum, &creator_cannonical, salt.as_bytes())
+                .map_err(|e| StdError::generic_err(e.to_string()))?,
+        )?;
+
+        let instantiate_msg = WasmMsg::Instantiate2 {
             code_id: self.code_id(),
-            msg,
+            msg: to_json_binary(&msg.into())?,
             funds: vec![],
             label: label.into(),
             admin: admin.map(Into::into),
-            salt: salt.into(),
-        }
-        .into())
+            salt: salt.as_bytes().into(),
+        };
+
+        Ok((instantiate_msg.into(), contract_addr))
     }
 }

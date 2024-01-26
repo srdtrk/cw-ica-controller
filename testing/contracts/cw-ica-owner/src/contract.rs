@@ -66,7 +66,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 mod execute {
-    use cosmwasm_std::{instantiate2_address, Addr};
+    use cosmwasm_std::Addr;
     use cw_ica_controller::helpers::CwIcaControllerContract;
     use cw_ica_controller::ibc::types::packet::IcaPacketData;
     use cw_ica_controller::types::callbacks::IcaControllerCallbackMsg;
@@ -110,23 +110,15 @@ mod execute {
         let salt = salt.unwrap_or(env.block.time.seconds().to_string());
         let label = format!("icacontroller-{}-{}", env.contract.address, ica_count);
 
-        let cosmos_msg = ica_code.instantiate2(
+        let (cosmos_msg, contract_addr) = ica_code.instantiate2(
+            deps.api,
+            deps.querier,
+            &env,
             instantiate_msg,
             label,
             Some(env.contract.address.to_string()),
-            salt.as_bytes(),
+            salt,
         )?;
-
-        let code_info = deps
-            .querier
-            .query_wasm_code_info(state.ica_controller_code_id)?;
-        let creator_cannonical = deps.api.addr_canonicalize(env.contract.address.as_str())?;
-
-        let contract_addr = deps.api.addr_humanize(&instantiate2_address(
-            &code_info.checksum,
-            &creator_cannonical,
-            salt.as_bytes(),
-        )?)?;
 
         let initial_state = state::IcaContractState::new(contract_addr.clone());
 
