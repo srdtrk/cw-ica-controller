@@ -47,6 +47,10 @@ const config: Config = {
     ],
   ],
 
+  themes: [
+    'docusaurus-theme-github-codeblock'
+  ],
+
   themeConfig: {
     // Replace with your project's social card
     image: 'https://opengraph.githubassets.com/946cd03a2431502cb8cdbb579ca48c56e2c4060ca5ff0b25e13739f3fc08b512/srdtrk/cw-ica-controller',
@@ -110,6 +114,13 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+    },
+    // github codeblock theme configuration
+    codeblock: {
+        showGithubLink: true,
+        githubLinkLabel: 'View on GitHub',
+        showRunmeLink: false,
+        runmeLinkLabel: 'Checkout via Runme'
     },
   } satisfies Preset.ThemeConfig,
 };
