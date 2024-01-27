@@ -319,6 +319,8 @@ dependencies = [
 [[package]]
 name = "cw-ica-controller-derive"
 version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d71896e4c9b3825f9498af166af4d5527f53bb5e788e339cf3812154aac986d"
 dependencies = [
  "proc-macro2",
  "quote",
