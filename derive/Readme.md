@@ -10,7 +10,7 @@ message enum variant into their `ExecuteMsg` enum.
 ## Usage
 
 I will show the usage of this crate (from the `cw-ica-controller` crate) in
-[`testing/contracts/callback-counter/src/msg.rs](testing/contracts/callback-counter/src/msg.rs).
+[`testing/contracts/callback-counter/src/msg.rs`](../testing/contracts/callback-counter/src/msg.rs).
 
 ```rust
 use cosmwasm_schema::{cw_serde, QueryResponses};
