@@ -1,5 +1,4 @@
-//! This module contains all code for this crate.
-
+#![doc = include_str!("../Readme.md")]
 #![deny(missing_docs)]
 #![deny(clippy::nursery, clippy::pedantic, warnings)]
 
