@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.1 (2024-01-27)
+
+### Features
+
+- Introduced a proc macro to insert the callback msg enum variant to external contracts' `ExecuteMsg`. (https://github.com/srdtrk/cw-ica-controller/pull/61)
+
 ## v0.4.0 (2024-01-27)
 
 ### Features
