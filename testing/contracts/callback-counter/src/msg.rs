@@ -1,13 +1,12 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cw_ica_controller::types::callbacks::IcaControllerCallbackMsg;
+use cw_ica_controller::helpers::ica_callback_execute;
 
 #[cw_serde]
 pub struct InstantiateMsg {}
 
+#[ica_callback_execute]
 #[cw_serde]
-pub enum ExecuteMsg {
-    ReceiveIcaCallback(IcaControllerCallbackMsg),
-}
+pub enum ExecuteMsg {}
 
 #[cw_serde]
 #[derive(QueryResponses)]

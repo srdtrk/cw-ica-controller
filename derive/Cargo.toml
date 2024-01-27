@@ -1,0 +1,19 @@
+[package]
+name = "cw-ica-controller-derive"
+authors = ["srdtrk <srdtrk@hotmail.com>"]
+version = "0.4.1"
+edition = "2021"
+description = "This crate contains macros for deriving cw-ica-controller interfaces."
+repository = "https://github.com/srdtrk/cw-ica-controller"
+license = "Apache-2.0"
+readme = "Readme.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+doctest = false
+proc-macro = true
+
+[dependencies]
+proc-macro2       = "1.0"
+quote             = "1.0"
+syn = { version = "1.0", features = ["derive"] }

@@ -11,6 +11,8 @@ use cosmwasm_std::{
 
 use crate::types::{msg, state};
 
+pub use cw_ica_controller_derive::ica_callback_execute; // re-export for use in macros
+
 /// `CwIcaControllerContract` is a wrapper around Addr that provides helpers
 /// for working with this contract.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]

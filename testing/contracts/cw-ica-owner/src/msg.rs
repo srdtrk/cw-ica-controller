@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cw_ica_controller::types::callbacks::IcaControllerCallbackMsg;
+use cw_ica_controller::helpers::ica_callback_execute;
 use cw_ica_controller::types::msg::options::ChannelOpenInitOptions;
 
 #[cw_serde]
@@ -8,6 +8,7 @@ pub struct InstantiateMsg {
     pub ica_controller_code_id: u64,
 }
 
+#[ica_callback_execute]
 #[cw_serde]
 pub enum ExecuteMsg {
     CreateIcaContract {
@@ -24,7 +25,6 @@ pub enum ExecuteMsg {
         /// The recipient's address, on the counterparty chain, to send the tokens to from ICA host.
         to_address: String,
     },
-    ReceiveIcaCallback(IcaControllerCallbackMsg),
 }
 
 #[cw_serde]
