@@ -253,11 +253,12 @@ dependencies = [
 
 [[package]]
 name = "cw-ica-controller"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "cosmos-sdk-proto",
  "cosmwasm-schema",
  "cosmwasm-std",
+ "cw-ica-controller-derive",
  "cw-ownable",
  "cw-storage-plus",
  "cw2",
@@ -266,6 +267,15 @@ dependencies = [
  "serde",
  "serde-json-wasm 1.0.1",
  "thiserror",
+]
+
+[[package]]
+name = "cw-ica-controller-derive"
+version = "0.4.1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]
