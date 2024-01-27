@@ -1,6 +1,6 @@
 [package]
 name = "cw-ica-controller"
-version = "0.4.0"
+version = "0.4.1"
 authors = ["srdtrk <srdtrk@hotmail.com>"]
 edition = "2021"
 description = "This is a cosmwasm implementation of an interchain accounts controller."
@@ -12,6 +12,7 @@ readme = "README.md"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+doctest = false
 
 [profile.release]
 opt-level = 3

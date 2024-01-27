@@ -1,7 +1,7 @@
 [package]
 name = "cw-ica-controller-derive"
 authors = ["srdtrk <srdtrk@hotmail.com>"]
-version = "0.1.0"
+version = "0.4.1"
 edition = "2021"
 description = "This crate contains macros for deriving cw-ica-controller interfaces."
 repository = "https://github.com/srdtrk/cw-ica-controller"
