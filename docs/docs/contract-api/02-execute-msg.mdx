@@ -1,0 +1,25 @@
+---
+title: ExecuteMsg
+sidebar_label: ExecuteMsg
+sidebar_position: 2
+slug: /contract-api/execute-msg
+---
+
+# `ExecuteMsg`
+
+The `ExecuteMsg` is the message that is used to interact with the `cw-ica-controller` contract mainly by the owner.
+
+## CreateChannel
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.4.0/src/types/msg.rs#L27-L37
+```
+
+This message is used to initiate an ICS-27 channel open handshake. It is only callable by the owner.
+This message only takes one optional parameter: `channel_open_init_options`.
+
+If this parameter is left empty, then the contract will use the `channel_open_init_options` that were last
+passed to the `InstantiateMsg` or `CreateChannel` messages.
+
+If this parameter is set, then the contract will use the `channel_open_init_options` that are passed to this
+message and save them for future `CreateChannel` messages.

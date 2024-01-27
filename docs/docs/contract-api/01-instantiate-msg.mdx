@@ -43,8 +43,7 @@ then the execution of the `InstantiateMsg` will not fail. This is because the so
 about the counterparty chain's connections. Instead, the channel open handshake will fail to complete.
 
 If the contract was instantiated with a `counterparty_connection_id` that does not match the connection
-end on the counterparty chain, then the owner must call `ExecuteMsg::CreateChannel` with the correct
-parameters to start a new channel open handshake.
+end on the counterparty chain, then the owner must call [`ExecuteMsg::CreateChannel`](./02-execute-msg.mdx#create-channel) with the correct parameters to start a new channel open handshake.
 
 #### `counterparty_port_id`
 
