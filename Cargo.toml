@@ -58,6 +58,7 @@ thiserror = { version = "1.0.50" }
 cosmos-sdk-proto = { version = "0.20.0", default-features = false, features = ["cosmwasm"] }
 semver = "1.0"
 cw-ownable = "0.5.1"
+cw-ica-controller-derive = { path = "derive" }
 
 [dev-dependencies]
 base64 = "0.13.1"
