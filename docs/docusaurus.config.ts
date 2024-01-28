@@ -39,6 +39,7 @@ const config: Config = {
           // Remove this to remove the "edit this page" links.
           editUrl:
             'https://github.com/srdtrk/cw-ica-controller/tree/feat/docusaurus-docs/docs',
+          sidebarCollapsed: false,
         },
         theme: {
           customCss: './src/css/custom.css',
@@ -123,6 +124,20 @@ const config: Config = {
         runmeLinkLabel: 'Checkout via Runme'
     },
   } satisfies Preset.ThemeConfig,
+  plugins: [
+    async function myPlugin(context, options) {
+      return {
+        name: "docusaurus-tailwindcss",
+        configurePostCss(postcssOptions) {
+          postcssOptions.plugins.push(require("postcss-import"));
+          postcssOptions.plugins.push(require("tailwindcss/nesting"));
+          postcssOptions.plugins.push(require("tailwindcss"));
+          postcssOptions.plugins.push(require("autoprefixer"));
+          return postcssOptions;
+        },
+      };
+    },
+  ],
 };
 
 export default config;
