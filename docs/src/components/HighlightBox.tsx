@@ -97,8 +97,8 @@ const gradientStyles = ({ color1, color2 }) => ({
   justifyContent: "start",
   marginBottom: 20,
   fontSize: 21,
-  flexWrap: "wrap",
-  flexDirection: "column",
+  // flexWrap: "wrap",
+  // flexDirection: "column",
 });
 
 function HighlightBox({ type, title, children }) {
@@ -123,11 +123,6 @@ function HighlightBox({ type, title, children }) {
   };
 
   const childrenWithStyles = React.Children.map(children, child => {
-    if (child.type === 'a') {
-      return React.cloneElement(child, {
-        style: anchorStyle,
-      });
-    }
     if (child.type === 'code') {
       return React.cloneElement(child, {
         style: codeStyle,
