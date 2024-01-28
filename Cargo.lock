@@ -296,7 +296,7 @@ dependencies = [
 
 [[package]]
 name = "cw-ica-controller"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "base64 0.13.1",
  "cosmos-sdk-proto",
@@ -318,9 +318,9 @@ dependencies = [
 
 [[package]]
 name = "cw-ica-controller-derive"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d71896e4c9b3825f9498af166af4d5527f53bb5e788e339cf3812154aac986d"
+checksum = "905f3948e7af9264095f7cd596cf519d72f9494337f8953504a4c01874979151"
 dependencies = [
  "proc-macro2",
  "quote",
