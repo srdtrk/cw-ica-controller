@@ -5,7 +5,9 @@ use cw_ica_controller::helpers::ica_callback_execute;
 pub struct InstantiateMsg {}
 
 #[ica_callback_execute]
+#[deny(missing_docs)]
 #[cw_serde]
+/// This is the execute message of the contract.
 pub enum ExecuteMsg {}
 
 #[cw_serde]

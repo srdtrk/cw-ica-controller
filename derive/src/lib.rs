@@ -87,6 +87,9 @@ pub fn ica_callback_execute(metadata: TokenStream, input: TokenStream) -> TokenS
         input,
         quote! {
         enum Right {
+            /// The callback message from `cw-ica-controller`.
+            /// The handler for this variant should verify that this message comes from an
+            /// expected legitimate source.
             ReceiveIcaCallback(::cw_ica_controller::types::callbacks::IcaControllerCallbackMsg),
         }
         }

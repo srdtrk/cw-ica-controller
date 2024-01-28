@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.2 (2024-01-28)
+
+### Changes
+
+- Added inline documentation to the enum variant inserted by the proc macro introduced in `v0.4.1`. (https://github.com/srdtrk/cw-ica-controller/pull/66)
+
 ## v0.4.1 (2024-01-27)
 
 ### Features
