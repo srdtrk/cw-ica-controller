@@ -1,6 +1,6 @@
 [package]
 name = "cw-ica-controller"
-version = "0.4.1"
+version = "0.4.2"
 authors = ["srdtrk <srdtrk@hotmail.com>"]
 edition = "2021"
 description = "This is a CosmWasm implementation of an ICS-27 interchain accounts controller."
@@ -58,7 +58,7 @@ thiserror = "1.0.50"
 cosmos-sdk-proto = { version = "0.20.0", default-features = false, features = ["cosmwasm"] }
 semver = "1.0"
 cw-ownable = "0.5.1"
-cw-ica-controller-derive = "0.4.1"
+cw-ica-controller-derive = "0.4.2"
 
 [dev-dependencies]
 base64 = "0.13.1"
