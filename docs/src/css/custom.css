@@ -4,7 +4,7 @@
  * work well for content-centric websites.
  */
 
-/* @import "./globals.css"; */
+@import "./globals.css";
 
 /* You can override the default Infima variables here. */
 :root {
