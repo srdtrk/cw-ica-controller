@@ -8,8 +8,8 @@ on:
     branches:
       - main
     paths:
-      # - 'docs/**'
-      - '.github/workflows/check-deploy.yml'
+      - 'docs/**'
+      - '.github/workflows/check-docs.yml'
 
 jobs:
   check-docs-build:
