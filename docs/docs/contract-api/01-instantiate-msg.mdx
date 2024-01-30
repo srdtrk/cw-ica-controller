@@ -43,7 +43,7 @@ then the execution of the `InstantiateMsg` will not fail. This is because the so
 about the counterparty chain's connections. Instead, the channel open handshake will fail to complete.
 
 If the contract was instantiated with a `counterparty_connection_id` that does not match the connection
-end on the counterparty chain, then the owner must call [`ExecuteMsg::CreateChannel`](./02-execute-msg.mdx#create-channel) with the correct parameters to start a new channel open handshake.
+end on the counterparty chain, then the owner must call [`ExecuteMsg::CreateChannel`](./02-execute-msg.mdx#createchannel) with the correct parameters to start a new channel open handshake.
 
 #### `counterparty_port_id`
 
@@ -62,4 +62,4 @@ This contract supports both formats, but defaults to `proto3`. This is because m
 
 This is the address of the contract that will receive the callbacks from the `cw-ica-controller` contract.
 This may be the same address as the `owner` or a different address. If left empty, no callbacks will be sent.
-Learn more about callbacks [here](/contract-api/callbacks).
+Learn more about callbacks [here](./04-callbacks.mdx).
