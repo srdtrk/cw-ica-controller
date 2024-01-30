@@ -1,6 +1,12 @@
+import React from "react";
+
 import clsx from 'clsx';
 import Heading from '@theme/Heading';
 import styles from './styles.module.css';
+
+import EasyDeploySvg from "@site/static/img/easy_deploy.svg";
+import UniversalSupportSvg from "@site/static/img/universal_support.svg";
+import FocusSvg from "@site/static/img/focus.svg";
 
 type FeatureItem = {
   title: string;
@@ -11,7 +17,7 @@ type FeatureItem = {
 const FeatureList: FeatureItem[] = [
   {
     title: 'Easy to Use',
-    Svg: require('@site/static/img/easy_deploy.svg').default,
+    Svg: EasyDeploySvg,
     description: (
       <>
         Create an interchain account (ICA) with a single instantiate call. No contracts are needed
@@ -21,7 +27,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Universal CosmWasm Support',
-    Svg: require('@site/static/img/universal_support.svg').default,
+    Svg: UniversalSupportSvg,
     description: (
       <>
         CosmWasm ICA Controller can be deployed on all IBC enabled CosmWasm chains. There is no need
@@ -31,7 +37,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Focus on What Matters',
-    Svg: require('@site/static/img/focus.svg').default,
+    Svg: FocusSvg,
     description: (
       <>
         CosmWasm ICA Controller lets you focus on your application, and we&apos;ll do the IBC chores
