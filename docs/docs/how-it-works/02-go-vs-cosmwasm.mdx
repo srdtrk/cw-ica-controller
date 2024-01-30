@@ -46,19 +46,3 @@ But there is more! `cw-ica-controller` is also able to do some things that the g
 |          Permanent channel closure          |          ✅          |            ❌            |           Golang implementation allows any relayer to always reopen any ICA channel (with the same parameters).           |
 
 [1]: https://github.com/larry0x/cw-plus-plus/tree/main/packages/ownable
-
-## Channel Opening Handshake
-
-The channel opening handshake is a 4-step process:
-
-1. Channel Open Init (source chain)
-2. Channel Open Try (destination chain)
-3. Channel Open Ack (source chain)
-4. Channel Open Confirm (destination chain)
-
-Naturally, this contract only implements the first and third steps of the channel opening handshake, as the second and
-fourth steps are handled by the counterparty IBC module.
-
-```rust reference
-https://github.com/srdtrk/cw-ica-controller/blob/v0.4.2/src/ibc/handshake.rs#L15-L46
-```
