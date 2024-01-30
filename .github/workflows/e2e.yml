@@ -6,7 +6,7 @@ on:
     paths:
       - '**.rs'
       - '**.go'
-      # - '.github/workflows/e2e.yml'
+      - '.github/workflows/e2e.yml'
 permissions:
   contents: read
 jobs:
