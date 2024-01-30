@@ -2,8 +2,6 @@
 # https://docusaurus.io/docs/deployment
 name: Deploy to GitHub Pages
 
-name: Deploy to GitHub Pages
-
 on:
   push:
     branches:
