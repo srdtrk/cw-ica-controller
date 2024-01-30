@@ -3,8 +3,10 @@ on:
   push:
     branches: [main]
   pull_request:
-    paths-ignore:
-      - '**/*.md'
+    paths:
+      - '**.rs'
+      - '**.go'
+      - '.github/workflows/e2e.yml'
 permissions:
   contents: read
 jobs:

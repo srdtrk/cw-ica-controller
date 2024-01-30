@@ -1,0 +1,48 @@
+---
+title: Go vs CosmWasm
+sidebar_label: Go vs CosmWasm
+sidebar_position: 2
+slug: /how-it-works/go-vs-cosmwasm
+---
+
+# Golang ICA Controller vs CosmWasm ICA Controller
+
+The golang implementation of the ICS-27 controller standard is also widely deployed on IBC enabled chains, with some
+notable exceptions being the Cosmos Hub and Osmosis.
+
+A contract developer could use the golang implementation of the ICA controller by submitting `CosmosMsg::Stargate`
+messages which would be handled by the golang implementation of the ICA controller.
+
+:::warning
+
+Using the golang implementation comes with a great disadvantage, which is that the golang implementation does not
+make callbacks to the contract that submitted the `CosmosMsg::Stargate` message! This means that the contract that
+submitted the `CosmosMsg::Stargate` message will not be able to know the result of the ICA transaction, nor the
+address of the newly created account on the other chain without intervention.
+
+:::
+
+:::tip
+
+Currently, Neutron and Nolus have custom bindings for the golang implementation of the ICA controller standard, which
+make callbacks to the contract that submitted the `CosmosMsg::Stargate` message. This means that you can use the
+golang implementation of the ICA controller standard on Neutron and Nolus without any problems. However, any
+applications that are built on these chains will not be able to be ported to other chains.
+
+:::
+
+`cw-ica-controller` solves this problem by making callbacks to a contract that the developer specifies.
+This means that the users of `cw-ica-controller` can use the same contract on any chain that supports CosmWasm.
+
+But there is more! `cw-ica-controller` is also able to do some things that the golang API limits you from doing.
+
+|                 **Feature**                 | `cw-ica-controller` | golang `ica-controller` |                                                      **Description**                                                      |
+|:-------------------------------------------:|:-------------------:|:-----------------------:|:-------------------------------------------------------------------------------------------------------------------------:|
+|                  Callbacks                  |          ✅          |            ❌            |                                       Golang implementation does not make callbacks                                       |
+|      Submit `cosmwasm_std::CosmosMsg`s      |          ✅          |            ❌            |            Golang implementation requires ICA transactions to be submitted in protobuf or `proto3json` format.            |
+| Reopen an ICA channel with different params |          ✅          |            ❌            | In golang implementation, if the channel closes due to timeout the channel can only be reopened with the same parameters. |
+|                 Change owner                |          ✅          |            ❌            |                              `cw-ica-controller` uses [`cw-ownable`][1] for owner management                              |
+|                Live upgrades                |          ✅          |            ❌            | In golang implementation, new features require coordinated chain upgrades which could get blocked on upgrading CosmosSDK. |
+|          Permanent channel closure          |          ✅          |            ❌            |           Golang implementation allows any relayer to always reopen any ICA channel (with the same parameters).           |
+
+[1]: https://github.com/larry0x/cw-plus-plus/tree/main/packages/ownable
