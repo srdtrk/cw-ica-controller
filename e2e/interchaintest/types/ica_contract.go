@@ -3,7 +3,7 @@ package types
 import (
 	"context"
 
-	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
+	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
 
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
 )

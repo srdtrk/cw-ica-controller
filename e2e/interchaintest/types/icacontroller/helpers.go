@@ -8,12 +8,12 @@ import (
 	codec "github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 
-	icatypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/types"
+	icatypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/types"
 )
 
 // NewExecuteMsg_SendCustomIcaMessages_FromProto creates a new ExecuteMsg_SendCustomIcaMessages.
-func NewExecuteMsg_SendCustomIcaMessages_FromProto(cdc codec.BinaryCodec, msgs []proto.Message, encoding string, memo *string, timeout *uint64) ExecuteMsg {
-	bz, err := icatypes.SerializeCosmosTxWithEncoding(cdc, msgs, encoding)
+func NewExecuteMsg_SendCustomIcaMessages_FromProto(cdc codec.Codec, msgs []proto.Message, encoding string, memo *string, timeout *uint64) ExecuteMsg {
+	bz, err := icatypes.SerializeCosmosTx(cdc, msgs, encoding)
 	if err != nil {
 		panic(err)
 	}

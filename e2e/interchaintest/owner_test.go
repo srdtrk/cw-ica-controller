@@ -9,10 +9,10 @@ import (
 
 	sdkmath "cosmossdk.io/math"
 
-	icatypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/types"
-	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
+	icatypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/types"
+	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 
-	"github.com/strangelove-ventures/interchaintest/v7/testutil"
+	"github.com/strangelove-ventures/interchaintest/v8/testutil"
 
 	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
