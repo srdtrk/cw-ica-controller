@@ -17,6 +17,7 @@ var chainSpecs = []*interchaintest.ChainSpec{
 				{
 					Repository: "cosmwasm/wasmd", // FOR LOCAL IMAGE USE: Docker Image Name
 					Version:    "v0.50.0",        // FOR LOCAL IMAGE USE: Docker Image Tag
+					UidGid:     "1025:1025",
 				},
 			},
 			Bin:           "wasmd",
@@ -40,6 +41,7 @@ var chainSpecs = []*interchaintest.ChainSpec{
 				{
 					Repository: "ghcr.io/cosmos/ibc-go-simd", // FOR LOCAL IMAGE USE: Docker Image Name
 					Version:    "v8.1.0",                     // FOR LOCAL IMAGE USE: Docker Image Tag
+					UidGid:     "1025:1025",
 				},
 			},
 			Bin:            "simd",
