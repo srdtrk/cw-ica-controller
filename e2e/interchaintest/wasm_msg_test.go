@@ -36,7 +36,8 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding str
 				Images: []ibc.DockerImage{
 					{
 						Repository: "cosmwasm/wasmd", // FOR LOCAL IMAGE USE: Docker Image Name
-						Version:    "v0.45.0",        // FOR LOCAL IMAGE USE: Docker Image Tag
+						Version:    "v0.50.0",        // FOR LOCAL IMAGE USE: Docker Image Tag
+						UidGid:     "1025:1025",
 					},
 				},
 				Bin:           "wasmd",
