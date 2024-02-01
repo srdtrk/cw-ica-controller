@@ -26,6 +26,7 @@ jobs:
           working-directory: e2e/interchaintest
   build:
     strategy:
+      fail-fast: false
       matrix:
         test:
           - TestIcaContractChannelHandshake
@@ -41,8 +42,6 @@ jobs:
           - TestSendWasmMsgsProtobufEncoding
     name: ${{ matrix.test }}
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
