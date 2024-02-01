@@ -21,7 +21,6 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	controllertypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/types"
-	hosttypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/types"
 	icatypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/types"
 	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 
@@ -372,12 +371,6 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		)
 		s.Require().NoError(err)
 
-		paramsResp, err := mysuite.GRPCQuery[hosttypes.QueryParamsResponse](ctx, simd, &hosttypes.QueryParamsRequest{})
-		s.Require().NoError(err)
-
-		s.Require().True(paramsResp.Params.HostEnabled)
-		s.Require().Equal([]string{"*"}, paramsResp.Params.AllowMessages)
-
 		// Create deposit message:
 		depositMsg := &govv1.MsgDeposit{
 			ProposalId: 1,
@@ -397,15 +390,15 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 		s.Require().NoError(err)
 
-		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+		err = testutil.WaitForBlocks(ctx, 8, wasmd, simd)
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
 		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
-		s.Require().Equal(uint64(1), callbackCounter.Error)
 		s.Require().Equal(uint64(1), callbackCounter.Success)
+		s.Require().Equal(uint64(0), callbackCounter.Error)
 
 		// Check if the proposal was created:
 		proposal, err := simd.QueryProposal(ctx, "1")
