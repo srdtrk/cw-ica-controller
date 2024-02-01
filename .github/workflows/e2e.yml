@@ -84,7 +84,7 @@ jobs:
           fi
       - name: Upload Diagnostics on Failure
         uses: actions/upload-artifact@v4
-        if: ${{ failure() && inputs.upload-logs }}
+        if: ${{ failure() }}
         continue-on-error: true
         with:
           name: '${{ matrix.entrypoint }}-${{ matrix.test }}'
