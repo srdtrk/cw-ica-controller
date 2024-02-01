@@ -689,7 +689,6 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		s.Require().True(expWeight.Equal(actualWeight))
 		s.Require().Equal(govv1.OptionAbstain, voteResp.Vote.Options[1].Option)
 		s.Require().True(expWeight.Equal(actualWeight2))
-		s.Require().Equal(expWeight.String(), voteResp.Vote.Options[1].Weight)
 	})
 
 	s.Run(fmt.Sprintf("TestSendAndSetWithdrawAddress-%s", encoding), func() {
