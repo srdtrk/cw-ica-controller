@@ -14,6 +14,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
@@ -93,6 +94,7 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding
 	ownershipResponse, err := types.QueryAnyMsg[icacontroller.OwnershipResponse](ctx, &s.Contract.Contract, icacontroller.OwnershipRequest)
 	s.Require().NoError(err)
 
+	s.Require().NotEmpty(contractState.IcaInfo.IcaAddress)
 	s.Contract.SetIcaAddress(contractState.IcaInfo.IcaAddress)
 
 	s.Require().Equal(s.UserA.FormattedAddress(), ownershipResponse.Owner)
@@ -353,11 +355,19 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 	s.Run(fmt.Sprintf("TestSendCustomIcaMessagesSuccess-%s", encoding), func() {
 		// Send custom ICA messages through the contract:
 		// Let's create a governance proposal on simd and deposit some funds to it.
-		govAddress, err := simd.GetModuleAddress(ctx, govtypes.ModuleName)
+		modAccResp, err := mysuite.GRPCQuery[authtypes.QueryModuleAccountByNameResponse](
+			ctx, simd, &authtypes.QueryModuleAccountByNameRequest{Name: govtypes.ModuleName},
+		)
 		s.Require().NoError(err)
 
+		cfg := simd.Config().EncodingConfig
+		var govAccount sdk.AccountI
+		err = cfg.InterfaceRegistry.UnpackAny(modAccResp.Account, &govAccount)
+		s.Require().NoError(err)
+		s.Require().NotEmpty(govAccount.String())
+
 		testProposal := &controllertypes.MsgUpdateParams{
-			Signer: govAddress,
+			Signer: govAccount.String(),
 			Params: controllertypes.Params{
 				ControllerEnabled: false,
 			},
@@ -396,8 +406,8 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
-		s.Require().Equal(uint64(1), callbackCounter.Error)
 		s.Require().Equal(uint64(1), callbackCounter.Success)
+		s.Require().Equal(uint64(0), callbackCounter.Error)
 
 		// Check if the proposal was created:
 		proposal, err := simd.QueryProposal(ctx, "1")
