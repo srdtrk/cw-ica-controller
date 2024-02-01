@@ -184,7 +184,7 @@ func (s *OwnerTestSuite) TestOwnerPredefinedAction() {
 				ToAddress: simdUser.FormattedAddress(),
 			},
 		}
-		err := s.OwnerContract.Execute(ctx, wasmdUser.KeyName(), execPredefinedActionMsg)
+		err := s.OwnerContract.Execute(ctx, wasmdUser.KeyName(), execPredefinedActionMsg, "--gas", "500000")
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 6, wasmd, simd)
