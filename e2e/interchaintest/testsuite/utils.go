@@ -8,6 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdktestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
@@ -45,6 +46,26 @@ func (s *TestSuite) FundAddressChainA(ctx context.Context, address string) {
 // The amount sent is 1,000,000,000 of the chain's denom.
 func (s *TestSuite) FundAddressChainB(ctx context.Context, address string) {
 	s.fundAddress(ctx, s.ChainB, s.UserB.KeyName(), address)
+}
+
+// GetModuleAddress returns the address of the given module on the given chain.
+// Added because interchaintest's method doesn't work.
+func (s *TestSuite) GetModuleAddress(ctx context.Context, chain *cosmos.CosmosChain, moduleName string) string {
+	modAccResp, err := GRPCQuery[authtypes.QueryModuleAccountByNameResponse](
+		ctx, chain, &authtypes.QueryModuleAccountByNameRequest{Name: moduleName},
+	)
+	s.Require().NoError(err)
+
+	cfg := chain.Config().EncodingConfig
+	var account sdk.AccountI
+	err = cfg.InterfaceRegistry.UnpackAny(modAccResp.Account, &account)
+	s.Require().NoError(err)
+
+	govAccount, ok := account.(authtypes.ModuleAccountI)
+	s.Require().True(ok)
+	s.Require().NotEmpty(govAccount.GetAddress().String())
+
+	return govAccount.GetAddress().String()
 }
 
 // fundAddress sends funds to the given address on the given chain
