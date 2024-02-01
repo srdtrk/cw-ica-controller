@@ -41,6 +41,8 @@ jobs:
           - TestSendWasmMsgsProtobufEncoding
     name: ${{ matrix.test }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
