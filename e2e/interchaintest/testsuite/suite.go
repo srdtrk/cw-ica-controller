@@ -134,6 +134,10 @@ func (s *TestSuite) SetupSuite(ctx context.Context, chainSpecs []*interchaintest
 			if err != nil {
 				t.Logf("an error occurred while stopping the relayer: %s", err)
 			}
+
+			// Collect diagnostics
+			chains := []string{chainSpecs[0].ChainConfig.Name, chainSpecs[1].ChainConfig.Name}
+			Collect(t, s.dockerClient, true, chains...)
 		},
 	)
 }

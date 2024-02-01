@@ -81,3 +81,11 @@ jobs:
           else
             go test -v . -run TestWithContractTestSuite -testify.m ${{ matrix.test }}
           fi
+      - name: Upload Diagnostics on Failure
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() && inputs.upload-logs }}
+        continue-on-error: true
+        with:
+          name: '${{ matrix.entrypoint }}-${{ matrix.test }}'
+          path: e2e/diagnostics
+          retention-days: 5

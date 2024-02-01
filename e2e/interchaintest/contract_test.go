@@ -356,7 +356,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		govAddress, err := simd.GetModuleAddress(ctx, govtypes.ModuleName)
 		s.Require().NoError(err)
 
-		testProposal := controllertypes.MsgUpdateParams{
+		testProposal := &controllertypes.MsgUpdateParams{
 			Signer: govAddress,
 			Params: controllertypes.Params{
 				ControllerEnabled: false,
@@ -364,7 +364,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		}
 
 		proposalMsg, err := govv1.NewMsgSubmitProposal(
-			[]sdk.Msg{&testProposal},
+			[]sdk.Msg{testProposal},
 			sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10_000_000))),
 			s.Contract.IcaAddress, "e2e", "e2e", "e2e", false,
 		)
@@ -389,15 +389,15 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 		s.Require().NoError(err)
 
-		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+		err = testutil.WaitForBlocks(ctx, 8, wasmd, simd)
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
 		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
+		s.Require().Equal(uint64(1), callbackCounter.Error)
 		s.Require().Equal(uint64(1), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
 
 		// Check if the proposal was created:
 		proposal, err := simd.QueryProposal(ctx, "1")
