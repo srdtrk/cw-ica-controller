@@ -361,13 +361,17 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		s.Require().NoError(err)
 
 		cfg := simd.Config().EncodingConfig
-		var govAccount sdk.AccountI
-		err = cfg.InterfaceRegistry.UnpackAny(modAccResp.Account, &govAccount)
+		var account sdk.AccountI
+		err = cfg.InterfaceRegistry.UnpackAny(modAccResp.Account, &account)
 		s.Require().NoError(err)
+		govAccount, ok := account.(authtypes.ModuleAccountI)
+		s.Require().True(ok)
 		s.Require().NotEmpty(govAccount.String())
 
+		s.T().Logf("govAddr: %s", govAccount.GetAddress().String())
+
 		testProposal := &controllertypes.MsgUpdateParams{
-			Signer: govAccount.String(),
+			Signer: govAccount.GetAddress().String(),
 			Params: controllertypes.Params{
 				ControllerEnabled: false,
 			},

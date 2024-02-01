@@ -24,9 +24,9 @@ const (
 	defaultFilePerm       = 0o750
 )
 
-// Collect can be used in `t.Cleanup` and will copy all the of the container logs and relevant files
+// collect can be used in `t.Cleanup` and will copy all the of the container logs and relevant files
 // into e2e/<test-suite>/<test-name>.log. These log files will be uploaded to GH upon test failure.
-func Collect(t *testing.T, dc *dockerclient.Client, debugModeEnabled bool, chainNames ...string) {
+func collect(t *testing.T, dc *dockerclient.Client, debugModeEnabled bool, chainNames ...string) {
 	t.Helper()
 
 	if !debugModeEnabled {
@@ -67,7 +67,7 @@ func Collect(t *testing.T, dc *dockerclient.Client, debugModeEnabled bool, chain
 			continue
 		}
 
-		logsBz, err := GetContainerLogs(ctx, dc, container.ID)
+		logsBz, err := getContainerLogs(ctx, dc, container.ID)
 		if err != nil {
 			t.Logf("failed reading logs in test cleanup: %s", err)
 			continue
@@ -123,7 +123,7 @@ func getContainerName(t *testing.T, container dockertypes.Container) string {
 // fetchAndWriteDiagnosticsFile fetches the contents of a single file from the given container id and writes
 // the contents of the file to a local path provided.
 func fetchAndWriteDiagnosticsFile(ctx context.Context, dc *dockerclient.Client, containerID, localPath, absoluteFilePathInContainer string) error {
-	fileBz, err := GetFileContentsFromContainer(ctx, dc, containerID, absoluteFilePathInContainer)
+	fileBz, err := getFileContentsFromContainer(ctx, dc, containerID, absoluteFilePathInContainer)
 	if err != nil {
 		return err
 	}
@@ -208,8 +208,8 @@ func GetTestContainers(ctx context.Context, t *testing.T, dc *dockerclient.Clien
 	return testContainers, nil
 }
 
-// GetContainerLogs returns the logs of a container as a byte array.
-func GetContainerLogs(ctx context.Context, dc *dockerclient.Client, containerName string) ([]byte, error) {
+// getContainerLogs returns the logs of a container as a byte array.
+func getContainerLogs(ctx context.Context, dc *dockerclient.Client, containerName string) ([]byte, error) {
 	readCloser, err := dc.ContainerLogs(ctx, containerName, dockertypes.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
@@ -220,8 +220,8 @@ func GetContainerLogs(ctx context.Context, dc *dockerclient.Client, containerNam
 	return io.ReadAll(readCloser)
 }
 
-// GetFileContentsFromContainer reads the contents of a specific file from a container.
-func GetFileContentsFromContainer(ctx context.Context, dc *dockerclient.Client, containerID, absolutePath string) ([]byte, error) {
+// getFileContentsFromContainer reads the contents of a specific file from a container.
+func getFileContentsFromContainer(ctx context.Context, dc *dockerclient.Client, containerID, absolutePath string) ([]byte, error) {
 	readCloser, _, err := dc.CopyFromContainer(ctx, containerID, absolutePath)
 	if err != nil {
 		return nil, fmt.Errorf("copying from container: %w", err)

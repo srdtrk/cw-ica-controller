@@ -137,7 +137,7 @@ func (s *TestSuite) SetupSuite(ctx context.Context, chainSpecs []*interchaintest
 
 			// Collect diagnostics
 			chains := []string{chainSpecs[0].ChainConfig.Name, chainSpecs[1].ChainConfig.Name}
-			Collect(t, s.dockerClient, true, chains...)
+			collect(t, s.dockerClient, true, chains...)
 		},
 	)
 }
