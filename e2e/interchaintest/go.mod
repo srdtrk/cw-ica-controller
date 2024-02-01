@@ -6,6 +6,7 @@ toolchain go1.21.5
 
 require (
 	cosmossdk.io/math v1.2.0
+	cosmossdk.io/x/upgrade v0.1.0
 	github.com/CosmWasm/wasmd v0.50.0
 	github.com/cosmos/cosmos-sdk v0.50.3
 	github.com/cosmos/gogoproto v1.4.11
@@ -31,7 +32,6 @@ require (
 	cosmossdk.io/log v1.3.0 // indirect
 	cosmossdk.io/store v1.0.2 // indirect
 	cosmossdk.io/x/tx v0.13.0 // indirect
-	cosmossdk.io/x/upgrade v0.1.0 // indirect
 	filippo.io/edwards25519 v1.0.0 // indirect
 	github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // indirect
 	github.com/99designs/keyring v1.2.2 // indirect
@@ -57,6 +57,7 @@ require (
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
+	github.com/cockroachdb/apd/v2 v2.0.2 // indirect
 	github.com/cockroachdb/errors v1.11.1 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/pebble v0.0.0-20231102162011-844f0582c2eb // indirect

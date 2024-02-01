@@ -9,11 +9,11 @@ import (
 	sdkmath "cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
+	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 
 	icatypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/types"
 
-	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos/wasm"
+	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
 )
 
 // This is some boilerplate test code to insert some tests for the types package.
@@ -25,12 +25,12 @@ func TestTypes(t *testing.T) {
 	t.Parallel()
 
 	// Create deposit message:
-	depositMsg := &govtypes.MsgDeposit{
+	depositMsg := &govv1.MsgDeposit{
 		ProposalId: 1,
 		Depositor:  testAddress,
 		Amount:     sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(10000000))),
 	}
 
-	_, err := icatypes.SerializeCosmosTx(wasm.WasmEncoding().Codec, []proto.Message{depositMsg}, icatypes.EncodingProto3JSON)
+	_, err := icatypes.SerializeCosmosTx(mysuite.SDKEncodingConfig().Codec, []proto.Message{depositMsg}, icatypes.EncodingProto3JSON)
 	require.NoError(t, err)
 }

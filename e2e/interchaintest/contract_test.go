@@ -16,9 +16,12 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
+	controllertypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/types"
+	hosttypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/types"
 	icatypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/types"
 	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 
@@ -352,20 +355,31 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 	s.Run(fmt.Sprintf("TestSendCustomIcaMessagesSuccess-%s", encoding), func() {
 		// Send custom ICA messages through the contract:
 		// Let's create a governance proposal on simd and deposit some funds to it.
-		testProposal := govtypes.TextProposal{
-			Title:       "IBC Gov Proposal",
-			Description: "tokens for all!",
-		}
-		protoAny, err := codectypes.NewAnyWithValue(&testProposal)
+		govAddress, err := simd.GetModuleAddress(ctx, govtypes.ModuleName)
 		s.Require().NoError(err)
-		proposalMsg := &govtypes.MsgSubmitProposal{
-			Content:        protoAny,
-			InitialDeposit: sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(5_000))),
-			Proposer:       s.Contract.IcaAddress,
+
+		testProposal := controllertypes.MsgUpdateParams{
+			Signer: govAddress,
+			Params: controllertypes.Params{
+				ControllerEnabled: false,
+			},
 		}
 
+		proposalMsg, err := govv1.NewMsgSubmitProposal(
+			[]sdk.Msg{&testProposal},
+			sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(5_000))),
+			s.Contract.IcaAddress, "e2e", "e2e", "e2e", false,
+		)
+		s.Require().NoError(err)
+
+		paramsResp, err := mysuite.GRPCQuery[hosttypes.QueryParamsResponse](ctx, simd, &hosttypes.QueryParamsRequest{})
+		s.Require().NoError(err)
+
+		s.Require().True(paramsResp.Params.HostEnabled)
+		s.Require().Equal([]string{"*"}, paramsResp.Params.AllowMessages)
+
 		// Create deposit message:
-		depositMsg := &govtypes.MsgDeposit{
+		depositMsg := &govv1.MsgDeposit{
 			ProposalId: 1,
 			Depositor:  s.Contract.IcaAddress,
 			Amount:     sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10_000_000))),
@@ -390,8 +404,8 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
 		s.Require().NoError(err)
 
+		s.Require().Equal(uint64(1), callbackCounter.Error)
 		s.Require().Equal(uint64(1), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
 
 		// Check if the proposal was created:
 		proposal, err := simd.QueryProposal(ctx, "1")
@@ -466,14 +480,14 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		s.Require().Equal(sdkmath.NewInt(10_000_000), delResp.DelegationResponse.Balance.Amount)
 
 		// Check if the vote was successful:
-		voteRequest := govtypes.QueryVoteRequest{
+		voteRequest := govv1.QueryVoteRequest{
 			ProposalId: 1,
 			Voter:      s.Contract.IcaAddress,
 		}
-		voteResp, err := mysuite.GRPCQuery[govtypes.QueryVoteResponse](ctx, simd, &voteRequest)
+		voteResp, err := mysuite.GRPCQuery[govv1.QueryVoteResponse](ctx, simd, &voteRequest)
 		s.Require().NoError(err)
 		s.Require().Len(voteResp.Vote.Options, 1)
-		s.Require().Equal(govtypes.OptionYes, voteResp.Vote.Options[0].Option)
+		s.Require().Equal(govv1.OptionYes, voteResp.Vote.Options[0].Option)
 		s.Require().Equal(sdkmath.LegacyNewDec(1), voteResp.Vote.Options[0].Weight)
 	})
 
@@ -531,20 +545,25 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 	s.Run(fmt.Sprintf("TestStargate-%s", encoding), func() {
 		// Send custom ICA messages through the contract:
 		// Let's create a governance proposal on simd and deposit some funds to it.
-		testProposal := govtypes.TextProposal{
-			Title:       "IBC Gov Proposal",
-			Description: "tokens for all!",
+		govAddress, err := simd.GetModuleAddress(ctx, govtypes.ModuleName)
+		s.Require().NoError(err)
+
+		testProposal := controllertypes.MsgUpdateParams{
+			Signer: govAddress,
+			Params: controllertypes.Params{
+				ControllerEnabled: false,
+			},
 		}
 		protoAny, err := codectypes.NewAnyWithValue(&testProposal)
 		s.Require().NoError(err)
-		proposalMsg := &govtypes.MsgSubmitProposal{
-			Content:        protoAny,
+		proposalMsg := &govv1.MsgSubmitProposal{
+			Messages:       []*codectypes.Any{protoAny},
 			InitialDeposit: sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(5_000))),
 			Proposer:       s.Contract.IcaAddress,
 		}
 
 		// Create deposit message:
-		depositMsg := &govtypes.MsgDeposit{
+		depositMsg := &govv1.MsgDeposit{
 			ProposalId: 1,
 			Depositor:  s.Contract.IcaAddress,
 			Amount:     sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10_000_000))),
@@ -674,18 +693,18 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		s.Require().Equal(sdkmath.NewInt(10_000_000), delResp.DelegationResponse.Balance.Amount)
 
 		// Check if the vote was successful:
-		voteRequest := govtypes.QueryVoteRequest{
+		voteRequest := govv1.QueryVoteRequest{
 			ProposalId: 1,
 			Voter:      s.Contract.IcaAddress,
 		}
-		voteResp, err := mysuite.GRPCQuery[govtypes.QueryVoteResponse](ctx, simd, &voteRequest)
+		voteResp, err := mysuite.GRPCQuery[govv1.QueryVoteResponse](ctx, simd, &voteRequest)
 		s.Require().NoError(err)
 		s.Require().Len(voteResp.Vote.Options, 2)
-		s.Require().Equal(govtypes.OptionYes, voteResp.Vote.Options[0].Option)
+		s.Require().Equal(govv1.OptionYes, voteResp.Vote.Options[0].Option)
 		expWeight, err := sdkmath.LegacyNewDecFromStr("0.5")
 		s.Require().NoError(err)
 		s.Require().Equal(expWeight, voteResp.Vote.Options[0].Weight)
-		s.Require().Equal(govtypes.OptionAbstain, voteResp.Vote.Options[1].Option)
+		s.Require().Equal(govv1.OptionAbstain, voteResp.Vote.Options[1].Option)
 		s.Require().Equal(expWeight, voteResp.Vote.Options[1].Weight)
 	})
 
