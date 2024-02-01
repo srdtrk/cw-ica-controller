@@ -382,7 +382,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 		s.Require().NoError(err)
 
-		err = testutil.WaitForBlocks(ctx, 8, wasmd, simd)
+		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
