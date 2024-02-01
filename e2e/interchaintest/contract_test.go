@@ -13,7 +13,6 @@ import (
 
 	sdkmath "cosmossdk.io/math"
 
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -372,11 +371,11 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		s.Require().NoError(err)
 
 		// Create deposit message:
-		depositMsg := &govv1.MsgDeposit{
-			ProposalId: 1,
-			Depositor:  s.Contract.IcaAddress,
-			Amount:     sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10_000_000))),
-		}
+		// depositMsg := &govv1.MsgDeposit{
+		// 	ProposalId: 1,
+		// 	Depositor:  s.Contract.IcaAddress,
+		// 	Amount:     sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10_000_000))),
+		// }
 
 		intialBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
@@ -384,13 +383,13 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		// Execute the contract:
 		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
 			simd.Config().EncodingConfig.Codec,
-			[]proto.Message{proposalMsg, depositMsg},
+			[]proto.Message{proposalMsg},
 			encoding, nil, nil,
 		)
 		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 		s.Require().NoError(err)
 
-		err = testutil.WaitForBlocks(ctx, 8, wasmd, simd)
+		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
@@ -404,12 +403,12 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		proposal, err := simd.QueryProposal(ctx, "1")
 		s.Require().NoError(err)
 		s.Require().Equal(simd.Config().Denom, proposal.TotalDeposit[0].Denom)
-		s.Require().Equal(fmt.Sprint(10_000_000+10_000_000), proposal.TotalDeposit[0].Amount)
+		s.Require().Equal(fmt.Sprint(10_000_000), proposal.TotalDeposit[0].Amount)
 		// We do not check title and description of the proposal because this is a legacy proposal.
 
 		postBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
-		s.Require().Equal(intialBalance.Sub(sdkmath.NewInt(10_000_000+10_000_000)), postBalance)
+		s.Require().Equal(intialBalance.Sub(sdkmath.NewInt(10_000_000)), postBalance)
 	})
 
 	s.Run(fmt.Sprintf("TestSendCosmosMsgsSuccess-%s", encoding), func() {
@@ -547,20 +546,13 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 				ControllerEnabled: false,
 			},
 		}
-		protoAny, err := codectypes.NewAnyWithValue(&testProposal)
-		s.Require().NoError(err)
-		proposalMsg := &govv1.MsgSubmitProposal{
-			Messages:       []*codectypes.Any{protoAny},
-			InitialDeposit: sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10_000_000))),
-			Proposer:       s.Contract.IcaAddress,
-		}
 
-		// Create deposit message:
-		depositMsg := &govv1.MsgDeposit{
-			ProposalId: 1,
-			Depositor:  s.Contract.IcaAddress,
-			Amount:     sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10_000_000))),
-		}
+		proposalMsg, err := govv1.NewMsgSubmitProposal(
+			[]sdk.Msg{&testProposal},
+			sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10_000_000))),
+			s.Contract.IcaAddress, "e2e", "e2e", "e2e", false,
+		)
+		s.Require().NoError(err)
 
 		initialBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
@@ -568,14 +560,14 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		if encoding == icatypes.EncodingProtobuf {
 			// Execute the contract:
 			sendStargateMsg := icacontroller.NewExecuteMsg_SendCosmosMsgs_FromProto(
-				[]proto.Message{proposalMsg, depositMsg}, nil, nil,
+				[]proto.Message{proposalMsg}, nil, nil,
 			)
 			err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendStargateMsg)
 			s.Require().NoError(err)
 		} else if encoding == icatypes.EncodingProto3JSON {
 			sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
 				simd.Config().EncodingConfig.Codec,
-				[]proto.Message{proposalMsg, depositMsg},
+				[]proto.Message{proposalMsg},
 				icatypes.EncodingProto3JSON, nil, nil,
 			)
 			err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
