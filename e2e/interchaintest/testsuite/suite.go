@@ -8,12 +8,12 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 
-	interchaintest "github.com/strangelove-ventures/interchaintest/v7"
-	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
-	"github.com/strangelove-ventures/interchaintest/v7/ibc"
-	"github.com/strangelove-ventures/interchaintest/v7/relayer"
-	"github.com/strangelove-ventures/interchaintest/v7/testreporter"
-	"github.com/strangelove-ventures/interchaintest/v7/testutil"
+	interchaintest "github.com/strangelove-ventures/interchaintest/v8"
+	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
+	"github.com/strangelove-ventures/interchaintest/v8/ibc"
+	"github.com/strangelove-ventures/interchaintest/v8/relayer"
+	"github.com/strangelove-ventures/interchaintest/v8/testreporter"
+	"github.com/strangelove-ventures/interchaintest/v8/testutil"
 )
 
 type TestSuite struct {
@@ -134,6 +134,10 @@ func (s *TestSuite) SetupSuite(ctx context.Context, chainSpecs []*interchaintest
 			if err != nil {
 				t.Logf("an error occurred while stopping the relayer: %s", err)
 			}
+
+			// Collect diagnostics
+			chains := []string{chainSpecs[0].ChainConfig.Name, chainSpecs[1].ChainConfig.Name}
+			collect(t, s.dockerClient, true, chains...)
 		},
 	)
 }

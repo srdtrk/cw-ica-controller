@@ -1,9 +1,11 @@
 package main
 
 import (
-	interchaintest "github.com/strangelove-ventures/interchaintest/v7"
-	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos/wasm"
-	"github.com/strangelove-ventures/interchaintest/v7/ibc"
+	interchaintest "github.com/strangelove-ventures/interchaintest/v8"
+	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos/wasm"
+	"github.com/strangelove-ventures/interchaintest/v8/ibc"
+
+	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
 )
 
 var chainSpecs = []*interchaintest.ChainSpec{
@@ -16,7 +18,8 @@ var chainSpecs = []*interchaintest.ChainSpec{
 			Images: []ibc.DockerImage{
 				{
 					Repository: "cosmwasm/wasmd", // FOR LOCAL IMAGE USE: Docker Image Name
-					Version:    "v0.45.0",        // FOR LOCAL IMAGE USE: Docker Image Tag
+					Version:    "v0.50.0",        // FOR LOCAL IMAGE USE: Docker Image Tag
+					UidGid:     "1025:1025",
 				},
 			},
 			Bin:           "wasmd",
@@ -39,7 +42,8 @@ var chainSpecs = []*interchaintest.ChainSpec{
 			Images: []ibc.DockerImage{
 				{
 					Repository: "ghcr.io/cosmos/ibc-go-simd", // FOR LOCAL IMAGE USE: Docker Image Name
-					Version:    "v7.3.0",                     // FOR LOCAL IMAGE USE: Docker Image Tag
+					Version:    "v8.1.0",                     // FOR LOCAL IMAGE USE: Docker Image Tag
+					UidGid:     "1025:1025",
 				},
 			},
 			Bin:            "simd",
@@ -47,6 +51,7 @@ var chainSpecs = []*interchaintest.ChainSpec{
 			Denom:          "stake",
 			GasPrices:      "0.00stake",
 			GasAdjustment:  1.3,
+			EncodingConfig: mysuite.SDKEncodingConfig(),
 			TrustingPeriod: "508h",
 			NoHostMount:    false,
 		},

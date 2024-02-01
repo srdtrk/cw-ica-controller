@@ -13,18 +13,19 @@ import (
 
 	sdkmath "cosmossdk.io/math"
 
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	icatypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/types"
-	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
+	controllertypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/types"
+	icatypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/types"
+	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 
-	"github.com/strangelove-ventures/interchaintest/v7"
-	"github.com/strangelove-ventures/interchaintest/v7/ibc"
-	"github.com/strangelove-ventures/interchaintest/v7/testutil"
+	"github.com/strangelove-ventures/interchaintest/v8"
+	"github.com/strangelove-ventures/interchaintest/v8/ibc"
+	"github.com/strangelove-ventures/interchaintest/v8/testutil"
 
 	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
@@ -92,6 +93,7 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding
 	ownershipResponse, err := types.QueryAnyMsg[icacontroller.OwnershipResponse](ctx, &s.Contract.Contract, icacontroller.OwnershipRequest)
 	s.Require().NoError(err)
 
+	s.Require().NotEmpty(contractState.IcaInfo.IcaAddress)
 	s.Contract.SetIcaAddress(contractState.IcaInfo.IcaAddress)
 
 	s.Require().Equal(s.UserA.FormattedAddress(), ownershipResponse.Owner)
@@ -352,24 +354,21 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 	s.Run(fmt.Sprintf("TestSendCustomIcaMessagesSuccess-%s", encoding), func() {
 		// Send custom ICA messages through the contract:
 		// Let's create a governance proposal on simd and deposit some funds to it.
-		testProposal := govtypes.TextProposal{
-			Title:       "IBC Gov Proposal",
-			Description: "tokens for all!",
-		}
-		protoAny, err := codectypes.NewAnyWithValue(&testProposal)
-		s.Require().NoError(err)
-		proposalMsg := &govtypes.MsgSubmitProposal{
-			Content:        protoAny,
-			InitialDeposit: sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(5_000))),
-			Proposer:       s.Contract.IcaAddress,
+		govAddress := s.GetModuleAddress(ctx, simd, govtypes.ModuleName)
+
+		testProposal := &controllertypes.MsgUpdateParams{
+			Signer: govAddress,
+			Params: controllertypes.Params{
+				ControllerEnabled: false,
+			},
 		}
 
-		// Create deposit message:
-		depositMsg := &govtypes.MsgDeposit{
-			ProposalId: 1,
-			Depositor:  s.Contract.IcaAddress,
-			Amount:     sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10_000_000))),
-		}
+		proposalMsg, err := govv1.NewMsgSubmitProposal(
+			[]sdk.Msg{testProposal},
+			sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10_000_000))),
+			s.Contract.IcaAddress, "e2e", "e2e", "e2e", false,
+		)
+		s.Require().NoError(err)
 
 		intialBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
@@ -377,7 +376,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		// Execute the contract:
 		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
 			simd.Config().EncodingConfig.Codec,
-			[]proto.Message{proposalMsg, depositMsg},
+			[]proto.Message{proposalMsg},
 			encoding, nil, nil,
 		)
 		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
@@ -394,15 +393,15 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 
 		// Check if the proposal was created:
-		proposal, err := simd.QueryProposal(ctx, "1")
+		proposalResp, err := mysuite.GRPCQuery[govv1.QueryProposalResponse](ctx, simd, &govv1.QueryProposalRequest{
+			ProposalId: 1,
+		})
 		s.Require().NoError(err)
-		s.Require().Equal(simd.Config().Denom, proposal.TotalDeposit[0].Denom)
-		s.Require().Equal(fmt.Sprint(10_000_000+5_000), proposal.TotalDeposit[0].Amount)
-		// We do not check title and description of the proposal because this is a legacy proposal.
+		s.Require().Equal("e2e", proposalResp.Proposal.Title)
 
 		postBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
-		s.Require().Equal(intialBalance.Sub(sdkmath.NewInt(10_000_000+5_000)), postBalance)
+		s.Require().Equal(intialBalance.Sub(sdkmath.NewInt(10_000_000)), postBalance)
 	})
 
 	s.Run(fmt.Sprintf("TestSendCosmosMsgsSuccess-%s", encoding), func() {
@@ -466,15 +465,15 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 		s.Require().Equal(sdkmath.NewInt(10_000_000), delResp.DelegationResponse.Balance.Amount)
 
 		// Check if the vote was successful:
-		voteRequest := govtypes.QueryVoteRequest{
+		voteRequest := govv1.QueryVoteRequest{
 			ProposalId: 1,
 			Voter:      s.Contract.IcaAddress,
 		}
-		voteResp, err := mysuite.GRPCQuery[govtypes.QueryVoteResponse](ctx, simd, &voteRequest)
+		voteResp, err := mysuite.GRPCQuery[govv1.QueryVoteResponse](ctx, simd, &voteRequest)
 		s.Require().NoError(err)
 		s.Require().Len(voteResp.Vote.Options, 1)
-		s.Require().Equal(govtypes.OptionYes, voteResp.Vote.Options[0].Option)
-		s.Require().Equal(sdkmath.LegacyNewDec(1), voteResp.Vote.Options[0].Weight)
+		s.Require().Equal(govv1.OptionYes, voteResp.Vote.Options[0].Option)
+		s.Require().Equal(sdkmath.LegacyNewDec(1).String(), voteResp.Vote.Options[0].Weight)
 	})
 
 	s.Run(fmt.Sprintf("TestSendCustomIcaMessagesError-%s", encoding), func() {
@@ -531,24 +530,21 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 	s.Run(fmt.Sprintf("TestStargate-%s", encoding), func() {
 		// Send custom ICA messages through the contract:
 		// Let's create a governance proposal on simd and deposit some funds to it.
-		testProposal := govtypes.TextProposal{
-			Title:       "IBC Gov Proposal",
-			Description: "tokens for all!",
-		}
-		protoAny, err := codectypes.NewAnyWithValue(&testProposal)
-		s.Require().NoError(err)
-		proposalMsg := &govtypes.MsgSubmitProposal{
-			Content:        protoAny,
-			InitialDeposit: sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(5_000))),
-			Proposer:       s.Contract.IcaAddress,
+		govAddress := s.GetModuleAddress(ctx, simd, govtypes.ModuleName)
+
+		testProposal := controllertypes.MsgUpdateParams{
+			Signer: govAddress,
+			Params: controllertypes.Params{
+				ControllerEnabled: false,
+			},
 		}
 
-		// Create deposit message:
-		depositMsg := &govtypes.MsgDeposit{
-			ProposalId: 1,
-			Depositor:  s.Contract.IcaAddress,
-			Amount:     sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10_000_000))),
-		}
+		proposalMsg, err := govv1.NewMsgSubmitProposal(
+			[]sdk.Msg{&testProposal},
+			sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10_000_000))),
+			s.Contract.IcaAddress, "e2e", "e2e", "e2e", false,
+		)
+		s.Require().NoError(err)
 
 		initialBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
@@ -556,14 +552,14 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		if encoding == icatypes.EncodingProtobuf {
 			// Execute the contract:
 			sendStargateMsg := icacontroller.NewExecuteMsg_SendCosmosMsgs_FromProto(
-				[]proto.Message{proposalMsg, depositMsg}, nil, nil,
+				[]proto.Message{proposalMsg}, nil, nil,
 			)
 			err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendStargateMsg)
 			s.Require().NoError(err)
 		} else if encoding == icatypes.EncodingProto3JSON {
 			sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
 				simd.Config().EncodingConfig.Codec,
-				[]proto.Message{proposalMsg, depositMsg},
+				[]proto.Message{proposalMsg},
 				icatypes.EncodingProto3JSON, nil, nil,
 			)
 			err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
@@ -581,15 +577,15 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 
 		// Check if the proposal was created:
-		proposal, err := simd.QueryProposal(ctx, "1")
+		proposalResp, err := mysuite.GRPCQuery[govv1.QueryProposalResponse](ctx, simd, &govv1.QueryProposalRequest{
+			ProposalId: 1,
+		})
 		s.Require().NoError(err)
-		s.Require().Equal(simd.Config().Denom, proposal.TotalDeposit[0].Denom)
-		s.Require().Equal(fmt.Sprint(10_000_000+5_000), proposal.TotalDeposit[0].Amount)
-		// We do not check title and description of the proposal because this is a legacy proposal.
+		s.Require().Equal("e2e", proposalResp.Proposal.Title)
 
 		postBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
-		s.Require().Equal(initialBalance.Sub(sdkmath.NewInt(10_000_000+5_000)), postBalance)
+		s.Require().Equal(initialBalance.Sub(sdkmath.NewInt(10_000_000)), postBalance)
 	})
 
 	s.Run(fmt.Sprintf("TestDelegateAndVoteWeightedAndCommunityPool-%s", encoding), func() {
@@ -674,19 +670,25 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		s.Require().Equal(sdkmath.NewInt(10_000_000), delResp.DelegationResponse.Balance.Amount)
 
 		// Check if the vote was successful:
-		voteRequest := govtypes.QueryVoteRequest{
+		voteRequest := govv1.QueryVoteRequest{
 			ProposalId: 1,
 			Voter:      s.Contract.IcaAddress,
 		}
-		voteResp, err := mysuite.GRPCQuery[govtypes.QueryVoteResponse](ctx, simd, &voteRequest)
+		voteResp, err := mysuite.GRPCQuery[govv1.QueryVoteResponse](ctx, simd, &voteRequest)
 		s.Require().NoError(err)
 		s.Require().Len(voteResp.Vote.Options, 2)
-		s.Require().Equal(govtypes.OptionYes, voteResp.Vote.Options[0].Option)
+
 		expWeight, err := sdkmath.LegacyNewDecFromStr("0.5")
 		s.Require().NoError(err)
-		s.Require().Equal(expWeight, voteResp.Vote.Options[0].Weight)
-		s.Require().Equal(govtypes.OptionAbstain, voteResp.Vote.Options[1].Option)
-		s.Require().Equal(expWeight, voteResp.Vote.Options[1].Weight)
+		actualWeight, err := sdkmath.LegacyNewDecFromStr(voteResp.Vote.Options[0].Weight)
+		s.Require().NoError(err)
+		actualWeight2, err := sdkmath.LegacyNewDecFromStr(voteResp.Vote.Options[1].Weight)
+		s.Require().NoError(err)
+
+		s.Require().Equal(govv1.OptionYes, voteResp.Vote.Options[0].Option)
+		s.Require().True(expWeight.Equal(actualWeight))
+		s.Require().Equal(govv1.OptionAbstain, voteResp.Vote.Options[1].Option)
+		s.Require().True(expWeight.Equal(actualWeight2))
 	})
 
 	s.Run(fmt.Sprintf("TestSendAndSetWithdrawAddress-%s", encoding), func() {

@@ -16,16 +16,17 @@ jobs:
     steps:
       - uses: actions/setup-go@v4
         with:
-          go-version: "1.20"
+          go-version: "1.21"
       - uses: actions/checkout@v3
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3.6.0
+        uses: golangci/golangci-lint-action@v3.7.0
         with:
-          version: v1.53.2
+          version: v1.54
           args: --timeout 5m
           working-directory: e2e/interchaintest
   build:
     strategy:
+      fail-fast: false
       matrix:
         test:
           - TestIcaContractChannelHandshake
@@ -69,7 +70,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.20"
+          go-version: "1.21"
           check-latest: true
           cache-dependency-path: |
              e2e/interchaintest/go.sum
@@ -81,3 +82,11 @@ jobs:
           else
             go test -v . -run TestWithContractTestSuite -testify.m ${{ matrix.test }}
           fi
+      - name: Upload Diagnostics on Failure
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
+        continue-on-error: true
+        with:
+          name: '${{ matrix.entrypoint }}-${{ matrix.test }}'
+          path: e2e/diagnostics
+          retention-days: 5
