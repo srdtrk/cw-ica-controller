@@ -678,11 +678,9 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		s.Require().NoError(err)
 		s.Require().Len(voteResp.Vote.Options, 2)
 		s.Require().Equal(govv1.OptionYes, voteResp.Vote.Options[0].Option)
-		expWeight, err := sdkmath.LegacyNewDecFromStr("0.5")
-		s.Require().NoError(err)
-		s.Require().Equal(expWeight.String(), voteResp.Vote.Options[0].Weight)
+		s.Require().Equal("0.5", voteResp.Vote.Options[0].Weight)
 		s.Require().Equal(govv1.OptionAbstain, voteResp.Vote.Options[1].Option)
-		s.Require().Equal(expWeight.String(), voteResp.Vote.Options[1].Weight)
+		s.Require().Equal("0.5", voteResp.Vote.Options[1].Weight)
 	})
 
 	s.Run(fmt.Sprintf("TestSendAndSetWithdrawAddress-%s", encoding), func() {
