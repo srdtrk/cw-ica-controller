@@ -677,10 +677,19 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 		voteResp, err := mysuite.GRPCQuery[govv1.QueryVoteResponse](ctx, simd, &voteRequest)
 		s.Require().NoError(err)
 		s.Require().Len(voteResp.Vote.Options, 2)
+
+		expWeight, err := sdkmath.LegacyNewDecFromStr("0.5")
+		s.Require().NoError(err)
+		actualWeight, err := sdkmath.LegacyNewDecFromStr(voteResp.Vote.Options[0].Weight)
+		s.Require().NoError(err)
+		actualWeight2, err := sdkmath.LegacyNewDecFromStr(voteResp.Vote.Options[1].Weight)
+		s.Require().NoError(err)
+
 		s.Require().Equal(govv1.OptionYes, voteResp.Vote.Options[0].Option)
-		s.Require().Equal("0.5", voteResp.Vote.Options[0].Weight)
+		s.Require().True(expWeight.Equal(actualWeight))
 		s.Require().Equal(govv1.OptionAbstain, voteResp.Vote.Options[1].Option)
-		s.Require().Equal("0.5", voteResp.Vote.Options[1].Weight)
+		s.Require().True(expWeight.Equal(actualWeight2))
+		s.Require().Equal(expWeight.String(), voteResp.Vote.Options[1].Weight)
 	})
 
 	s.Run(fmt.Sprintf("TestSendAndSetWithdrawAddress-%s", encoding), func() {
