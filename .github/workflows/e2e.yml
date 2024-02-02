@@ -37,7 +37,8 @@ jobs:
           - TestRecoveredIcaContractInstantiatedChannelHandshake
           - TestIcaContractExecution_Ordered_Proto3Json
           - TestIcaContractExecution_Unordered_Protobuf
-          - TestIcaContractTimeoutPacket_Ordered
+          - TestIcaContractTimeoutPacket_Ordered_Proto3Json
+          - TestIcaContractTimeoutPacket_Unordered_Protobuf
           - TestOwnerCreateIcaContract
           - TestOwnerPredefinedAction
           - TestSendCosmosMsgs_Ordered_Proto3Json

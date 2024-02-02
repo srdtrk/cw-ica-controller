@@ -762,7 +762,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding, ordering st
 	})
 }
 
-func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered() {
+func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Proto3Json() {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
@@ -808,7 +808,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered() {
 		err = s.Relayer.StartRelayer(ctx, s.ExecRep)
 		s.Require().NoError(err)
 
-		// Wait until timeout acknoledgement is received:
+		// Wait until timeout packet is received:
 		err = testutil.WaitForBlocks(ctx, 2, wasmd, simd)
 		s.Require().NoError(err)
 
@@ -920,6 +920,123 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered() {
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 10, wasmd, simd)
+		s.Require().NoError(err)
+
+		icaBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
+		s.Require().NoError(err)
+		s.Require().Equal(sdkmath.NewInt(1000000000-100), icaBalance)
+
+		// Check if contract callbacks were executed:
+		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
+		s.Require().NoError(err)
+
+		s.Require().Equal(uint64(1), callbackCounter.Success)
+		s.Require().Equal(uint64(0), callbackCounter.Error)
+		s.Require().Equal(uint64(1), callbackCounter.Timeout)
+	})
+}
+
+func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Unordered_Protobuf() {
+	ctx := context.Background()
+
+	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
+	// sets up the contract and does the channel handshake for the contract test suite.
+	s.SetupContractTestSuite(ctx, icatypes.EncodingProtobuf, channeltypes.UNORDERED.String())
+	wasmd, simd := s.ChainA, s.ChainB
+	wasmdUser, _ := s.UserA, s.UserB
+
+	// Fund the ICA address:
+	s.FundAddressChainB(ctx, s.Contract.IcaAddress)
+
+	contractState, err := types.QueryAnyMsg[icacontroller.ContractState](
+		ctx, &s.Contract.Contract,
+		icacontroller.GetContractStateRequest,
+	)
+	s.Require().NoError(err)
+
+	var simdChannelsLen int
+	s.Run("TestTimeout", func() {
+		// We will send a message to the host that will timeout after 3 seconds.
+		// You cannot use 0 seconds because block timestamp will be greater than the timeout timestamp which is not allowed.
+		// Host will not be able to respond to this message in time.
+
+		// Stop the relayer so that the host cannot respond to the message:
+		err := s.Relayer.StopRelayer(ctx, s.ExecRep)
+		s.Require().NoError(err)
+
+		time.Sleep(5 * time.Second)
+
+		timeout := uint64(3)
+		// Execute the contract:
+		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
+			simd.Config().EncodingConfig.Codec, []proto.Message{},
+			icatypes.EncodingProto3JSON, nil, &timeout,
+		)
+		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
+		s.Require().NoError(err)
+
+		// Wait until timeout:
+		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+		s.Require().NoError(err)
+
+		err = s.Relayer.StartRelayer(ctx, s.ExecRep)
+		s.Require().NoError(err)
+
+		// Wait until timeout packet is received:
+		err = testutil.WaitForBlocks(ctx, 2, wasmd, simd)
+		s.Require().NoError(err)
+
+		// Flush to make sure the channel is closed in simd:
+		err = s.Relayer.Flush(ctx, s.ExecRep, s.PathName, contractState.IcaInfo.ChannelID)
+		s.Require().NoError(err)
+
+		err = testutil.WaitForBlocks(ctx, 2, wasmd, simd)
+		s.Require().NoError(err)
+
+		// Check if channel is stil open:
+		wasmdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, wasmd.Config().ChainID)
+		s.Require().NoError(err)
+		s.Require().Equal(1, len(wasmdChannels))
+		s.Require().Equal(channeltypes.OPEN.String(), wasmdChannels[0].State)
+
+		simdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, simd.Config().ChainID)
+		s.Require().NoError(err)
+		// sometimes there is a redundant channel for unknown reasons
+		simdChannelsLen = len(simdChannels)
+		s.Require().Greater(simdChannelsLen, 0)
+		s.Require().Equal(channeltypes.OPEN.String(), simdChannels[0].State)
+
+		// Check if contract callbacks were executed:
+		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
+		s.Require().NoError(err)
+		s.Require().Equal(uint64(0), callbackCounter.Success)
+		s.Require().Equal(uint64(0), callbackCounter.Error)
+		s.Require().Equal(uint64(1), callbackCounter.Timeout)
+
+		// Check if contract channel state is still open:
+		contractChannelState, err := types.QueryAnyMsg[icacontroller.ContractChannelState](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
+		s.Require().NoError(err)
+		s.Require().Equal(channeltypes.OPEN.String(), contractChannelState.ChannelStatus)
+	})
+
+	s.Run("TestSendCustomIcaMessagesAfterTimeout", func() {
+		// Send custom ICA message through the contract:
+		sendMsg := &banktypes.MsgSend{
+			FromAddress: s.Contract.IcaAddress,
+			ToAddress:   s.UserB.FormattedAddress(),
+			Amount:      sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(100))),
+		}
+
+		// Execute the contract:
+		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
+			simd.Config().EncodingConfig.Codec,
+			[]proto.Message{sendMsg},
+			icatypes.EncodingProtobuf, nil, nil,
+		)
+		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
+		s.Require().NoError(err)
+
+		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
 		icaBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
