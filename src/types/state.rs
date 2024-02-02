@@ -209,6 +209,7 @@ mod tests {
     use cw_ica_controller_v0_1_3::types::state as v0_1_3;
     use cw_ica_controller_v0_2_0::types::state as v0_2_0;
     use cw_ica_controller_v0_3_0::types::state as v0_3_0;
+    use cw_ica_controller_v0_4_2 as v0_4_2;
 
     mod v0_1_2 {
         use super::*;
@@ -287,5 +288,32 @@ mod tests {
         };
 
         assert_eq!(deserialized, exp_state);
+    }
+
+    // Only change in v0.4.2 to v0.5.0 is the an additional field `channel_ordering` in
+    // `ChannelOpenInitOptions` which is not used in the state.
+    #[test]
+    fn test_migration_from_v0_4_2_to_v0_5_0() {
+        let mock_options = v0_4_2::types::msg::options::ChannelOpenInitOptions {
+            connection_id: "connection-mock".to_string(),
+            counterparty_connection_id: "counterparty-connection-mock".to_string(),
+            counterparty_port_id: Some("counterparty-port-mock".to_string()),
+            tx_encoding: Some(v0_4_2::ibc::types::metadata::TxEncoding::Protobuf),
+        };
+
+        let serialized = cosmwasm_std::to_json_binary(&mock_options).unwrap();
+
+        let deserialized: crate::types::msg::options::ChannelOpenInitOptions =
+            cosmwasm_std::from_json(serialized).unwrap();
+
+        let exp_options = crate::types::msg::options::ChannelOpenInitOptions {
+            connection_id: "connection-mock".to_string(),
+            counterparty_connection_id: "counterparty-connection-mock".to_string(),
+            counterparty_port_id: Some("counterparty-port-mock".to_string()),
+            tx_encoding: Some(crate::ibc::types::metadata::TxEncoding::Protobuf),
+            channel_ordering: None,
+        };
+
+        assert_eq!(deserialized, exp_options);
     }
 }
