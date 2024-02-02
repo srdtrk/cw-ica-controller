@@ -141,6 +141,7 @@ func (s *ContractTestSuite) IcaContractChannelHandshakeTest_WithEncodingAndOrder
 		s.Require().Equal(s.Contract.Port(), wasmdChannel.PortID)
 		s.Require().Equal(icatypes.HostPortID, wasmdChannel.Counterparty.PortID)
 		s.Require().Equal(channeltypes.OPEN.String(), wasmdChannel.State)
+		s.Require().Equal(ordering, wasmdChannel.Ordering)
 
 		simdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, simd.Config().ChainID)
 		s.Require().NoError(err)
@@ -157,6 +158,7 @@ func (s *ContractTestSuite) IcaContractChannelHandshakeTest_WithEncodingAndOrder
 		s.Require().Equal(icatypes.HostPortID, simdChannel.PortID)
 		s.Require().Equal(s.Contract.Port(), simdChannel.Counterparty.PortID)
 		s.Require().Equal(channeltypes.OPEN.String(), simdChannel.State)
+		s.Require().Equal(ordering, simdChannel.Ordering)
 
 		// Check contract's channel state
 		contractChannelState, err := types.QueryAnyMsg[icacontroller.ContractChannelState](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
