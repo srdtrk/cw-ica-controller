@@ -74,11 +74,9 @@ pub mod channel {
         let counterparty_port_id =
             counterparty_port_id.map_or(keys::HOST_PORT_ID.into(), Into::into);
 
-        let ordering = ordering.map_or(Order::Ordered, |ordering| {
-            match ordering {
-                IbcOrder::Ordered => Order::Ordered,
-                IbcOrder::Unordered => Order::Unordered,
-            }
+        let ordering = ordering.map_or(Order::Ordered, |ordering| match ordering {
+            IbcOrder::Ordered => Order::Ordered,
+            IbcOrder::Unordered => Order::Unordered,
         });
 
         MsgChannelOpenInit {
