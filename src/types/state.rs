@@ -131,6 +131,8 @@ mod contract {
 }
 
 mod channel {
+    use cosmwasm_std::IbcOrder;
+
     use super::{cw_serde, IbcChannel};
 
     /// Status is the status of an IBC channel.
@@ -151,6 +153,14 @@ mod channel {
         /// Closed is the state of the channel when it is closed.
         #[serde(rename = "STATE_CLOSED")]
         Closed,
+        /// The channel has just accepted the upgrade handshake attempt and
+        /// is flushing in-flight packets. Added in `ibc-go` v8.1.0.
+        #[serde(rename = "STATE_FLUSHING")]
+        Flushing,
+        /// The channel has just completed flushing any in-flight packets.
+        /// Added in `ibc-go` v8.1.0.
+        #[serde(rename = "STATE_FLUSHCOMPLETE")]
+        FlushComplete,
     }
 
     /// State is the state of the IBC application's channel.
@@ -175,13 +185,19 @@ mod channel {
 
         /// Checks if the channel is open
         #[must_use]
-        pub fn is_open(&self) -> bool {
-            self.channel_status == Status::Open
+        pub const fn is_open(&self) -> bool {
+            matches!(self.channel_status, Status::Open)
         }
 
         /// Closes the channel
         pub fn close(&mut self) {
             self.channel_status = Status::Closed;
+        }
+
+        /// Checks if the channel is [`IbcOrder::Ordered`]
+        #[must_use]
+        pub const fn is_ordered(&self) -> bool {
+            matches!(self.channel.order, IbcOrder::Ordered)
         }
     }
 }

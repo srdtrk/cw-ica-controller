@@ -9,13 +9,20 @@ use cosmwasm_std::{
     IbcPacketTimeoutMsg, IbcReceiveResponse, Never,
 };
 
-use crate::types::{state::CHANNEL_STATE, ContractError};
+use crate::types::{state, ContractError};
 
 use super::types::{events, packet::acknowledgement::Data as AcknowledgementData};
 
 /// Implements the IBC module's `OnAcknowledgementPacket` handler.
+///
+/// # Errors
+///
+/// This function returns an error if:
+///
+/// - The acknowledgement data is invalid.
+/// - [`ibc_packet_ack::success`] or [`ibc_packet_ack::error`] returns an error.
 #[entry_point]
-#[allow(clippy::pedantic)]
+#[allow(clippy::needless_pass_by_value)] // entry point needs this signature
 pub fn ibc_packet_ack(
     deps: DepsMut,
     _env: Env,
@@ -33,26 +40,33 @@ pub fn ibc_packet_ack(
 }
 
 /// Implements the IBC module's `OnTimeoutPacket` handler.
+///
+/// # Errors
+///
+/// This function returns an error if:
+///
+/// - [`ibc_packet_timeout::callback`] returns an error.
+/// - The channel state cannot be loaded or saved.
 #[entry_point]
-#[allow(clippy::pedantic)]
+#[allow(clippy::needless_pass_by_value)] // entry point needs this signature
 pub fn ibc_packet_timeout(
     deps: DepsMut,
     _env: Env,
     msg: IbcPacketTimeoutMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
-    // Due to the semantics of ordered channels, the underlying channel end is closed.
-    CHANNEL_STATE.update(
-        deps.storage,
-        |mut channel_state| -> Result<_, ContractError> {
-            channel_state.close();
-            Ok(channel_state)
-        },
-    )?;
+    let mut channel_state = state::CHANNEL_STATE.load(deps.storage)?;
+
+    // If the channel is ordered, close it.
+    if channel_state.is_ordered() {
+        channel_state.close();
+        state::CHANNEL_STATE.save(deps.storage, &channel_state)?;
+    }
 
     ibc_packet_timeout::callback(deps, msg.packet, msg.relayer)
 }
 
-/// Handles the `PacketReceive` for the IBC module.
+/// Implements the IBC module's `OnRecvPacket` handler.
+/// Always panics because the ICA controller cannot receive packets.
 #[entry_point]
 #[allow(clippy::pedantic)]
 pub fn ibc_packet_receive(
@@ -60,7 +74,7 @@ pub fn ibc_packet_receive(
     _env: Env,
     _msg: IbcPacketReceiveMsg,
 ) -> Result<IbcReceiveResponse, Never> {
-    // An ICA controller cannot receive packets, so this is a no-op.
+    // An ICA controller cannot receive packets, so this is a panic.
     // It must be implemented to satisfy the wasmd interface.
     unreachable!("ICA controller cannot receive packets")
 }
@@ -68,9 +82,9 @@ pub fn ibc_packet_receive(
 mod ibc_packet_ack {
     use cosmwasm_std::{Addr, Binary, IbcPacket};
 
-    use crate::types::{callbacks::IcaControllerCallbackMsg, state::STATE};
+    use crate::types::callbacks::IcaControllerCallbackMsg;
 
-    use super::{events, AcknowledgementData, ContractError, DepsMut, IbcBasicResponse};
+    use super::{events, state, AcknowledgementData, ContractError, DepsMut, IbcBasicResponse};
 
     /// Handles the successful acknowledgement of an ica packet. This means that the
     /// transaction was successfully executed on the host chain.
@@ -81,7 +95,7 @@ mod ibc_packet_ack {
         relayer: Addr,
         res: Binary,
     ) -> Result<IbcBasicResponse, ContractError> {
-        let state = STATE.load(deps.storage)?;
+        let state = state::STATE.load(deps.storage)?;
 
         let success_event = events::packet_ack::success(&packet, &res);
 
@@ -110,7 +124,7 @@ mod ibc_packet_ack {
         relayer: Addr,
         err: String,
     ) -> Result<IbcBasicResponse, ContractError> {
-        let state = STATE.load(deps.storage)?;
+        let state = state::STATE.load(deps.storage)?;
 
         let error_event = events::packet_ack::error(&packet, &err);
 
