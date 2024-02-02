@@ -51,7 +51,7 @@ func (s *ContractTestSuite) SetupSuite(ctx context.Context, chainSpecs []*interc
 
 // SetupContractTestSuite starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 // sets up the contract and does the channel handshake for the contract test suite.
-func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding string) {
+func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding, ordering string) {
 	s.SetupSuite(ctx, chainSpecs)
 
 	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/callback_counter.wasm")
@@ -73,6 +73,7 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding
 			CounterpartyConnectionId: s.ChainBConnID,
 			CounterpartyPortId:       nil,
 			TxEncoding:               &encoding,
+			ChannelOrdering:          &ordering,
 		},
 		SendCallbacksTo: &callbackAddress,
 	}
@@ -105,12 +106,28 @@ func TestWithContractTestSuite(t *testing.T) {
 	suite.Run(t, new(ContractTestSuite))
 }
 
-func (s *ContractTestSuite) TestIcaContractChannelHandshake() {
+func (s *ContractTestSuite) TestIcaContractChannelHandshake_Ordered_Protobuf() {
+	s.IcaContractChannelHandshakeTest_WithEncodingAndOrdering(icatypes.EncodingProtobuf, channeltypes.ORDERED.String())
+}
+
+func (s *ContractTestSuite) TestIcaContractChannelHandshake_Ordered_Proto3Json() {
+	s.IcaContractChannelHandshakeTest_WithEncodingAndOrdering(icatypes.EncodingProto3JSON, channeltypes.ORDERED.String())
+}
+
+func (s *ContractTestSuite) TestIcaContractChannelHandshake_Unordered_Protobuf() {
+	s.IcaContractChannelHandshakeTest_WithEncodingAndOrdering(icatypes.EncodingProtobuf, channeltypes.UNORDERED.String())
+}
+
+func (s *ContractTestSuite) TestIcaContractChannelHandshake_Unordered_Proto3Json() {
+	s.IcaContractChannelHandshakeTest_WithEncodingAndOrdering(icatypes.EncodingProto3JSON, channeltypes.UNORDERED.String())
+}
+
+func (s *ContractTestSuite) IcaContractChannelHandshakeTest_WithEncodingAndOrdering(encoding, ordering string) {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 	// sets up the contract and does the channel handshake for the contract test suite.
-	s.SetupContractTestSuite(ctx, icatypes.EncodingProto3JSON)
+	s.SetupContractTestSuite(ctx, icatypes.EncodingProto3JSON, ordering)
 	wasmd, simd := s.ChainA, s.ChainB
 
 	s.Run("TestChannelHandshakeSuccess", func() {
@@ -331,20 +348,20 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 	})
 }
 
-func (s *ContractTestSuite) TestIcaContractExecutionProto3JsonEncoding() {
-	s.IcaContractExecutionTestWithEncoding(icatypes.EncodingProto3JSON)
+func (s *ContractTestSuite) TestIcaContractExecution_Ordered_Proto3Json() {
+	s.IcaContractExecutionTestWithEncoding(icatypes.EncodingProto3JSON, channeltypes.ORDERED.String())
 }
 
-func (s *ContractTestSuite) TestIcaContractExecutionProtobufEncoding() {
-	s.IcaContractExecutionTestWithEncoding(icatypes.EncodingProtobuf)
+func (s *ContractTestSuite) TestIcaContractExecution_Unordered_Protobuf() {
+	s.IcaContractExecutionTestWithEncoding(icatypes.EncodingProtobuf, channeltypes.UNORDERED.String())
 }
 
-func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string) {
+func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding, ordering string) {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 	// sets up the contract and does the channel handshake for the contract test suite.
-	s.SetupContractTestSuite(ctx, encoding)
+	s.SetupContractTestSuite(ctx, encoding, ordering)
 	wasmd, simd := s.ChainA, s.ChainB
 	wasmdUser := s.UserA
 
@@ -498,12 +515,12 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding string
 	})
 }
 
-func (s *ContractTestSuite) TestSendCosmosMsgsProto3JsonEncoding() {
-	s.SendCosmosMsgsTestWithEncoding(icatypes.EncodingProto3JSON)
+func (s *ContractTestSuite) TestSendCosmosMsgs_Ordered_Proto3Json() {
+	s.SendCosmosMsgsTestWithEncoding(icatypes.EncodingProto3JSON, channeltypes.ORDERED.String())
 }
 
-func (s *ContractTestSuite) TestSendCosmosMsgsProtobufEncoding() {
-	s.SendCosmosMsgsTestWithEncoding(icatypes.EncodingProtobuf)
+func (s *ContractTestSuite) TestSendCosmosMsgs_Unordered_Protobuf() {
+	s.SendCosmosMsgsTestWithEncoding(icatypes.EncodingProtobuf, channeltypes.UNORDERED.String())
 }
 
 // SendCosmosMsgsTestWithEncoding tests some more CosmosMsgs that are not covered by the IcaContractExecutionTestWithEncoding.
@@ -514,12 +531,12 @@ func (s *ContractTestSuite) TestSendCosmosMsgsProtobufEncoding() {
 // - VoteWeighted
 // - FundCommunityPool
 // - SetWithdrawAddress
-func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
+func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding, ordering string) {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 	// sets up the contract and does the channel handshake for the contract test suite.
-	s.SetupContractTestSuite(ctx, encoding)
+	s.SetupContractTestSuite(ctx, encoding, ordering)
 	wasmd, simd := s.ChainA, s.ChainB
 	wasmdUser := s.UserA
 	simdUser := s.UserB
@@ -743,12 +760,12 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding string) {
 	})
 }
 
-func (s *ContractTestSuite) TestIcaContractTimeoutPacket() {
+func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered() {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 	// sets up the contract and does the channel handshake for the contract test suite.
-	s.SetupContractTestSuite(ctx, icatypes.EncodingProto3JSON)
+	s.SetupContractTestSuite(ctx, icatypes.EncodingProto3JSON, channeltypes.ORDERED.String())
 	wasmd, simd := s.ChainA, s.ChainB
 	wasmdUser, _ := s.UserA, s.UserB
 
