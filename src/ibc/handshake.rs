@@ -3,7 +3,7 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse, IbcChannel, IbcChannelCloseMsg,
-    IbcChannelConnectMsg, IbcChannelOpenMsg, IbcChannelOpenResponse, IbcOrder,
+    IbcChannelConnectMsg, IbcChannelOpenMsg, IbcChannelOpenResponse,
 };
 
 use super::types::{keys::HOST_PORT_ID, metadata::IcaMetadata};
@@ -64,7 +64,7 @@ mod ibc_channel_open {
 
     use super::{
         ChannelState, ContractError, DepsMut, Ibc3ChannelOpenResponse, IbcBasicResponse,
-        IbcChannel, IbcChannelOpenResponse, IbcOrder, IcaMetadata, CHANNEL_STATE, HOST_PORT_ID,
+        IbcChannel, IbcChannelOpenResponse, IcaMetadata, CHANNEL_STATE, HOST_PORT_ID,
         STATE,
     };
 
@@ -81,10 +81,6 @@ mod ibc_channel_open {
         contract_state.disable_channel_open_init();
         STATE.save(deps.storage, &contract_state)?;
 
-        // Validate the channel ordering
-        if channel.order != IbcOrder::Ordered {
-            return Err(ContractError::InvalidChannelOrdering);
-        }
         // Validate the host port
         if channel.counterparty_endpoint.port_id != HOST_PORT_ID {
             return Err(ContractError::InvalidHostPort);

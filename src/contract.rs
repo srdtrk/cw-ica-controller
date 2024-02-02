@@ -39,6 +39,7 @@ pub fn instantiate(
         msg.channel_open_init_options.counterparty_port_id,
         msg.channel_open_init_options.counterparty_connection_id,
         msg.channel_open_init_options.tx_encoding,
+        msg.channel_open_init_options.channel_ordering,
     );
 
     Ok(Response::new().add_message(ica_channel_open_init_msg))
@@ -147,6 +148,7 @@ mod execute {
             options.counterparty_port_id,
             options.counterparty_connection_id,
             options.tx_encoding,
+            options.channel_ordering,
         );
 
         Ok(Response::new().add_message(ica_channel_open_init_msg))
@@ -295,6 +297,7 @@ mod tests {
             counterparty_connection_id: "connection-1".to_string(),
             counterparty_port_id: None,
             tx_encoding: None,
+            channel_ordering: None,
         };
 
         let msg = InstantiateMsg {
@@ -322,6 +325,7 @@ mod tests {
             channel_open_init_options.counterparty_port_id,
             channel_open_init_options.counterparty_connection_id,
             channel_open_init_options.tx_encoding,
+            channel_open_init_options.channel_ordering,
         );
         assert_eq!(res.messages[0], SubMsg::new(expected_msg));
 
@@ -350,6 +354,7 @@ mod tests {
             counterparty_connection_id: "connection-1".to_string(),
             counterparty_port_id: None,
             tx_encoding: None,
+            channel_ordering: None,
         };
 
         // Instantiate the contract
@@ -419,6 +424,7 @@ mod tests {
             counterparty_connection_id: "connection-1".to_string(),
             counterparty_port_id: None,
             tx_encoding: None,
+            channel_ordering: None,
         };
 
         // Instantiate the contract
@@ -475,6 +481,7 @@ mod tests {
             counterparty_connection_id: "connection-1".to_string(),
             counterparty_port_id: None,
             tx_encoding: None,
+            channel_ordering: None,
         };
 
         // Instantiate the contract

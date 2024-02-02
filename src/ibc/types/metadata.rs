@@ -243,6 +243,7 @@ mod tests {
             counterparty_connection_id: "connection-1".to_string(),
             tx_encoding: None,
             counterparty_port_id: Some(super::super::keys::HOST_PORT_ID.to_string()),
+            channel_ordering: None,
         };
 
         CHANNEL_OPEN_INIT_OPTIONS
@@ -272,6 +273,7 @@ mod tests {
             counterparty_connection_id: "connection-1".to_string(),
             tx_encoding: None,
             counterparty_port_id: Some(super::super::keys::HOST_PORT_ID.to_string()),
+            channel_ordering: None,
         };
 
         CHANNEL_OPEN_INIT_OPTIONS
