@@ -1117,7 +1117,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		s.Require().NoError(err)
 
 		// Wait for the channel to get set up
-		err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
+		err = testutil.WaitForBlocks(ctx, 8, s.ChainA, s.ChainB)
 		s.Require().NoError(err)
 
 		// Check if a new channel was opened in simd
@@ -1181,7 +1181,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 		s.Require().NoError(err)
 
-		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+		err = testutil.WaitForBlocks(ctx, 7, wasmd, simd)
 		s.Require().NoError(err)
 
 		icaBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
