@@ -1,0 +1,65 @@
+---
+title: InstantiateMsg
+sidebar_label: InstantiateMsg
+sidebar_position: 1
+slug: /contract-api/instantiate-msg
+---
+
+# `InstantiateMsg`
+
+The `InstantiateMsg` is the message that is used to instantiate the `cw-ica-controller` contract.
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.4.0/src/types/msg.rs#L8-L21
+```
+
+## Fields
+
+### `owner`
+
+This contract has an owner who is allowed to call the `ExecuteMsg` methods.
+The owner management is handled by the amazing [cw-ownable](https://crates.io/crates/cw-ownable) crate.
+If left empty, the owner is set to the sender of the `InstantiateMsg`.
+
+### `channel_open_init_options`
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.4.0/src/types/msg.rs#L120-L132
+```
+
+These are the options required for the contract to initiate an ICS-27 channel open handshake.
+This contract requires there to be an IBC connection between the two chains before it can open a channel.
+
+#### `connection_id`
+
+The identifier of the IBC connection end on the deployed (source) chain. (The underlying IBC light client must
+be live.) If this field is set to a non-existent connection, the execution of the `InstantiateMsg` will fail.
+
+#### `counterparty_connection_id`
+
+The identifier of the IBC connection end on the counterparty (destination) chain. (The underlying IBC light
+client must be live.) If this field is set to a non-existent connection or a different connection's end,
+then the execution of the `InstantiateMsg` will not fail. This is because the source chain does not know
+about the counterparty chain's connections. Instead, the channel open handshake will fail to complete.
+
+If the contract was instantiated with a `counterparty_connection_id` that does not match the connection
+end on the counterparty chain, then the owner must call [`ExecuteMsg::CreateChannel`](./02-execute-msg.mdx#createchannel) with the correct parameters to start a new channel open handshake.
+
+#### `counterparty_port_id`
+
+This is a required parameter for the ICS-27 channel version metadata. I've added it here for consistency.
+Currently, the only supported value is `icahost`. If left empty, it is set to `icahost`.
+**So you should ignore this field.**
+
+#### `tx_encoding`
+
+The ICS-27 implementation in `ibc-go` supports two transaction encoding formats: `proto3` and `proto3json`.
+This contract supports both formats, but defaults to `proto3`. This is because most chains don't yet support
+`proto3json` encoding. Moreover, this contract does not support some `CosmosMsg` while using `proto3json`.
+**So, if you are unsure, leave this field empty.**
+
+### `send_callbacks_to`
+
+This is the address of the contract that will receive the callbacks from the `cw-ica-controller` contract.
+This may be the same address as the `owner` or a different address. If left empty, no callbacks will be sent.
+Learn more about callbacks [here](./04-callbacks.mdx).

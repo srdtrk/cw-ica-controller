@@ -1,0 +1,136 @@
+---
+title: Callbacks
+sidebar_label: Callbacks
+sidebar_position: 4
+slug: /contract-api/callbacks
+---
+
+# Callbacks
+
+The `cw-ica-controller` contract provides a callback mechanism upon various channel and packet lifecycle events.
+A callback address is recorded in the contract's state. This address is set during the contract's instantiation
+or can be updated later by the contract owner using [`ExecuteMsg::UpdateCallbackAddress`](./02-execute-msg.mdx#updatecallbackaddress).
+
+## `ReceiveIcaCallback` enum variant
+
+The contract whose address is recorded as the callback address must include a callback enum variant in its `ExecuteMsg` enum.
+We included a procedural macro to generate this enum variant for you in `cw-ica-controller`'s `helpers` module. See the following example:
+
+```rust title="src/msg.rs"
+use cw_ica_controller::helpers::ica_callback_execute;
+
+#[ica_callback_execute]
+#[cw_serde]
+pub enum ExecuteMsg {}
+```
+
+This will transform the enum to:
+
+```rust title="src/msg.rs"
+#[cw_serde]
+pub enum ExecuteMsg {
+    ReceiveIcaCallback(::cw_ica_controller::types::callbacks::IcaControllerCallbackMsg),
+}
+```
+
+:::note
+
+Other derive macro invocations must occur after this procedural macro as they may depend on the new variant. For example, the following will **fail** because the `Clone` derivation occurs before the addition of the field.
+
+```rust
+use cw_ica_controller::helper::ica_callback_execute;
+use cosmwasm_schema::cw_serde;
+
+#[derive(Clone)]
+#[ica_callback_execute]
+#[allow(dead_code)]
+#[cw_serde]
+enum Test {
+    Foo,
+    Bar(u64),
+    Baz { foo: u64 },
+}
+```
+
+:::
+
+Since this variant is inserted to the `ExecuteMsg`, the callback contract must handle this enum variant in its `execute` function:
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.4.1/testing/contracts/callback-counter/src/contract.rs#L28-L40
+```
+
+The callback contract can then handle the callback message as it sees fit, ideally by performing some kind of validation that the callback comes
+from an expected legitimate source. The callback contract can also perform some kind of action based on the callback message, such as
+incrementing a counter or error handling.
+
+:::warning
+If the callback contract returns an error, the `cw-ica-controller` will not proceed with the channel or packet lifecycle event that triggered the callback.
+
+1. If the callback contract returns an error in response to a `ChannelOpenAck` callback, then the `cw-ica-controller` will not proceed with the channel opening.
+2. If the callback contract returns an error in response to a `OnAcknowledgementPacketCallback` callback, then the `cw-ica-controller` will not proceed
+  with the packet acknowledgement.
+3. If the callback contract returns an error in response to a `OnTimeoutPacketCallback` callback, then the `cw-ica-controller` will not proceed with the packet timeout.
+
+Since ICA channels are ordered, cases 2 and 3 will result in the halting of the channel until the callback contract returns a successful response.
+
+:::
+
+## IcaControllerCallbackMsg
+
+The `IcaControllerCallbackMsg` enum is the message type that is sent to the callback contract. It contains the following variants:
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.4.1/src/types/callbacks.rs#L15-L46
+```
+
+### OnChannelOpenAckCallback
+
+The `OnChannelOpenAckCallback` variant is sent to the callback contract when the `cw-ica-controller` receives a `ChannelOpenAck` message from the counterparty chain.
+
+Let's go through the fields of this variant:
+
+- **`channel`**: This is the IBC Channel that would be opened if the callback contract returns a successful response.
+See [`cosmwasm_std::IbcChannel`](https://github.com/CosmWasm/cosmwasm/blob/v1.5.2/packages/std/src/ibc.rs#L115-L128) for more details.
+
+- **`ica_address`**: This is the address (in the counterparty chain) of the interchain account that would be created if the callback contract returns a successful response.
+
+- **`tx_encoding`**: This is the transaction encoding that would be used for the ICS-27 transactions.
+
+### OnAcknowledgementPacketCallback
+
+The `OnAcknowledgementPacketCallback` variant is sent to the callback contract when the `cw-ica-controller` receives an acknowledgement packet from the counterparty chain for a packet that was sent from the calling `cw-ica-controller` contract.
+
+Let's go through the fields of this variant:
+
+- **`ica_acknowledgement`**: This is the acknowledgement data that was sent by the counterparty chain.
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.4.1/src/ibc/types/packet.rs#L169-L177
+```
+
+If the ICA packet was successfully executed on the counterparty chain, then this will be `Data::Result(Binary)` where `Binary` is the protobuf encoded result of the ICA packet execution.
+
+If the ICA packet was not successfully executed on the counterparty chain, then this will be `Data::Error(String)` where `String` is the error message returned by the counterparty chain.
+
+:::note
+
+The error message returned by the counterparty chain doesn't include any useful information about the error. It only
+contains the codespace of the error. This is because in CosmosSDK, tx error messages may be non-deterministic, and
+thus, they cannot be included in the IBC packet acknowledgement which is a deterministic message. This is a limitation of `ibc-go`.
+
+:::
+
+- **`original_packet`**: This is the original ICA packet that was sent by the calling `cw-ica-controller` contract. See [`cosmwasm_std::IbcPacket`](https://github.com/CosmWasm/cosmwasm/blob/v1.5.2/packages/std/src/ibc.rs#L195-L207)
+
+- **`relayer`**: This is the address of the relayer that relayed the packet to the counterparty chain.
+
+### OnTimeoutPacketCallback
+
+The `OnTimeoutPacketCallback` variant is sent to the callback contract when the `cw-ica-controller` receives a timeout packet for a packet that was sent.
+
+Let's go through the fields of this variant:
+
+- **`original_packet`**: This is the original ICA packet that was sent by the calling `cw-ica-controller` contract. See [`cosmwasm_std::IbcPacket`](https://github.com/CosmWasm/cosmwasm/blob/v1.5.2/packages/std/src/ibc.rs#L195-L207)
+
+- **`relayer`**: This is the address of the relayer that relayed the packet to the counterparty chain.
