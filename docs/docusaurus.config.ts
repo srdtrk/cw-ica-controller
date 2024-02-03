@@ -40,6 +40,18 @@ const config: Config = {
           editUrl:
             'https://github.com/srdtrk/cw-ica-controller/tree/feat/docusaurus-docs/docs',
           sidebarCollapsed: false,
+          // Select the latest version
+          lastVersion: "v0.4.x",
+          versions: {
+            current: {
+              label: 'main',
+              banner: 'unreleased',
+            },
+            "v0.4.x": {
+              label: 'v0.4',
+              path: 'v0.4',
+            },
+          },
         },
         theme: {
           customCss: './src/css/custom.css',
@@ -80,6 +92,11 @@ const config: Config = {
           sidebarId: 'docsSidebar',
           position: 'left',
           label: 'Documentation',
+        },
+        {
+          type: "docsVersionDropdown",
+          position: "right",
+          dropdownActiveClassDisabled: true,
         },
         {
           href: 'https://github.com/srdtrk/cw-ica-controller',
