@@ -21,6 +21,10 @@ pub const CHANNEL_STATE: Item<ChannelState> = Item::new("ica_channel");
 pub const CHANNEL_OPEN_INIT_OPTIONS: Item<ChannelOpenInitOptions> =
     Item::new("channel_open_init_options");
 
+/// The item used to store whether or not channel open init is allowed.
+/// Used to prevent relayers from opening channels. This right is reserved to the contract.
+pub const ALLOW_CHANNEL_OPEN_INIT: Item<bool> = Item::new("allow_channel_open_init");
+
 mod contract {
     use crate::ibc::types::metadata::TxEncoding;
 
@@ -36,9 +40,6 @@ mod contract {
         /// This is set during the handshake.
         #[serde(default)]
         pub ica_info: Option<IcaInfo>,
-        /// If true, the IBC application will accept `MsgChannelOpenInit` messages.
-        #[serde(default)]
-        pub allow_channel_open_init: bool,
         /// The address of the callback contract.
         #[serde(default)]
         pub callback_address: Option<Addr>,
@@ -51,21 +52,7 @@ mod contract {
             Self {
                 ica_info: None,
                 // We always allow the first `MsgChannelOpenInit` message.
-                allow_channel_open_init: true,
                 callback_address,
-            }
-        }
-
-        /// Checks if channel open init is allowed
-        ///
-        /// # Errors
-        ///
-        /// Returns an error if channel open init is not allowed.
-        pub const fn verify_open_init_allowed(&self) -> Result<(), ContractError> {
-            if self.allow_channel_open_init {
-                Ok(())
-            } else {
-                Err(ContractError::ChannelOpenInitNotAllowed)
             }
         }
 
@@ -78,16 +65,6 @@ mod contract {
             self.ica_info
                 .as_ref()
                 .map_or(Err(ContractError::IcaInfoNotSet), |s| Ok(s.clone()))
-        }
-
-        /// Disables channel open init
-        pub fn disable_channel_open_init(&mut self) {
-            self.allow_channel_open_init = false;
-        }
-
-        /// Enables channel open init
-        pub fn enable_channel_open_init(&mut self) {
-            self.allow_channel_open_init = true;
         }
 
         /// Sets the ICA info
@@ -290,10 +267,9 @@ mod tests {
         assert_eq!(deserialized, exp_state);
     }
 
-    // Only change in v0.4.2 to v0.5.0 is the an additional field `channel_ordering` in
-    // `ChannelOpenInitOptions` which is not used in the state.
     #[test]
     fn test_migration_from_v0_4_2_to_v0_5_0() {
+        // Test channel open init options
         let mock_options = v0_4_2::types::msg::options::ChannelOpenInitOptions {
             connection_id: "connection-mock".to_string(),
             counterparty_connection_id: "counterparty-connection-mock".to_string(),
@@ -315,5 +291,23 @@ mod tests {
         };
 
         assert_eq!(deserialized, exp_options);
+
+        // Test contract state
+        let mock_state = v0_4_2::types::state::ContractState {
+            ica_info: None,
+            allow_channel_open_init: false,
+            callback_address: Some(Addr::unchecked("callback")),
+        };
+
+        let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
+
+        let deserialized: ContractState = cosmwasm_std::from_json(serialized).unwrap();
+
+        let exp_state = ContractState {
+            ica_info: None,
+            callback_address: Some(Addr::unchecked("callback")),
+        };
+
+        assert_eq!(deserialized, exp_state);
     }
 }
