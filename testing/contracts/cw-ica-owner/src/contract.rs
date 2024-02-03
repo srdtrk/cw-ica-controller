@@ -112,7 +112,7 @@ mod execute {
 
         let (cosmos_msg, contract_addr) = ica_code.instantiate2(
             deps.api,
-            deps.querier,
+            &deps.querier,
             &env,
             instantiate_msg,
             label,

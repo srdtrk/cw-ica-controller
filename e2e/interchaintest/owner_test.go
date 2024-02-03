@@ -140,7 +140,6 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 		)
 		s.Require().NoError(err)
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
-		s.Require().Equal(false, contractState.AllowChannelOpenInit)
 
 		ownershipResponse, err := types.QueryAnyMsg[icacontroller.OwnershipResponse](ctx, &icaContract.Contract, icacontroller.OwnershipRequest)
 		s.Require().NoError(err)

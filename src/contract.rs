@@ -33,6 +33,8 @@ pub fn instantiate(
 
     state::CHANNEL_OPEN_INIT_OPTIONS.save(deps.storage, &msg.channel_open_init_options)?;
 
+    state::ALLOW_CHANNEL_OPEN_INIT.save(deps.storage, &true)?;
+
     let ica_channel_open_init_msg = new_ica_channel_open_init_cosmos_msg(
         env.contract.address.to_string(),
         msg.channel_open_init_options.connection_id,
@@ -107,7 +109,7 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 }
 
 mod execute {
-    use cosmwasm_std::{CosmosMsg, StdResult};
+    use cosmwasm_std::CosmosMsg;
 
     use crate::{ibc::types::packet::IcaPacketData, types::msg::options::ChannelOpenInitOptions};
 
@@ -128,10 +130,7 @@ mod execute {
     ) -> Result<Response, ContractError> {
         cw_ownable::assert_owner(deps.storage, &info.sender)?;
 
-        state::STATE.update(deps.storage, |mut state| -> StdResult<_> {
-            state.enable_channel_open_init();
-            Ok(state)
-        })?;
+        state::ALLOW_CHANNEL_OPEN_INIT.save(deps.storage, &true)?;
 
         let options = if let Some(new_options) = options {
             state::CHANNEL_OPEN_INIT_OPTIONS.save(deps.storage, &new_options)?;

@@ -4,8 +4,8 @@ import "encoding/json"
 
 // ContractState is used to represent its state in Contract's storage
 type ContractState struct {
-	IcaInfo              IcaInfo `json:"ica_info"`
-	AllowChannelOpenInit bool    `json:"allow_channel_open_init"`
+	IcaInfo         IcaInfo `json:"ica_info"`
+	CallbackAddress *string `json:"callback_address"`
 }
 
 // IcaInfo is used to represent the ICA info in the contract's state

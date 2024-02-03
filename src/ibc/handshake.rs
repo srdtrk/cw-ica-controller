@@ -99,12 +99,14 @@ mod ibc_channel_open {
         deps: DepsMut,
         channel: IbcChannel,
     ) -> Result<IbcChannelOpenResponse, ContractError> {
-        // Check if open init is allowed, and then disable further open init
-        let mut contract_state = state::STATE.load(deps.storage)?;
+        if !state::ALLOW_CHANNEL_OPEN_INIT
+            .load(deps.storage)
+            .unwrap_or_default()
+        {
+            return Err(ContractError::ChannelOpenInitNotAllowed);
+        }
 
-        contract_state.verify_open_init_allowed()?;
-        contract_state.disable_channel_open_init();
-        state::STATE.save(deps.storage, &contract_state)?;
+        state::ALLOW_CHANNEL_OPEN_INIT.save(deps.storage, &false)?;
 
         // Validate the host port
         if channel.counterparty_endpoint.port_id != keys::HOST_PORT_ID {
