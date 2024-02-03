@@ -156,7 +156,7 @@ impl CwIcaControllerCode {
     pub fn instantiate2(
         &self,
         api: &dyn Api,
-        querier: QuerierWrapper,
+        querier: &QuerierWrapper,
         env: &Env,
         msg: impl Into<msg::InstantiateMsg>,
         label: impl Into<String>,
