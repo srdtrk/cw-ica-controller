@@ -55,6 +55,9 @@ pub enum ContractError {
     #[error("MsgChannelOpenInit is not allowed")]
     ChannelOpenInitNotAllowed,
 
+    #[error("MsgChannelCloseInit is not allowed")]
+    ChannelCloseInitNotAllowed,
+
     #[error("codec is not supported: unsupported codec format {0}")]
     UnsupportedCodec(String),
 
@@ -81,4 +84,7 @@ pub enum ContractError {
 
     #[error("no channel init options are provided to the contract")]
     NoChannelInitOptions,
+
+    #[error("invalid channel status: expected {expected}, got {actual}")]
+    InvalidChannelStatus { expected: String, actual: String },
 }

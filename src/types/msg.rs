@@ -35,6 +35,8 @@ pub enum ExecuteMsg {
         #[serde(skip_serializing_if = "Option::is_none")]
         channel_open_init_options: Option<options::ChannelOpenInitOptions>,
     },
+    /// `CloseChannel` closes the IBC channel.
+    CloseChannel {},
     /// `SendCosmosMsgs` converts the provided array of [`CosmosMsg`] to an ICA tx and sends them to the ICA host.
     /// [`CosmosMsg::Stargate`] and [`CosmosMsg::Wasm`] are only supported if the [`TxEncoding`](crate::ibc::types::metadata::TxEncoding) is [`TxEncoding::Protobuf`](crate::ibc::types::metadata::TxEncoding).
     ///

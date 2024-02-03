@@ -63,14 +63,13 @@ pub fn ibc_channel_connect(
 }
 
 /// Handles the `ChanCloseInit` and `ChanCloseConfirm` for the IBC module.
-/// `ChanCloseInit` is not implemented yet.
 ///
 /// # Errors
 ///
 /// This function returns an error if:
 ///
 /// - The channel is not stored in the contract state.
-/// - The channel is already closed.
+/// - The channel is not open.
 /// - The channel is not the same as the stored channel.
 #[entry_point]
 #[allow(clippy::needless_pass_by_value)] // entry point needs this signature
@@ -80,7 +79,7 @@ pub fn ibc_channel_close(
     msg: IbcChannelCloseMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
     match msg {
-        IbcChannelCloseMsg::CloseInit { .. } => unimplemented!(),
+        IbcChannelCloseMsg::CloseInit { channel } => ibc_channel_close::init(deps, channel),
         IbcChannelCloseMsg::CloseConfirm { channel } => ibc_channel_close::confirm(deps, channel),
     }
 }
@@ -206,6 +205,38 @@ mod ibc_channel_open {
 mod ibc_channel_close {
     use super::{state, ContractError, DepsMut, IbcBasicResponse, IbcChannel};
 
+    /// Handles the `ChanClosedInit` for the IBC module.
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn init(deps: DepsMut, channel: IbcChannel) -> Result<IbcBasicResponse, ContractError> {
+        if !state::ALLOW_CHANNEL_CLOSE_INIT
+            .load(deps.storage)
+            .unwrap_or_default()
+        {
+            return Err(ContractError::ChannelCloseInitNotAllowed);
+        };
+
+        state::ALLOW_CHANNEL_CLOSE_INIT.save(deps.storage, &false)?;
+
+        // Validate that this is the stored channel
+        let mut channel_state = state::CHANNEL_STATE.load(deps.storage)?;
+        if channel_state.channel != channel {
+            return Err(ContractError::InvalidChannelInContractState);
+        }
+        if !channel_state.is_open() {
+            return Err(ContractError::InvalidChannelStatus {
+                expected: state::ChannelStatus::Open.to_string(),
+                actual: channel_state.channel_status.to_string(),
+            });
+        }
+
+        // Update the channel state
+        channel_state.close();
+        state::CHANNEL_STATE.save(deps.storage, &channel_state)?;
+
+        // Return the response, emit events if needed
+        Ok(IbcBasicResponse::default())
+    }
+
     /// Handles the `ChanCloseConfirm` for the IBC module.
     #[allow(clippy::needless_pass_by_value)]
     pub fn confirm(deps: DepsMut, channel: IbcChannel) -> Result<IbcBasicResponse, ContractError> {
@@ -213,6 +244,12 @@ mod ibc_channel_close {
         let mut channel_state = state::CHANNEL_STATE.load(deps.storage)?;
         if channel_state.channel != channel {
             return Err(ContractError::InvalidChannelInContractState);
+        }
+        if !channel_state.is_open() {
+            return Err(ContractError::InvalidChannelStatus {
+                expected: state::ChannelStatus::Open.to_string(),
+                actual: channel_state.channel_status.to_string(),
+            });
         }
 
         // Update the channel state

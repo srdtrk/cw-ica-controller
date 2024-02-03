@@ -60,6 +60,7 @@ pub fn execute(
         ExecuteMsg::CreateChannel {
             channel_open_init_options,
         } => execute::create_channel(deps, env, info, channel_open_init_options),
+        ExecuteMsg::CloseChannel {} => execute::close_channel(deps, info),
         ExecuteMsg::SendCustomIcaMessages {
             messages,
             packet_memo,
@@ -109,7 +110,7 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 }
 
 mod execute {
-    use cosmwasm_std::CosmosMsg;
+    use cosmwasm_std::{CosmosMsg, IbcMsg};
 
     use crate::{ibc::types::packet::IcaPacketData, types::msg::options::ChannelOpenInitOptions};
 
@@ -130,8 +131,6 @@ mod execute {
     ) -> Result<Response, ContractError> {
         cw_ownable::assert_owner(deps.storage, &info.sender)?;
 
-        state::ALLOW_CHANNEL_OPEN_INIT.save(deps.storage, &true)?;
-
         let options = if let Some(new_options) = options {
             state::CHANNEL_OPEN_INIT_OPTIONS.save(deps.storage, &new_options)?;
             new_options
@@ -140,6 +139,8 @@ mod execute {
                 .may_load(deps.storage)?
                 .ok_or(ContractError::NoChannelInitOptions)?
         };
+
+        state::ALLOW_CHANNEL_OPEN_INIT.save(deps.storage, &true)?;
 
         let ica_channel_open_init_msg = new_ica_channel_open_init_cosmos_msg(
             env.contract.address.to_string(),
@@ -151,6 +152,28 @@ mod execute {
         );
 
         Ok(Response::new().add_message(ica_channel_open_init_msg))
+    }
+
+    /// Submits a [`IbcMsg::CloseChannel`].
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn close_channel(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+        cw_ownable::assert_owner(deps.storage, &info.sender)?;
+
+        let channel_state = state::CHANNEL_STATE.load(deps.storage)?;
+        if !channel_state.is_open() {
+            return Err(ContractError::InvalidChannelStatus {
+                expected: state::ChannelStatus::Open.to_string(),
+                actual: channel_state.channel_status.to_string(),
+            });
+        }
+
+        state::ALLOW_CHANNEL_CLOSE_INIT.save(deps.storage, &true)?;
+
+        let channel_close_msg = CosmosMsg::Ibc(IbcMsg::CloseChannel {
+            channel_id: channel_state.channel.endpoint.channel_id,
+        });
+
+        Ok(Response::new().add_message(channel_close_msg))
     }
 
     // Sends custom messages to the ICA host.
