@@ -39,12 +39,15 @@ const config: Config = {
           // Remove this to remove the "edit this page" links.
           editUrl:
             'https://github.com/srdtrk/cw-ica-controller/tree/feat/docusaurus-docs/docs',
+          // Routed the docs to the root path
+          routeBasePath: "/",
           sidebarCollapsed: false,
           // Select the latest version
           lastVersion: "v0.4.x",
           versions: {
             current: {
               label: 'main',
+              path: 'main',
               banner: 'unreleased',
             },
             "v0.4.x": {
@@ -113,7 +116,7 @@ const config: Config = {
           items: [
             {
               label: 'Documentation',
-              to: '/docs/intro',
+              to: '/main',
             },
           ],
         },
@@ -158,6 +161,18 @@ const config: Config = {
     },
   } satisfies Preset.ThemeConfig,
   plugins: [
+    [
+      "@docusaurus/plugin-client-redirects",
+      {
+        // makes the default page next in production
+        redirects: [
+          {
+            from: ["/", "/master", "/next", "/docs"],
+            to: "/main",
+          },
+        ],
+      },
+    ],
     async function myPlugin(context, options) {
       return {
         name: "docusaurus-tailwindcss",
