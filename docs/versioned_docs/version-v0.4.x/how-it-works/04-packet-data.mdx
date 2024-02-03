@@ -1,0 +1,50 @@
+---
+title: Packet Data
+sidebar_label: Packet Data
+sidebar_position: 4
+slug: /how-it-works/packet-data
+---
+
+import HighlightTag from '@site/src/components/HighlightTag';
+
+# Packet Data Structure
+
+<HighlightTag type="advanced"/><HighlightTag type="protocol"/>
+
+The data that is sent over an IBC channel is called a packet. The packet data is defined by the IBC application module
+that is sending the packet. In the case of `cw-ica-controller`, the packet data is defined by the ICS-27 specification.
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.4.2/src/ibc/types/packet.rs#L18-L44
+```
+
+Depending on the tx encoding format, the data field is either encoded as a proto3json string or a protobuf bytes using
+the following functions:
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.4.2/src/ibc/types/packet.rs#L18-L44
+```
+
+## From CosmosMsg to Packet Data
+
+Since this contract also provides an execute message to send `CosmosMsg`s as ICA packets, we have a helper function
+that converts a `CosmosMsg` to a packet data (depending on the tx encoding format, protobuf is better supported):
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.4.2/src/ibc/types/packet.rs#L98-L138
+```
+
+The specific conversion of each `CosmosMsg` variant into a protobuf any or a proto3json string can be found in
+[`cosmos_msg.rs`](https://github.com/srdtrk/cw-ica-controller/blob/v0.4.2/src/types/cosmos_msg.rs).
+
+## Acknowledgement Data
+
+For each packet that is sent, the receiving module must respond with an acknowledgement packet. The acknowledgement
+packet is used to signal whether or not the ICA packet was successfully executed. The acknowledgement data is defined by the ICS-27 specification.
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.4.2/src/ibc/types/packet.rs#L169-L178
+```
+
+`cw-ica-controller` includes the acknowledgement packet in the [callbacks](../contract-api/04-callbacks.mdx) that
+it makes to the external contract.

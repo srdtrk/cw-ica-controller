@@ -72,7 +72,7 @@ If the callback contract returns an error, the `cw-ica-controller` will not proc
   with the packet acknowledgement.
 3. If the callback contract returns an error in response to a `OnTimeoutPacketCallback` callback, then the `cw-ica-controller` will not proceed with the packet timeout.
 
-If the ICA channel is ordered, cases 2 and 3 will result in the halting of the channel until the callback contract returns a successful response.
+Since ICA channels are ordered, cases 2 and 3 will result in the halting of the channel until the callback contract returns a successful response.
 
 :::
 

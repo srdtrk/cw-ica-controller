@@ -80,7 +80,11 @@ type ChannelOpenInitOptions struct {
 	// The optional counterparty port id.
 	CounterpartyPortId *string `json:"counterparty_port_id,omitempty"`
 	// The optional tx encoding.
+	// Accepted values: "proto3", "proto3json"
 	TxEncoding *string `json:"tx_encoding,omitempty"`
+	// The optional channel ordering.
+	// Accepted values: "ORDER_UNORDERED", "ORDER_ORDERED"
+	ChannelOrdering *string `json:"channel_ordering,omitempty"`
 }
 
 // ToString returns a string representation of the message

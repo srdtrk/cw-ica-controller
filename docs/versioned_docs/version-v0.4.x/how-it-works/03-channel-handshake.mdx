@@ -47,6 +47,14 @@ https://github.com/srdtrk/cw-ica-controller/blob/v0.4.2/src/contract.rs#L130-L13
 
 Whenever a new channel is created, the submitter of `MsgChannelOpenInit` must propose a version string and ordering.
 
+:::info
+
+Interchain Accounts currently only supports ordered channels. This means that a timed-out packet will close the
+channel. In the upcoming `ibc-go` v8.1 release, unordered channels will be supported, which will allow for the
+ICA channels to remain open even after a packet times out.
+
+:::
+
 In IBC, the version string is used to determine whether or not the two modules on either side of the channel are
 compatible. The two modules are compatible if and only if they both support and agree on the same version string.
 Moreover, the version string may carry arbitrary metadata encoded in JSON format. This metadata can be used to

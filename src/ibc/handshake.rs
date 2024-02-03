@@ -3,19 +3,28 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse, IbcChannel, IbcChannelCloseMsg,
-    IbcChannelConnectMsg, IbcChannelOpenMsg, IbcChannelOpenResponse, IbcOrder,
+    IbcChannelConnectMsg, IbcChannelOpenMsg, IbcChannelOpenResponse,
 };
 
-use super::types::{keys::HOST_PORT_ID, metadata::IcaMetadata};
+use super::types::{keys, metadata::IcaMetadata};
 use crate::types::{
-    state::{ChannelState, CHANNEL_STATE, STATE},
+    state::{self, ChannelState},
     ContractError,
 };
 
 /// Handles the `OpenInit` and `OpenTry` parts of the IBC handshake.
 /// In this application, we only handle `OpenInit` messages since we are the ICA controller
+///
+/// # Errors
+///
+/// This function returns an error if:
+///
+/// - The channel is already open.
+/// - `allow_channel_open_init` is disabled.
+/// - The host port is invalid.
+/// - Version metadata is invalid.
 #[entry_point]
-#[allow(clippy::pedantic)]
+#[allow(clippy::needless_pass_by_value)] // entry point needs this signature
 pub fn ibc_channel_open(
     deps: DepsMut,
     _env: Env,
@@ -29,8 +38,16 @@ pub fn ibc_channel_open(
 
 /// Handles the `OpenAck` and `OpenConfirm` parts of the IBC handshake.
 /// In this application, we only handle `OpenAck` messages since we are the ICA controller
+///
+/// # Errors
+///
+/// This function returns an error if:
+///
+/// - The host port is invalid.
+/// - The version metadata is invalid.
+/// - The ICA address is empty.
 #[entry_point]
-#[allow(clippy::pedantic)]
+#[allow(clippy::needless_pass_by_value)] // entry point needs this signature
 pub fn ibc_channel_connect(
     deps: DepsMut,
     _env: Env,
@@ -46,8 +63,17 @@ pub fn ibc_channel_connect(
 }
 
 /// Handles the `ChanCloseInit` and `ChanCloseConfirm` for the IBC module.
+/// `ChanCloseInit` is not implemented yet.
+///
+/// # Errors
+///
+/// This function returns an error if:
+///
+/// - The channel is not stored in the contract state.
+/// - The channel is already closed.
+/// - The channel is not the same as the stored channel.
 #[entry_point]
-#[allow(clippy::pedantic)]
+#[allow(clippy::needless_pass_by_value)] // entry point needs this signature
 pub fn ibc_channel_close(
     deps: DepsMut,
     _env: Env,
@@ -63,9 +89,8 @@ mod ibc_channel_open {
     use crate::types::callbacks::IcaControllerCallbackMsg;
 
     use super::{
-        ChannelState, ContractError, DepsMut, Ibc3ChannelOpenResponse, IbcBasicResponse,
-        IbcChannel, IbcChannelOpenResponse, IbcOrder, IcaMetadata, CHANNEL_STATE, HOST_PORT_ID,
-        STATE,
+        keys, state, ChannelState, ContractError, DepsMut, Ibc3ChannelOpenResponse,
+        IbcBasicResponse, IbcChannel, IbcChannelOpenResponse, IcaMetadata,
     };
 
     /// Handles the `OpenInit` part of the IBC handshake.
@@ -75,18 +100,14 @@ mod ibc_channel_open {
         channel: IbcChannel,
     ) -> Result<IbcChannelOpenResponse, ContractError> {
         // Check if open init is allowed, and then disable further open init
-        let mut contract_state = STATE.load(deps.storage)?;
+        let mut contract_state = state::STATE.load(deps.storage)?;
 
         contract_state.verify_open_init_allowed()?;
         contract_state.disable_channel_open_init();
-        STATE.save(deps.storage, &contract_state)?;
+        state::STATE.save(deps.storage, &contract_state)?;
 
-        // Validate the channel ordering
-        if channel.order != IbcOrder::Ordered {
-            return Err(ContractError::InvalidChannelOrdering);
-        }
         // Validate the host port
-        if channel.counterparty_endpoint.port_id != HOST_PORT_ID {
+        if channel.counterparty_endpoint.port_id != keys::HOST_PORT_ID {
             return Err(ContractError::InvalidHostPort);
         }
 
@@ -104,18 +125,11 @@ mod ibc_channel_open {
         metadata.validate(&channel)?;
 
         // Check if the channel is already exists
-        if let Some(channel_state) = CHANNEL_STATE.may_load(deps.storage)? {
+        if let Some(channel_state) = state::CHANNEL_STATE.may_load(deps.storage)? {
             // this contract can only store one active channel
             // if the channel is already open, return an error
             if channel_state.is_open() {
-                return Err(ContractError::ActiveChannelAlreadySet {});
-            }
-            let app_version = channel_state.channel.version;
-            if !metadata.is_previous_version_equal(&app_version) {
-                return Err(ContractError::InvalidVersion {
-                    expected: app_version,
-                    actual: metadata.to_string(),
-                });
+                return Err(ContractError::ActiveChannelAlreadySet);
             }
         }
         // Channel state need not be saved here, as it is tracked by wasmd during the handshake
@@ -132,12 +146,12 @@ mod ibc_channel_open {
         mut channel: IbcChannel,
         counterparty_version: String,
     ) -> Result<IbcBasicResponse, ContractError> {
-        let mut state = STATE.load(deps.storage)?;
+        let mut state = state::STATE.load(deps.storage)?;
 
         // portID cannot be host chain portID
         // this is not possible since it is wasm.CONTRACT_ADDRESS
         // but we check it anyway since this is a recreation of the go code
-        if channel.endpoint.port_id == HOST_PORT_ID {
+        if channel.endpoint.port_id == keys::HOST_PORT_ID {
             return Err(ContractError::InvalidControllerPort);
         }
 
@@ -161,12 +175,12 @@ mod ibc_channel_open {
             &channel.endpoint.channel_id,
             metadata.encoding.clone(),
         );
-        STATE.save(deps.storage, &state)?;
+        state::STATE.save(deps.storage, &state)?;
 
         channel.version = counterparty_version;
 
         // Save the channel state
-        CHANNEL_STATE.save(
+        state::CHANNEL_STATE.save(
             deps.storage,
             &ChannelState::new_open_channel(channel.clone()),
         )?;
@@ -188,20 +202,20 @@ mod ibc_channel_open {
 }
 
 mod ibc_channel_close {
-    use super::{ContractError, DepsMut, IbcBasicResponse, IbcChannel, CHANNEL_STATE};
+    use super::{state, ContractError, DepsMut, IbcBasicResponse, IbcChannel};
 
     /// Handles the `ChanCloseConfirm` for the IBC module.
     #[allow(clippy::needless_pass_by_value)]
     pub fn confirm(deps: DepsMut, channel: IbcChannel) -> Result<IbcBasicResponse, ContractError> {
         // Validate that this is the stored channel
-        let mut channel_state = CHANNEL_STATE.load(deps.storage)?;
+        let mut channel_state = state::CHANNEL_STATE.load(deps.storage)?;
         if channel_state.channel != channel {
             return Err(ContractError::InvalidChannelInContractState);
         }
 
         // Update the channel state
         channel_state.close();
-        CHANNEL_STATE.save(deps.storage, &channel_state)?;
+        state::CHANNEL_STATE.save(deps.storage, &channel_state)?;
 
         // Return the response, emit events if needed
         Ok(IbcBasicResponse::default())

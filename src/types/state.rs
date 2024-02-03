@@ -131,6 +131,8 @@ mod contract {
 }
 
 mod channel {
+    use cosmwasm_std::IbcOrder;
+
     use super::{cw_serde, IbcChannel};
 
     /// Status is the status of an IBC channel.
@@ -151,6 +153,14 @@ mod channel {
         /// Closed is the state of the channel when it is closed.
         #[serde(rename = "STATE_CLOSED")]
         Closed,
+        /// The channel has just accepted the upgrade handshake attempt and
+        /// is flushing in-flight packets. Added in `ibc-go` v8.1.0.
+        #[serde(rename = "STATE_FLUSHING")]
+        Flushing,
+        /// The channel has just completed flushing any in-flight packets.
+        /// Added in `ibc-go` v8.1.0.
+        #[serde(rename = "STATE_FLUSHCOMPLETE")]
+        FlushComplete,
     }
 
     /// State is the state of the IBC application's channel.
@@ -175,13 +185,19 @@ mod channel {
 
         /// Checks if the channel is open
         #[must_use]
-        pub fn is_open(&self) -> bool {
-            self.channel_status == Status::Open
+        pub const fn is_open(&self) -> bool {
+            matches!(self.channel_status, Status::Open)
         }
 
         /// Closes the channel
         pub fn close(&mut self) {
             self.channel_status = Status::Closed;
+        }
+
+        /// Checks if the channel is [`IbcOrder::Ordered`]
+        #[must_use]
+        pub const fn is_ordered(&self) -> bool {
+            matches!(self.channel.order, IbcOrder::Ordered)
         }
     }
 }
@@ -193,6 +209,7 @@ mod tests {
     use cw_ica_controller_v0_1_3::types::state as v0_1_3;
     use cw_ica_controller_v0_2_0::types::state as v0_2_0;
     use cw_ica_controller_v0_3_0::types::state as v0_3_0;
+    use cw_ica_controller_v0_4_2 as v0_4_2;
 
     mod v0_1_2 {
         use super::*;
@@ -271,5 +288,32 @@ mod tests {
         };
 
         assert_eq!(deserialized, exp_state);
+    }
+
+    // Only change in v0.4.2 to v0.5.0 is the an additional field `channel_ordering` in
+    // `ChannelOpenInitOptions` which is not used in the state.
+    #[test]
+    fn test_migration_from_v0_4_2_to_v0_5_0() {
+        let mock_options = v0_4_2::types::msg::options::ChannelOpenInitOptions {
+            connection_id: "connection-mock".to_string(),
+            counterparty_connection_id: "counterparty-connection-mock".to_string(),
+            counterparty_port_id: Some("counterparty-port-mock".to_string()),
+            tx_encoding: Some(v0_4_2::ibc::types::metadata::TxEncoding::Protobuf),
+        };
+
+        let serialized = cosmwasm_std::to_json_binary(&mock_options).unwrap();
+
+        let deserialized: crate::types::msg::options::ChannelOpenInitOptions =
+            cosmwasm_std::from_json(serialized).unwrap();
+
+        let exp_options = crate::types::msg::options::ChannelOpenInitOptions {
+            connection_id: "connection-mock".to_string(),
+            counterparty_connection_id: "counterparty-connection-mock".to_string(),
+            counterparty_port_id: Some("counterparty-port-mock".to_string()),
+            tx_encoding: Some(crate::ibc::types::metadata::TxEncoding::Protobuf),
+            channel_ordering: None,
+        };
+
+        assert_eq!(deserialized, exp_options);
     }
 }
