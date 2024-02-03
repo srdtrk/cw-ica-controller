@@ -1218,7 +1218,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
 			simd.Config().EncodingConfig.Codec,
 			[]proto.Message{sendMsg},
-			icatypes.EncodingProto3JSON, nil, nil,
+			icatypes.EncodingProtobuf, nil, nil,
 		)
 		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 		s.Require().NoError(err)
