@@ -129,14 +129,7 @@ mod ibc_channel_open {
             // this contract can only store one active channel
             // if the channel is already open, return an error
             if channel_state.is_open() {
-                return Err(ContractError::ActiveChannelAlreadySet {});
-            }
-            let app_version = channel_state.channel.version;
-            if !metadata.is_previous_version_equal(&app_version) {
-                return Err(ContractError::InvalidVersion {
-                    expected: app_version,
-                    actual: metadata.to_string(),
-                });
+                return Err(ContractError::ActiveChannelAlreadySet);
             }
         }
         // Channel state need not be saved here, as it is tracked by wasmd during the handshake

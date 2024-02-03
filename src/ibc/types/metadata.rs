@@ -138,22 +138,6 @@ impl IcaMetadata {
         }
         Ok(())
     }
-
-    /// Checks if the previous version of the [`IcaMetadata`] is equal to the current one
-    pub fn is_previous_version_equal(&self, previous_version: impl Into<String>) -> bool {
-        let maybe_previous_metadata: Result<Self, _> =
-            serde_json_wasm::from_str(&previous_version.into());
-        match maybe_previous_metadata {
-            Ok(previous_metadata) => {
-                self.version == previous_metadata.version
-                    && self.controller_connection_id == previous_metadata.controller_connection_id
-                    && self.host_connection_id == previous_metadata.host_connection_id
-                    && self.encoding == previous_metadata.encoding
-                    && self.tx_type == previous_metadata.tx_type
-            }
-            Err(_) => false,
-        }
-    }
 }
 
 impl ToString for IcaMetadata {
@@ -307,19 +291,5 @@ mod tests {
         let serialized_metadata = r#"{"version":"ics27-1","controller_connection_id":"connection-0","host_connection_id":"connection-1","address":"","encoding":"proto3json","tx_type":"sdk_multi_msg"}"#;
         let metadata: IcaMetadata = serde_json_wasm::from_str(serialized_metadata).unwrap();
         assert_eq!(metadata, mock_metadata());
-    }
-
-    #[test]
-    fn test_is_previous_version_equal_success() {
-        let metadata = mock_metadata();
-        let previous_version = r#"{"version":"ics27-1","controller_connection_id":"connection-0","host_connection_id":"connection-1","address":"different","encoding":"proto3json","tx_type":"sdk_multi_msg"}"#;
-        assert!(metadata.is_previous_version_equal(previous_version));
-    }
-
-    #[test]
-    fn test_is_previous_version_equal_failure() {
-        let metadata = mock_metadata();
-        let previous_version = r#"{"version":"ics27-2","controller_connection_id":"connection-123","host_connection_id":"connection-11","address":"different","encoding":"proto3json","tx_type":"sdk_multi_msg"}"#;
-        assert!(!metadata.is_previous_version_equal(previous_version));
     }
 }
