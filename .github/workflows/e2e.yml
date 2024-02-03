@@ -44,6 +44,7 @@ jobs:
           - TestSendCosmosMsgs_Ordered_Proto3Json
           - TestSendCosmosMsgs_Unordered_Protobuf
           - TestSendWasmMsgsProtobufEncoding
+          - TestMigrateOrderedToUnordered
     name: ${{ matrix.test }}
     runs-on: ubuntu-latest
     steps:

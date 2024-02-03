@@ -27,6 +27,7 @@ All contract tests are located in `interchaintest/contract_test.go` file. Curren
 - `TestSendCosmosMsgs_Ordered_Proto3Json`
 - `TestSendCosmosMsgs_Unordered_Protobuf`
 - `TestSendWasmMsgsProtobufEncoding`
+- `TestMigrateOrderedToUnordered`
 
 (These three tests used to be one monolithic test, but they were split into three in order to run them in parallel in the CI.)
 
