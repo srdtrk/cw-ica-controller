@@ -127,7 +127,7 @@ func (s *ContractTestSuite) IcaContractChannelHandshakeTest_WithEncodingAndOrder
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 	// sets up the contract and does the channel handshake for the contract test suite.
-	s.SetupContractTestSuite(ctx, icatypes.EncodingProto3JSON, ordering)
+	s.SetupContractTestSuite(ctx, encoding, ordering)
 	wasmd, simd := s.ChainA, s.ChainB
 
 	s.Run("TestChannelHandshakeSuccess", func() {
@@ -1056,49 +1056,16 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, s.Contract.IcaAddress)
 
-	contractState, err := types.QueryAnyMsg[icacontroller.ContractState](
-		ctx, &s.Contract.Contract,
-		icacontroller.GetContractStateRequest,
-	)
-	s.Require().NoError(err)
-
 	var simdChannelsLen int
-	s.Run("TestTimeout", func() {
-		// We will send a message to the host that will timeout after 3 seconds.
-		// You cannot use 0 seconds because block timestamp will be greater than the timeout timestamp which is not allowed.
-		// Host will not be able to respond to this message in time.
-
-		// Stop the relayer so that the host cannot respond to the message:
-		err := s.Relayer.StopRelayer(ctx, s.ExecRep)
+	s.Run("TestCloseChannel", func() {
+		// Close the channel:
+		closeChannelMsg := icacontroller.ExecuteMsg{
+			CloseChannel: &struct{}{},
+		}
+		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), closeChannelMsg)
 		s.Require().NoError(err)
 
-		time.Sleep(5 * time.Second)
-
-		timeout := uint64(3)
-		// Execute the contract:
-		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
-			simd.Config().EncodingConfig.Codec, []proto.Message{},
-			icatypes.EncodingProto3JSON, nil, &timeout,
-		)
-		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
-		s.Require().NoError(err)
-
-		// Wait until timeout:
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
-		s.Require().NoError(err)
-
-		err = s.Relayer.StartRelayer(ctx, s.ExecRep)
-		s.Require().NoError(err)
-
-		// Wait until timeout packet is received:
-		err = testutil.WaitForBlocks(ctx, 2, wasmd, simd)
-		s.Require().NoError(err)
-
-		// Flush to make sure the channel is closed in simd:
-		err = s.Relayer.Flush(ctx, s.ExecRep, s.PathName, contractState.IcaInfo.ChannelID)
-		s.Require().NoError(err)
-
-		err = testutil.WaitForBlocks(ctx, 2, wasmd, simd)
 		s.Require().NoError(err)
 
 		// Check if channel was closed:
@@ -1119,7 +1086,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		s.Require().NoError(err)
 		s.Require().Equal(uint64(0), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
-		s.Require().Equal(uint64(1), callbackCounter.Timeout)
+		s.Require().Equal(uint64(0), callbackCounter.Timeout)
 
 		// Check if contract channel state was updated:
 		contractChannelState, err := types.QueryAnyMsg[icacontroller.ContractChannelState](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
@@ -1150,7 +1117,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		s.Require().NoError(err)
 
 		// Wait for the channel to get set up
-		err = testutil.WaitForBlocks(ctx, 10, s.ChainA, s.ChainB)
+		err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
 		s.Require().NoError(err)
 
 		// Check if a new channel was opened in simd
@@ -1194,7 +1161,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 
 		s.Require().Equal(uint64(0), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
-		s.Require().Equal(uint64(1), callbackCounter.Timeout)
+		s.Require().Equal(uint64(0), callbackCounter.Timeout)
 	})
 
 	s.Run("TestSendCustomIcaMessagesAfterReopen", func() {
@@ -1211,10 +1178,10 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 			[]proto.Message{sendMsg},
 			icatypes.EncodingProtobuf, nil, nil,
 		)
-		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
+		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 		s.Require().NoError(err)
 
-		err = testutil.WaitForBlocks(ctx, 10, wasmd, simd)
+		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
 		icaBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
@@ -1227,7 +1194,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
-		s.Require().Equal(uint64(1), callbackCounter.Timeout)
+		s.Require().Equal(uint64(0), callbackCounter.Timeout)
 	})
 }
 

@@ -52,12 +52,12 @@ func (s *TestSuite) SetupSuite(ctx context.Context, chainSpecs []*interchaintest
 	s.ChainB = chains[1].(*cosmos.CosmosChain)
 
 	// docker run -it --rm --entrypoint echo ghcr.io/cosmos/relayer "$(id -u):$(id -g)"
-	customRelayerImage := relayer.CustomDockerImage("ghcr.io/cosmos/relayer", "", "100:1000")
+	goRelayerImage := relayer.CustomDockerImage(goRelayerImage, goRelayerTag, goRelayerUidGid)
 
 	s.Relayer = interchaintest.NewBuiltinRelayerFactory(
 		ibc.CosmosRly,
 		zaptest.NewLogger(t),
-		customRelayerImage,
+		goRelayerImage,
 	).Build(t, s.dockerClient, s.network)
 
 	s.ExecRep = testreporter.NewNopReporter().RelayerExecReporter(t)

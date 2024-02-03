@@ -17,6 +17,7 @@ type InstantiateMsg struct {
 // ExecuteMsg is the message to execute cw-ica-controller
 type ExecuteMsg struct {
 	CreateChannel         *ExecuteMsg_CreateChannel         `json:"create_channel,omitempty"`
+	CloseChannel          *struct{}                         `json:"close_channel,omitempty"`
 	SendCosmosMsgs        *ExecuteMsg_SendCosmosMsgs        `json:"send_cosmos_msgs,omitempty"`
 	SendCustomIcaMessages *ExecuteMsg_SendCustomIcaMessages `json:"send_custom_ica_messages,omitempty"`
 	UpdateCallbackAddress *ExecuteMsg_UpdateCallbackAddress `json:"update_callback_address,omitempty"`
