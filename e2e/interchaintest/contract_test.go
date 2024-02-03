@@ -183,7 +183,6 @@ func (s *ContractTestSuite) IcaContractChannelHandshakeTest_WithEncodingAndOrder
 		s.Require().NoError(err)
 
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
-		s.Require().Equal(false, contractState.AllowChannelOpenInit)
 	})
 }
 
@@ -215,13 +214,6 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 
 	err = s.Contract.Instantiate(ctx, wasmdUser.KeyName(), wasmd, codeId, instantiateMsg, "--gas", "500000")
 	s.Require().NoError(err)
-
-	contractState, err := types.QueryAnyMsg[icacontroller.ContractState](
-		ctx, &s.Contract.Contract,
-		icacontroller.GetContractStateRequest,
-	)
-	s.Require().NoError(err)
-	s.Require().Equal(false, contractState.AllowChannelOpenInit)
 
 	version := fmt.Sprintf(`{"version":"%s","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"%s","tx_type":"%s"}`, icatypes.Version, s.ChainAConnID, s.ChainBConnID, icatypes.EncodingProtobuf, icatypes.TxTypeSDKMultiMsg)
 	err = s.Relayer.CreateChannel(ctx, s.ExecRep, s.PathName, ibc.CreateChannelOptions{
@@ -346,7 +338,6 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 		s.Require().NoError(err)
 
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
-		s.Require().Equal(false, contractState.AllowChannelOpenInit)
 	})
 }
 
