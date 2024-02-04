@@ -10,7 +10,9 @@
 
 ![cw-ica-controller](./docs/static/img/cw-ica-controller.svg)
 
-This is a CosmWasm smart contract that communicates with the golang `ica/host` module on the counterparty chain to create and manage **one** interchain account. This contract can also execute callbacks based on the result of the interchain account transaction. Because this is a CosmWasm implementation of the entire ICA controller, the chain that this contract is deployed on need **not** have the ICA module enabled. Moreover, the counterparty chain need not have CosmWasm support. This contract can be deployed on chains that support CosmWasm `v1.2+`.
+This is a CosmWasm smart contract that communicates with the golang `ica/host` module on the counterparty chain to create and manage **one** interchain account. This contract can also execute callbacks based on the result of the interchain account transaction. Because this is a CosmWasm implementation of the entire ICA controller, the chain that this contract is deployed on need **not** have the ICA module enabled. Moreover, the counterparty chain need not have CosmWasm support. This contract can be deployed on chains that support CosmWasm `v1.3+`.
+
+**A documentation website for this contract is [here](https://srdtrk.github.io/cw-ica-controller/).**
 
 This contract now supports both `proto3json` and protobuf encoding/decoding for ICA transactions. **The recommended encoding is protobuf.** If no encoding is specified, then the contract will default to protobuf encoding.
 
