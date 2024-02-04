@@ -1198,6 +1198,56 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 	})
 }
 
+func (s *ContractTestSuite) TestCloseChannel_Protobuf_Unordered() {
+	ctx := context.Background()
+
+	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
+	// sets up the contract and does the channel handshake for the contract test suite.
+	s.SetupContractTestSuite(ctx, icatypes.EncodingProtobuf, channeltypes.UNORDERED.String())
+	wasmd, simd := s.ChainA, s.ChainB
+	wasmdUser, _ := s.UserA, s.UserB
+
+	// Fund the ICA address:
+	s.FundAddressChainB(ctx, s.Contract.IcaAddress)
+
+	s.Run("TestCloseChannel", func() {
+		// Close the channel:
+		closeChannelMsg := icacontroller.ExecuteMsg{
+			CloseChannel: &struct{}{},
+		}
+		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), closeChannelMsg)
+		s.Require().NoError(err)
+
+		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+		s.Require().NoError(err)
+
+		// Check if channel was closed:
+		wasmdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, wasmd.Config().ChainID)
+		s.Require().NoError(err)
+		s.Require().Equal(1, len(wasmdChannels))
+		s.Require().Equal(channeltypes.CLOSED.String(), wasmdChannels[0].State)
+
+		simdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, simd.Config().ChainID)
+		s.Require().NoError(err)
+		// sometimes there is a redundant channel for unknown reasons
+		simdChannelsLen := len(simdChannels)
+		s.Require().Greater(simdChannelsLen, 0)
+		s.Require().Equal(channeltypes.CLOSED.String(), simdChannels[0].State)
+
+		// Check if contract callbacks were executed:
+		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
+		s.Require().NoError(err)
+		s.Require().Equal(uint64(0), callbackCounter.Success)
+		s.Require().Equal(uint64(0), callbackCounter.Error)
+		s.Require().Equal(uint64(0), callbackCounter.Timeout)
+
+		// Check if contract channel state was updated:
+		contractChannelState, err := types.QueryAnyMsg[icacontroller.ContractChannelState](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
+		s.Require().NoError(err)
+		s.Require().Equal(channeltypes.CLOSED.String(), contractChannelState.ChannelStatus)
+	})
+}
+
 // toJSONString returns a string representation of the given value
 // by marshaling it to JSON. It panics if marshaling fails.
 func toJSONString(v any) string {
