@@ -45,6 +45,7 @@ jobs:
           - TestSendCosmosMsgs_Unordered_Protobuf
           - TestSendWasmMsgsProtobufEncoding
           - TestMigrateOrderedToUnordered
+          - TestCloseChannel_Protobuf_Unordered
     name: ${{ matrix.test }}
     runs-on: ubuntu-latest
     steps:
