@@ -25,6 +25,16 @@ passed to the `InstantiateMsg` or `CreateChannel` messages.
 If this parameter is set, then the contract will use the `channel_open_init_options` that are passed to this
 message and save them for future `CreateChannel` messages.
 
+## `CloseChannel`
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/9890793d3a19a9ec068e26627ec99ec48b3b9d92/src/types/msg.rs#L38-L39
+```
+
+This message is used to close the ICS-27 channel. It is only callable by the owner.
+The channel can then be reopened with parameters (e.g. channel ordering and version) that are different from the
+original channel open handshake.
+
 ## `SendCosmosMsgs`
 
 ```rust reference
