@@ -1,6 +1,6 @@
 //! # Packet
 //!
-//! This module contains the packet data to be send to the ica host and acknowledgement data types.
+//! This module contains the ICS-27 packet data and acknowledgement types.
 
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{to_json_binary, CosmosMsg, Env, IbcMsg, IbcTimeout, StdError, StdResult};

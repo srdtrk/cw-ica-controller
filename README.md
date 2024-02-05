@@ -297,7 +297,16 @@ cw-ica-controller = { version = "0.3.0", default-features = false }
 
 ### Channel Closing and Reopening
 
-If the ICA channel is closed, for example, due to a timed out packet. (This is because the semantics of ordered channels in IBC requires that any timeout will cause the channel to be closed.) The contract is then able to create a new channel with the same interchain account address, and continue to use the same interchain account. To do this, you submit a `ExecuteMsg::CreateChannel`. This can also be seen in the end to end tests.
+#### Channel Closing
+
+An ICA channel can be closed due to a timed out packet if the channel is ordered.
+Otherwise, the channel can be closed by the user by submitting a `ExecuteMsg::CloseChannel` message.
+
+#### Channel Reopening
+
+If the ICA channel is closed, the contract is then able to create a new channel with the same interchain account address, and continue to use the same interchain account. To do this, you submit a `ExecuteMsg::CreateChannel`.
+Note that the `channel_open_init_options` can be changed when creating a new channel.
+This is useful if the user wants to change the ordering of the channel.
 
 ## Demo
 
@@ -336,7 +345,6 @@ This contract follows [semantic versioning](https://semver.org/), but with the f
 This contract is not meant to be used in production. It is meant to be used as a reference implementation for how to build a CosmWasm contract that can communicate with the golang ica/host module. The following are some of the limitations of this contract:
 
 - The contract cannot create multiple interchain accounts. It can only create one.
-- ICA channels must be ordered (enforced by golang ica/host module). Due to the semantics of ordered channels in IBC, any timeout will cause the channel to be closed.
 
 ## Acknowledgements
 
