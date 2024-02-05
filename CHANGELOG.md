@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.5.0 (2024-02-05)
+
+### Features
+
+- Added support for UNORDERED channels introduced to `icahost` in `ibc-go` v8.1.0. (https://github.com/srdtrk/cw-ica-controller/pull/74)
+- Added `ExecuteMsg::CloseChannel` to close a channel so that it may be reopened with different options. (https://github.com/srdtrk/cw-ica-controller/pull/78)
+
+### API Breaking Changes
+
+- Removed `allow_channel_open_init` from `ContractState`. (https://github.com/srdtrk/cw-ica-controller/pull/76)
+- Removed needless pass by value in `helpers.rs`. (https://github.com/srdtrk/cw-ica-controller/pull/76)
+- Added `channel_ordering` field to `ChannelOpenInitOptions`. (https://github.com/srdtrk/cw-ica-controller/pull/74)
+
 ## v0.4.2 (2024-01-28)
 
 ### Changes

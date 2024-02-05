@@ -1,6 +1,6 @@
 //! # Messages
 //!
-//! This module defines the messages the ICA controller contract receives.
+//! This module defines the messages that this contract receives.
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Binary, CosmosMsg};

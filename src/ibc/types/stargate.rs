@@ -1,15 +1,7 @@
 //! # Stargate
 //!
-//! This module contains all the IBC stargate types that are needed to communicate with the IBC
-//! core module. The use of this module is optional, and it currently only needed if the ICA controller
-//! is not provided with the [handshake version metadata](super::metadata::IcaMetadata) by the relayer.
-//!
-//! Not all blockchains support the stargate messages, it is therefore recommended to provide the
-//! handshake version metadata to the ICA controller. See a full discussion of this topic
-//! [here](https://github.com/cosmos/ibc-go/issues/3942).
-//!
-//! This module is not tested in the end-to-end tests as the default wasmd docker image does not support
-//! stargate queries. It is tested anecdotally, so use it at your own risk.
+//! This module contains protobuf types and helpers that are needed to communicate with
+//! the core modules of the Cosmos SDK using [`cosmwasm_std::CosmosMsg::Stargate`].
 
 /// Contains the stargate channel lifecycle helper methods.
 pub mod channel {

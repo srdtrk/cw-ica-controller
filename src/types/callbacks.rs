@@ -1,7 +1,7 @@
 //! # Callbacks
 //!
-//! This module contains the callbacks that this contract can make to other contracts upon
-//! channel and packet lifecycle events.
+//! This module contains the callbacks message type that this contract can make to other
+//! contracts upon channel and packet lifecycle events.
 
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{

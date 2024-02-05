@@ -2,9 +2,9 @@
 //!
 //! This file contains the [`IcaMetadata`] struct and its methods.
 //!
-//! The metadata is the information that is communicated during the handshake between the
-//! ICA controller and the ICA host. It encodes key information about the messages exchanged
-//! between the ICA controller and the ICA host.
+//! The version metadata is the information that is communicated during the ICS-27 channel
+//! handshake between this contract and the ICA host. It encodes key information about the
+//! interchain account.
 
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Deps, IbcChannel};

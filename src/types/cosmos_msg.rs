@@ -1,4 +1,5 @@
-//! This module contains the helpers to convert [`CosmosMsg`] to [`cosmos_sdk_proto::Any`] or json string.
+//! This module contains the helpers to convert [`CosmosMsg`] to [`cosmos_sdk_proto::Any`]
+//! or a [`proto3json`](crate::ibc::types::metadata::TxEncoding::Proto3Json) string.
 
 use cosmos_sdk_proto::{prost::EncodeError, Any};
 use cosmwasm_std::{BankMsg, Coin, CosmosMsg, IbcMsg};
