@@ -16,5 +16,5 @@ type IcaState struct {
 	IcaId        uint64                             `json:"ica_id"`
 	IcaAddr      string                             `json:"ica_addr"`
 	TxEncoding   string                             `json:"tx_encoding"`
-	ChannelState icacontroller.ContractChannelState `json:"channel_state"`
+	ChannelState icacontroller.State `json:"channel_state"`
 }
