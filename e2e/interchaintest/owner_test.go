@@ -119,31 +119,31 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 		s.Require().Equal(channeltypes.OPEN.String(), simdChannel.State)
 
 		// Check contract's channel state
-		contractChannelState, err := types.QueryAnyMsg[icacontroller.ContractChannelState](ctx, &icaContract.Contract, icacontroller.GetChannelRequest)
+		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &icaContract.Contract, icacontroller.GetChannelRequest)
 		s.Require().NoError(err)
 
 		s.T().Logf("contract's channel store after handshake: %s", toJSONString(contractChannelState))
 
-		s.Require().Equal(wasmdChannel.State, contractChannelState.ChannelStatus)
+		s.Require().Equal(wasmdChannel.State, string(contractChannelState.ChannelStatus))
 		s.Require().Equal(wasmdChannel.Version, contractChannelState.Channel.Version)
-		s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionID)
-		s.Require().Equal(wasmdChannel.ChannelID, contractChannelState.Channel.Endpoint.ChannelID)
-		s.Require().Equal(wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortID)
-		s.Require().Equal(wasmdChannel.Counterparty.ChannelID, contractChannelState.Channel.CounterpartyEndpoint.ChannelID)
-		s.Require().Equal(wasmdChannel.Counterparty.PortID, contractChannelState.Channel.CounterpartyEndpoint.PortID)
-		s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
+		s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionId)
+		s.Require().Equal(wasmdChannel.ChannelID, contractChannelState.Channel.Endpoint.ChannelId)
+		s.Require().Equal(wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortId)
+		s.Require().Equal(wasmdChannel.Counterparty.ChannelID, contractChannelState.Channel.CounterpartyEndpoint.ChannelId)
+		s.Require().Equal(wasmdChannel.Counterparty.PortID, contractChannelState.Channel.CounterpartyEndpoint.PortId)
+		s.Require().Equal(wasmdChannel.Ordering, string(contractChannelState.Channel.Order))
 
 		// Check contract state
-		contractState, err := types.QueryAnyMsg[icacontroller.ContractState](
+		contractState, err := types.QueryAnyMsg[icacontroller.State_2](
 			ctx, &icaContract.Contract,
 			icacontroller.GetContractStateRequest,
 		)
 		s.Require().NoError(err)
-		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelID)
+		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelId)
 
-		ownershipResponse, err := types.QueryAnyMsg[icacontroller.OwnershipResponse](ctx, &icaContract.Contract, icacontroller.OwnershipRequest)
+		ownershipResponse, err := types.QueryAnyMsg[icacontroller.Ownership_for_String](ctx, &icaContract.Contract, icacontroller.OwnershipRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(s.OwnerContract.Address, ownershipResponse.Owner)
+		s.Require().Equal(s.OwnerContract.Address, *ownershipResponse.Owner)
 		s.Require().Nil(ownershipResponse.PendingOwner)
 		s.Require().Nil(ownershipResponse.PendingExpiry)
 	})
@@ -165,7 +165,7 @@ func (s *OwnerTestSuite) TestOwnerPredefinedAction() {
 	icaContract := types.NewIcaContract(*types.NewContract(icaState.ContractAddr, strconv.FormatUint(s.IcaContractCodeId, 10), wasmd))
 
 	// Check contract state
-	contractState, err := types.QueryAnyMsg[icacontroller.ContractState](
+	contractState, err := types.QueryAnyMsg[icacontroller.State_2](
 		ctx, &icaContract.Contract,
 		icacontroller.GetContractStateRequest,
 	)

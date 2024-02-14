@@ -12,7 +12,7 @@ import (
 )
 
 // NewExecuteMsg_SendCustomIcaMessages_FromProto creates a new ExecuteMsg_SendCustomIcaMessages.
-func NewExecuteMsg_SendCustomIcaMessages_FromProto(cdc codec.Codec, msgs []proto.Message, encoding string, memo *string, timeout *uint64) ExecuteMsg {
+func NewExecuteMsg_SendCustomIcaMessages_FromProto(cdc codec.Codec, msgs []proto.Message, encoding string, memo *string, timeout *int) ExecuteMsg {
 	bz, err := icatypes.SerializeCosmosTx(cdc, msgs, encoding)
 	if err != nil {
 		panic(err)
@@ -22,7 +22,7 @@ func NewExecuteMsg_SendCustomIcaMessages_FromProto(cdc codec.Codec, msgs []proto
 
 	return ExecuteMsg{
 		SendCustomIcaMessages: &ExecuteMsg_SendCustomIcaMessages{
-			Messages:       messages,
+			Messages:       Binary(messages),
 			PacketMemo:     memo,
 			TimeoutSeconds: timeout,
 		},
@@ -30,8 +30,8 @@ func NewExecuteMsg_SendCustomIcaMessages_FromProto(cdc codec.Codec, msgs []proto
 }
 
 // NewExecuteMsg_SendCosmosMsgs_FromProto creates a new ExecuteMsg_SendCosmosMsgs.
-func NewExecuteMsg_SendCosmosMsgs_FromProto(msgs []proto.Message, memo *string, timeout *uint64) ExecuteMsg {
-	cosmosMsgs := make([]ContractCosmosMsg, len(msgs))
+func NewExecuteMsg_SendCosmosMsgs_FromProto(msgs []proto.Message, memo *string, timeout *int) ExecuteMsg {
+	cosmosMsgs := make([]CosmosMsg_for_Empty, len(msgs))
 
 	for i, msg := range msgs {
 		protoAny, err := codectypes.NewAnyWithValue(msg)
@@ -39,10 +39,10 @@ func NewExecuteMsg_SendCosmosMsgs_FromProto(msgs []proto.Message, memo *string, 
 			panic(err)
 		}
 
-		cosmosMsgs[i] = ContractCosmosMsg{
-			Stargate: &StargateCosmosMsg{
+		cosmosMsgs[i] = CosmosMsg_for_Empty{
+			Stargate: &CosmosMsg_for_Empty_Stargate{
 				TypeUrl: protoAny.TypeUrl,
-				Value:   base64.StdEncoding.EncodeToString(protoAny.Value),
+				Value:   Binary(base64.StdEncoding.EncodeToString(protoAny.Value)),
 			},
 		}
 

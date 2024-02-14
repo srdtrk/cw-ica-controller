@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
 
@@ -22,11 +23,11 @@ func (c *IcaContract) SetIcaAddress(icaAddress string) {
 }
 
 func (c *IcaContract) Execute(ctx context.Context, callerKeyName string, msg icacontroller.ExecuteMsg, extraExecTxArgs ...string) error {
-	return c.Contract.ExecAnyMsg(ctx, callerKeyName, msg.ToString(), extraExecTxArgs...)
+	return c.Contract.ExecAnyMsg(ctx, callerKeyName, toString(msg), extraExecTxArgs...)
 }
 
 func (c *IcaContract) Instantiate(ctx context.Context, callerKeyName string, chain *cosmos.CosmosChain, codeId string, msg icacontroller.InstantiateMsg, extraExecTxArgs ...string) error {
-	contractAddr, err := chain.InstantiateContract(ctx, callerKeyName, codeId, msg.ToString(), true, extraExecTxArgs...)
+	contractAddr, err := chain.InstantiateContract(ctx, callerKeyName, codeId, toString(msg), true, extraExecTxArgs...)
 	if err != nil {
 		return err
 	}
@@ -35,4 +36,14 @@ func (c *IcaContract) Instantiate(ctx context.Context, callerKeyName string, cha
 	c.CodeID = codeId
 	c.Chain = chain
 	return nil
+}
+
+// toString converts the message to a string using json
+func toString(msg interface{}) string {
+	bz, err := json.Marshal(msg)
+	if err != nil {
+		panic(err)
+	}
+
+	return string(bz)
 }
