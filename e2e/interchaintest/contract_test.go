@@ -97,7 +97,7 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding
 	s.Require().NotEmpty(contractState.IcaInfo.IcaAddress)
 	s.Contract.SetIcaAddress(contractState.IcaInfo.IcaAddress)
 
-	s.Require().Equal(s.UserA.FormattedAddress(), ownershipResponse.Owner)
+	s.Require().Equal(s.UserA.FormattedAddress(), *ownershipResponse.Owner)
 	s.Require().Nil(ownershipResponse.PendingOwner)
 	s.Require().Nil(ownershipResponse.PendingExpiry)
 }
@@ -141,7 +141,7 @@ func (s *ContractTestSuite) IcaContractChannelHandshakeTest_WithEncodingAndOrder
 		s.Require().Equal(s.Contract.Port(), wasmdChannel.PortID)
 		s.Require().Equal(icatypes.HostPortID, wasmdChannel.Counterparty.PortID)
 		s.Require().Equal(channeltypes.OPEN.String(), wasmdChannel.State)
-		s.Require().Equal(ordering, wasmdChannel.Ordering)
+		s.Require().Equal(string(ordering), wasmdChannel.Ordering)
 
 		simdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, simd.Config().ChainID)
 		s.Require().NoError(err)
@@ -158,7 +158,7 @@ func (s *ContractTestSuite) IcaContractChannelHandshakeTest_WithEncodingAndOrder
 		s.Require().Equal(icatypes.HostPortID, simdChannel.PortID)
 		s.Require().Equal(s.Contract.Port(), simdChannel.Counterparty.PortID)
 		s.Require().Equal(channeltypes.OPEN.String(), simdChannel.State)
-		s.Require().Equal(ordering, simdChannel.Ordering)
+		s.Require().Equal(string(ordering), simdChannel.Ordering)
 
 		// Check contract's channel state
 		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
@@ -166,14 +166,14 @@ func (s *ContractTestSuite) IcaContractChannelHandshakeTest_WithEncodingAndOrder
 
 		s.T().Logf("contract's channel store after handshake: %s", toJSONString(contractChannelState))
 
-		s.Require().Equal(wasmdChannel.State, contractChannelState.ChannelStatus)
+		s.Require().Equal(wasmdChannel.State, string(contractChannelState.ChannelStatus))
 		s.Require().Equal(wasmdChannel.Version, contractChannelState.Channel.Version)
 		s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionId)
 		s.Require().Equal(wasmdChannel.ChannelID, contractChannelState.Channel.Endpoint.ChannelId)
 		s.Require().Equal(wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortId)
 		s.Require().Equal(wasmdChannel.Counterparty.ChannelID, contractChannelState.Channel.CounterpartyEndpoint.ChannelId)
 		s.Require().Equal(wasmdChannel.Counterparty.PortID, contractChannelState.Channel.CounterpartyEndpoint.PortId)
-		s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
+		s.Require().Equal(wasmdChannel.Ordering, string(contractChannelState.Channel.Order))
 
 		// Check contract state
 		contractState, err := types.QueryAnyMsg[icacontroller.State_2](
@@ -321,14 +321,14 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 
 		s.T().Logf("contract's channel store after handshake: %s", toJSONString(contractChannelState))
 
-		s.Require().Equal(wasmdChannel.State, contractChannelState.ChannelStatus)
+		s.Require().Equal(wasmdChannel.State, string(contractChannelState.ChannelStatus))
 		s.Require().Equal(wasmdChannel.Version, contractChannelState.Channel.Version)
 		s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionId)
 		s.Require().Equal(wasmdChannel.ChannelID, contractChannelState.Channel.Endpoint.ChannelId)
 		s.Require().Equal(wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortId)
 		s.Require().Equal(wasmdChannel.Counterparty.ChannelID, contractChannelState.Channel.CounterpartyEndpoint.ChannelId)
 		s.Require().Equal(wasmdChannel.Counterparty.PortID, contractChannelState.Channel.CounterpartyEndpoint.PortId)
-		s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
+		s.Require().Equal(wasmdChannel.Ordering, string(contractChannelState.Channel.Order))
 
 		// Check contract state
 		contractState, err := types.QueryAnyMsg[icacontroller.State_2](
@@ -833,7 +833,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Proto3Json() {
 		// Check if contract channel state was updated:
 		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(channeltypes.CLOSED.String(), contractChannelState.ChannelStatus)
+		s.Require().Equal(icacontroller.Status_StateClosed_Value, contractChannelState.ChannelStatus)
 	})
 
 	s.Run("TestChannelReopening", func() {
@@ -869,13 +869,13 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Proto3Json() {
 		// Check if contract channel state was updated:
 		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(channeltypes.OPEN.String(), contractChannelState.ChannelStatus)
+		s.Require().Equal(icacontroller.Status_StateOpen_Value, contractChannelState.ChannelStatus)
 		s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionId)
 		s.Require().Equal(wasmdChannel.ChannelID, contractChannelState.Channel.Endpoint.ChannelId)
 		s.Require().Equal(wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortId)
 		s.Require().Equal(wasmdChannel.Counterparty.ChannelID, contractChannelState.Channel.CounterpartyEndpoint.ChannelId)
 		s.Require().Equal(wasmdChannel.Counterparty.PortID, contractChannelState.Channel.CounterpartyEndpoint.PortId)
-		s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
+		s.Require().Equal(wasmdChannel.Ordering, string(contractChannelState.Channel.Order))
 
 		contractState, err := types.QueryAnyMsg[icacontroller.State_2](
 			ctx, &s.Contract.Contract,
@@ -1007,7 +1007,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Unordered_Protobuf() {
 		// Check if contract channel state is still open:
 		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(channeltypes.OPEN.String(), contractChannelState.ChannelStatus)
+		s.Require().Equal(icacontroller.Status_StateOpen_Value, contractChannelState.ChannelStatus)
 	})
 
 	s.Run("TestSendCustomIcaMessagesAfterTimeout", func() {
@@ -1091,7 +1091,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		// Check if contract channel state was updated:
 		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(channeltypes.CLOSED.String(), contractChannelState.ChannelStatus)
+		s.Require().Equal(icacontroller.Status_StateClosed_Value, contractChannelState.ChannelStatus)
 	})
 
 	s.Run("TestChannelReopening", func() {
@@ -1135,7 +1135,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		s.Require().Equal(2, len(wasmdChannels))
 		wasmdChannel := wasmdChannels[1]
 		s.Require().Equal(channeltypes.OPEN.String(), wasmdChannel.State)
-		s.Require().Equal(channeltypes.UNORDERED.String(), wasmdChannel.Ordering)
+		s.Require().Equal(icacontroller.IbcOrder_OrderUnordered, wasmdChannel.Ordering)
 
 		// Check if contract channel state was updated:
 		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
@@ -1146,7 +1146,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		s.Require().Equal(wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortId)
 		s.Require().Equal(wasmdChannel.Counterparty.ChannelID, contractChannelState.Channel.CounterpartyEndpoint.ChannelId)
 		s.Require().Equal(wasmdChannel.Counterparty.PortID, contractChannelState.Channel.CounterpartyEndpoint.PortId)
-		s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
+		s.Require().Equal(wasmdChannel.Ordering, string(contractChannelState.Channel.Order))
 
 		contractState, err := types.QueryAnyMsg[icacontroller.State_2](
 			ctx, &s.Contract.Contract,

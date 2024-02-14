@@ -95,7 +95,7 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding ica
 
 	s.Contract.SetIcaAddress(contractState.IcaInfo.IcaAddress)
 
-	s.Require().Equal(s.UserA.FormattedAddress(), ownershipResponse.Owner)
+	s.Require().Equal(s.UserA.FormattedAddress(), *ownershipResponse.Owner)
 	s.Require().Nil(ownershipResponse.PendingOwner)
 	s.Require().Nil(ownershipResponse.PendingExpiry)
 
