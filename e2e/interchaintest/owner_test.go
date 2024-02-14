@@ -143,7 +143,7 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 
 		ownershipResponse, err := types.QueryAnyMsg[icacontroller.Ownership_for_String](ctx, &icaContract.Contract, icacontroller.OwnershipRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(s.OwnerContract.Address, ownershipResponse.Owner)
+		s.Require().Equal(s.OwnerContract.Address, *ownershipResponse.Owner)
 		s.Require().Nil(ownershipResponse.PendingOwner)
 		s.Require().Nil(ownershipResponse.PendingExpiry)
 	})

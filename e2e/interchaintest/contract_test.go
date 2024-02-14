@@ -1140,7 +1140,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		// Check if contract channel state was updated:
 		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(channeltypes.OPEN.String(), contractChannelState.ChannelStatus)
+		s.Require().Equal(icacontroller.Status_StateOpen_Value, contractChannelState.ChannelStatus)
 		s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionId)
 		s.Require().Equal(wasmdChannel.ChannelID, contractChannelState.Channel.Endpoint.ChannelId)
 		s.Require().Equal(wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortId)
