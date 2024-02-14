@@ -124,14 +124,14 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 
 		s.T().Logf("contract's channel store after handshake: %s", toJSONString(contractChannelState))
 
-		s.Require().Equal(wasmdChannel.State, contractChannelState.ChannelStatus)
+		s.Require().Equal(wasmdChannel.State, string(contractChannelState.ChannelStatus))
 		s.Require().Equal(wasmdChannel.Version, contractChannelState.Channel.Version)
 		s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionId)
 		s.Require().Equal(wasmdChannel.ChannelID, contractChannelState.Channel.Endpoint.ChannelId)
 		s.Require().Equal(wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortId)
 		s.Require().Equal(wasmdChannel.Counterparty.ChannelID, contractChannelState.Channel.CounterpartyEndpoint.ChannelId)
 		s.Require().Equal(wasmdChannel.Counterparty.PortID, contractChannelState.Channel.CounterpartyEndpoint.PortId)
-		s.Require().Equal(wasmdChannel.Ordering, contractChannelState.Channel.Order)
+		s.Require().Equal(wasmdChannel.Ordering, string(contractChannelState.Channel.Order))
 
 		// Check contract state
 		contractState, err := types.QueryAnyMsg[icacontroller.State_2](

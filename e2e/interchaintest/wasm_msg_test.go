@@ -312,7 +312,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding icacontroller.
 		contractInfoResp, err := mysuite.GRPCQuery[wasmtypes.QueryContractInfoResponse](ctx, wasmd2, &contractInfoRequest)
 		s.Require().NoError(err)
 
-		s.Require().Equal(counterCodeID+1, contractInfoResp.ContractInfo.CodeID)
+		s.Require().Equal(counterCodeID+1, int(contractInfoResp.ContractInfo.CodeID))
 		s.Require().Equal(wasmd2User.FormattedAddress(), contractInfoResp.ContractInfo.Admin)
 	})
 }

@@ -1135,7 +1135,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		s.Require().Equal(2, len(wasmdChannels))
 		wasmdChannel := wasmdChannels[1]
 		s.Require().Equal(channeltypes.OPEN.String(), wasmdChannel.State)
-		s.Require().Equal(icacontroller.IbcOrder_OrderUnordered, wasmdChannel.Ordering)
+		s.Require().Equal(channeltypes.UNORDERED.String(), wasmdChannel.Ordering)
 
 		// Check if contract channel state was updated:
 		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
@@ -1244,7 +1244,7 @@ func (s *ContractTestSuite) TestCloseChannel_Protobuf_Unordered() {
 		// Check if contract channel state was updated:
 		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(channeltypes.CLOSED.String(), contractChannelState.ChannelStatus)
+		s.Require().Equal(icacontroller.Status_StateClosed_Value, contractChannelState.ChannelStatus)
 	})
 }
 
