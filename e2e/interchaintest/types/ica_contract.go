@@ -40,10 +40,10 @@ func (c *IcaContract) Instantiate(ctx context.Context, callerKeyName string, cha
 
 // toString converts the message to a string using json
 func toString(msg interface{}) string {
-  bz, err := json.Marshal(msg)
-  if err != nil {
-    panic(err)
-  }
+	bz, err := json.Marshal(msg)
+	if err != nil {
+		panic(err)
+	}
 
-  return string(bz)
+	return string(bz)
 }
