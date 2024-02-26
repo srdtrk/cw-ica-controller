@@ -2,7 +2,9 @@
 
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, IbcChannel, Storage};
+
 use secret_toolkit::storage::Item;
+use secret_toolkit::serialization::Json;
 
 use super::{msg::options::ChannelOpenInitOptions, ContractError};
 
@@ -15,13 +17,13 @@ pub use contract::State as ContractState;
 pub const OWNER: Item<Addr> = Item::new(b"owner");
 
 /// The item used to store the state of the IBC application.
-pub const STATE: Item<ContractState> = Item::new(b"state");
+pub const STATE: Item<ContractState, Json> = Item::new(b"state");
 
 /// The item used to store the state of the IBC application's channel.
-pub const CHANNEL_STATE: Item<ChannelState> = Item::new(b"ica_channel");
+pub const CHANNEL_STATE: Item<ChannelState, Json> = Item::new(b"ica_channel");
 
 /// The item used to store the channel open init options.
-pub const CHANNEL_OPEN_INIT_OPTIONS: Item<ChannelOpenInitOptions> =
+pub const CHANNEL_OPEN_INIT_OPTIONS: Item<ChannelOpenInitOptions, Json> =
     Item::new(b"channel_open_init_options");
 
 /// The item used to store whether or not channel open init is allowed.
