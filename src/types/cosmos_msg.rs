@@ -60,8 +60,8 @@ mod convert_to_any {
             gov::v1beta1::{MsgVote, VoteOption as ProtoVoteOption},
         },
         cosmwasm::wasm::v1::{
-            MsgClearAdmin, MsgExecuteContract, MsgInstantiateContract,
-            MsgMigrateContract, MsgUpdateAdmin,
+            MsgClearAdmin, MsgExecuteContract, MsgInstantiateContract, MsgMigrateContract,
+            MsgUpdateAdmin,
         },
         ibc::{applications::transfer::v1::MsgTransfer, core::client::v1::Height},
         prost::EncodeError,

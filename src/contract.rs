@@ -24,10 +24,12 @@ pub fn instantiate(
 
     let callback_contract = msg
         .send_callbacks_to
-        .map(|cb| -> StdResult<ContractInfo> { Ok(ContractInfo {
-            address: deps.api.addr_validate(&cb.address)?,
-            code_hash: cb.code_hash,
-        })})
+        .map(|cb| -> StdResult<ContractInfo> {
+            Ok(ContractInfo {
+                address: deps.api.addr_validate(&cb.address)?,
+                code_hash: cb.code_hash,
+            })
+        })
         .transpose()?;
 
     // Save the admin. Ica address is determined during handshake.
@@ -83,7 +85,7 @@ pub fn execute(
             packet_memo,
             timeout_seconds,
         } => execute::send_cosmos_msgs(deps, env, info, messages, packet_memo, timeout_seconds),
-        ExecuteMsg::UpdateOwnership {owner} => execute::update_ownership(deps, info, owner),
+        ExecuteMsg::UpdateOwnership { owner } => execute::update_ownership(deps, info, owner),
     }
 }
 
@@ -101,7 +103,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 mod execute {
     use cosmwasm_std::{ContractInfo, CosmosMsg, IbcMsg, StdResult};
 
-    use crate::{ibc::types::packet::IcaPacketData, types::msg::{options::ChannelOpenInitOptions, CallbackInfo}};
+    use crate::{
+        ibc::types::packet::IcaPacketData,
+        types::msg::{options::ChannelOpenInitOptions, CallbackInfo},
+    };
 
     use super::{
         new_ica_channel_open_init_cosmos_msg, state, Binary, ContractError, DepsMut, Env,
@@ -239,11 +244,13 @@ mod execute {
         let mut contract_state = state::STATE.load(deps.storage)?;
 
         contract_state.callback_contract = callback_contract
-            .map(|cb| -> StdResult<ContractInfo> { Ok(ContractInfo {
-            address: deps.api.addr_validate(&cb.address)?,
-            code_hash: cb.code_hash,
-        })})
-        .transpose()?;
+            .map(|cb| -> StdResult<ContractInfo> {
+                Ok(ContractInfo {
+                    address: deps.api.addr_validate(&cb.address)?,
+                    code_hash: cb.code_hash,
+                })
+            })
+            .transpose()?;
 
         state::STATE.save(deps.storage, &contract_state)?;
 

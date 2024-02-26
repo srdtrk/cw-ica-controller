@@ -37,7 +37,10 @@ pub const ALLOW_CHANNEL_CLOSE_INIT: Item<bool> = Item::new(b"allow_channel_close
 /// # Errors
 ///
 /// Returns an error if the address is not the owner or if the owner cannot be loaded.
-pub fn assert_owner(storage: &dyn Storage, address: impl Into<String>) -> Result<(), ContractError> {
+pub fn assert_owner(
+    storage: &dyn Storage,
+    address: impl Into<String>,
+) -> Result<(), ContractError> {
     if OWNER.load(storage)? != address.into() {
         return Err(ContractError::Unauthorized);
     }

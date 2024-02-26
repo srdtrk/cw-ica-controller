@@ -4,9 +4,7 @@
 //! contracts upon channel and packet lifecycle events.
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{
-    to_binary, Addr, Binary, CosmosMsg, IbcChannel, IbcPacket, StdResult, WasmMsg,
-};
+use cosmwasm_std::{to_binary, Addr, Binary, CosmosMsg, IbcChannel, IbcPacket, StdResult, WasmMsg};
 
 use crate::ibc::types::{
     metadata::TxEncoding, packet::acknowledgement::Data as AcknowledgementData,
@@ -62,7 +60,11 @@ impl IcaControllerCallbackMsg {
     /// # Errors
     ///
     /// This function returns an error if the message cannot be serialized.
-    pub fn into_cosmos_msg<C>(self, contract_addr: impl Into<String>, code_hash: impl Into<String>) -> StdResult<CosmosMsg<C>>
+    pub fn into_cosmos_msg<C>(
+        self,
+        contract_addr: impl Into<String>,
+        code_hash: impl Into<String>,
+    ) -> StdResult<CosmosMsg<C>>
     where
         C: Clone + std::fmt::Debug + PartialEq,
     {
