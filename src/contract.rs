@@ -400,7 +400,7 @@ mod tests {
         let res = execute(deps.as_mut(), env, info, msg);
         assert_eq!(
             res.unwrap_err().to_string(),
-            "Caller is not the contract's current owner".to_string()
+            "unauthorized".to_string()
         );
     }
 }
