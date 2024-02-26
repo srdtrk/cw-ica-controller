@@ -5,7 +5,7 @@
 
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
-    to_json_binary, Addr, Binary, CosmosMsg, IbcChannel, IbcPacket, StdResult, WasmMsg,
+    to_binary, Addr, Binary, CosmosMsg, IbcChannel, IbcPacket, StdResult, WasmMsg,
 };
 
 use crate::ibc::types::{
@@ -51,9 +51,9 @@ impl IcaControllerCallbackMsg {
     /// # Errors
     ///
     /// This function returns an error if the message cannot be serialized.
-    pub fn into_json_binary(self) -> StdResult<Binary> {
+    pub fn into_binary(self) -> StdResult<Binary> {
         let msg = ReceiverExecuteMsg::ReceiveIcaCallback(self);
-        to_json_binary(&msg)
+        to_binary(&msg)
     }
 
     /// `into_cosmos_msg` converts this message into a [`CosmosMsg`] message to be sent to
@@ -62,13 +62,14 @@ impl IcaControllerCallbackMsg {
     /// # Errors
     ///
     /// This function returns an error if the message cannot be serialized.
-    pub fn into_cosmos_msg<C>(self, contract_addr: impl Into<String>) -> StdResult<CosmosMsg<C>>
+    pub fn into_cosmos_msg<C>(self, contract_addr: impl Into<String>, code_hash: impl Into<String>) -> StdResult<CosmosMsg<C>>
     where
         C: Clone + std::fmt::Debug + PartialEq,
     {
         let execute = WasmMsg::Execute {
             contract_addr: contract_addr.into(),
-            msg: self.into_json_binary()?,
+            code_hash: code_hash.into(),
+            msg: self.into_binary()?,
             funds: vec![],
         };
 

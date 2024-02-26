@@ -17,11 +17,19 @@ pub struct InstantiateMsg {
     /// The contract address that the channel and packet lifecycle callbacks are sent to.
     /// If not specified, then no callbacks are sent.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub send_callbacks_to: Option<String>,
+    pub send_callbacks_to: Option<CallbackInfo>,
+}
+
+/// The info needed to send callbacks
+#[cw_serde]
+pub struct CallbackInfo {
+    /// The address of the callback contract.
+    pub address: String,
+    /// The code hash of the callback contract.
+    pub code_hash: String,
 }
 
 /// The messages to execute the ICA controller contract.
-#[cw_ownable::cw_ownable_execute]
 #[cw_serde]
 pub enum ExecuteMsg {
     /// `CreateChannel` makes the contract submit a stargate MsgChannelOpenInit to the chain.
@@ -93,12 +101,16 @@ pub enum ExecuteMsg {
     UpdateCallbackAddress {
         /// The new callback address.
         /// If not specified, then no callbacks are sent.
-        callback_address: Option<String>,
+        callback_contract: Option<CallbackInfo>,
+    },
+    /// `UpdateOwnership` updates the contract owner.
+    UpdateOwnership {
+        /// The new owner of the contract.
+        owner: String,
     },
 }
 
 /// The messages to query the ICA controller contract.
-#[cw_ownable::cw_ownable_query]
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
@@ -108,11 +120,10 @@ pub enum QueryMsg {
     /// GetContractState returns the contact's state.
     #[returns(crate::types::state::ContractState)]
     GetContractState {},
+    /// Ownership returns the owner of the contract.
+    #[returns(String)]
+    Ownership {},
 }
-
-/// The message to migrate this contract.
-#[cw_serde]
-pub struct MigrateMsg {}
 
 /// Option types for other messages.
 pub mod options {

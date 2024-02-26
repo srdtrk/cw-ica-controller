@@ -5,8 +5,8 @@
 
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_json, DepsMut, Env, IbcBasicResponse, IbcPacketAckMsg, IbcPacketReceiveMsg,
-    IbcPacketTimeoutMsg, IbcReceiveResponse, Never,
+    from_binary, DepsMut, Env, IbcBasicResponse, IbcPacketAckMsg, IbcPacketReceiveMsg,
+    IbcPacketTimeoutMsg, IbcReceiveResponse,
 };
 
 use crate::types::{state, ContractError};
@@ -29,7 +29,7 @@ pub fn ibc_packet_ack(
     ack: IbcPacketAckMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
     // This lets the ICA controller know whether or not the sent transactions succeeded.
-    match from_json(&ack.acknowledgement.data)? {
+    match from_binary(&ack.acknowledgement.data)? {
         AcknowledgementData::Result(res) => {
             ibc_packet_ack::success(deps, ack.original_packet, ack.relayer, res)
         }
@@ -73,7 +73,7 @@ pub fn ibc_packet_receive(
     _deps: DepsMut,
     _env: Env,
     _msg: IbcPacketReceiveMsg,
-) -> Result<IbcReceiveResponse, Never> {
+) -> Result<IbcReceiveResponse, ContractError> {
     // An ICA controller cannot receive packets, so this is a panic.
     // It must be implemented to satisfy the wasmd interface.
     unreachable!("ICA controller cannot receive packets")
@@ -99,13 +99,13 @@ mod ibc_packet_ack {
 
         let success_event = events::packet_ack::success(&packet, &res);
 
-        if let Some(contract_addr) = state.callback_address {
+        if let Some(contract) = state.callback_contract {
             let callback_msg = IcaControllerCallbackMsg::OnAcknowledgementPacketCallback {
                 ica_acknowledgement: AcknowledgementData::Result(res),
                 original_packet: packet,
                 relayer,
             }
-            .into_cosmos_msg(contract_addr)?;
+            .into_cosmos_msg(contract.address, contract.code_hash)?;
 
             Ok(IbcBasicResponse::default()
                 .add_message(callback_msg)
@@ -128,13 +128,13 @@ mod ibc_packet_ack {
 
         let error_event = events::packet_ack::error(&packet, &err);
 
-        if let Some(contract_addr) = state.callback_address {
+        if let Some(contract) = state.callback_contract {
             let callback_msg = IcaControllerCallbackMsg::OnAcknowledgementPacketCallback {
                 ica_acknowledgement: AcknowledgementData::Error(err),
                 original_packet: packet,
                 relayer,
             }
-            .into_cosmos_msg(contract_addr)?;
+            .into_cosmos_msg(contract.address, contract.code_hash)?;
 
             Ok(IbcBasicResponse::default()
                 .add_message(callback_msg)
@@ -161,12 +161,12 @@ mod ibc_packet_timeout {
     ) -> Result<IbcBasicResponse, ContractError> {
         let state = STATE.load(deps.storage)?;
 
-        if let Some(contract_addr) = state.callback_address {
+        if let Some(contract) = state.callback_contract {
             let callback_msg = IcaControllerCallbackMsg::OnTimeoutPacketCallback {
                 original_packet: packet,
                 relayer,
             }
-            .into_cosmos_msg(contract_addr)?;
+            .into_cosmos_msg(contract.address, contract.code_hash)?;
 
             Ok(IbcBasicResponse::default().add_message(callback_msg))
         } else {

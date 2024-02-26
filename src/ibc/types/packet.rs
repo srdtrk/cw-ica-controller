@@ -3,7 +3,7 @@
 //! This module contains the ICS-27 packet data and acknowledgement types.
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{to_json_binary, CosmosMsg, Env, IbcMsg, IbcTimeout, StdError, StdResult};
+use cosmwasm_std::{to_binary, CosmosMsg, Env, IbcMsg, IbcTimeout, StdError, StdResult};
 
 pub use cosmos_sdk_proto::ibc::applications::interchain_accounts::v1::CosmosTx;
 use cosmos_sdk_proto::traits::Message;
@@ -154,7 +154,7 @@ impl IcaPacketData {
             .plus_seconds(timeout_seconds.unwrap_or(DEFAULT_TIMEOUT_SECONDS));
         Ok(IbcMsg::SendPacket {
             channel_id: channel_id.into(),
-            data: to_json_binary(&self)?,
+            data: to_binary(&self)?,
             timeout: IbcTimeout::with_timestamp(timeout_timestamp),
         })
     }
@@ -180,7 +180,7 @@ pub mod acknowledgement {
 #[cfg(test)]
 mod tests {
     use acknowledgement::Data as AcknowledgementData;
-    use cosmwasm_std::{from_json, Binary};
+    use cosmwasm_std::{from_binary, Binary};
 
     use super::*;
 
@@ -193,7 +193,7 @@ mod tests {
             123, 34, 114, 101, 115, 117, 108, 116, 34, 58, 34, 99, 51, 86, 106, 89, 50, 86, 122,
             99, 119, 61, 61, 34, 125,
         ]);
-        let ack: AcknowledgementData = from_json(cw_success_binary).unwrap();
+        let ack: AcknowledgementData = from_binary(&cw_success_binary).unwrap();
         assert_eq!(
             ack,
             AcknowledgementData::Result(Binary::from_base64("c3VjY2Vzcw==").unwrap())
@@ -203,7 +203,7 @@ mod tests {
         let error_bytes =
             br#"{"error":"ABCI code: 1: error handling packet: see events for details"}"#;
         let cw_error_binary = Binary(error_bytes.to_vec());
-        let ack: AcknowledgementData = from_json(cw_error_binary).unwrap();
+        let ack: AcknowledgementData = from_binary(&cw_error_binary).unwrap();
         assert_eq!(
             ack,
             AcknowledgementData::Error(

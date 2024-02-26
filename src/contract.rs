@@ -1,11 +1,10 @@
 //! This module handles the execution logic of the contract.
 
-use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{entry_point, ContractInfo};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
 use crate::ibc::types::stargate::channel::new_ica_channel_open_init_cosmos_msg;
-use crate::types::keys;
-use crate::types::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use crate::types::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::types::state::{self, ChannelState, ContractState};
 use crate::types::ContractError;
 
@@ -18,18 +17,21 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    cw2::set_contract_version(deps.storage, keys::CONTRACT_NAME, keys::CONTRACT_VERSION)?;
-
     let owner = msg.owner.unwrap_or_else(|| info.sender.to_string());
-    cw_ownable::initialize_owner(deps.storage, deps.api, Some(&owner))?;
+    let owner = deps.api.addr_validate(&owner)?;
 
-    let callback_address = msg
+    state::OWNER.save(deps.storage, &owner)?;
+
+    let callback_contract = msg
         .send_callbacks_to
-        .map(|addr| deps.api.addr_validate(&addr))
+        .map(|cb| -> StdResult<ContractInfo> { Ok(ContractInfo {
+            address: deps.api.addr_validate(&cb.address)?,
+            code_hash: cb.code_hash,
+        })})
         .transpose()?;
 
     // Save the admin. Ica address is determined during handshake.
-    state::STATE.save(deps.storage, &ContractState::new(callback_address))?;
+    state::STATE.save(deps.storage, &ContractState::new(callback_contract))?;
 
     state::CHANNEL_OPEN_INIT_OPTIONS.save(deps.storage, &msg.channel_open_init_options)?;
 
@@ -73,15 +75,15 @@ pub fn execute(
             packet_memo,
             timeout_seconds,
         ),
-        ExecuteMsg::UpdateCallbackAddress { callback_address } => {
-            execute::update_callback_address(deps, info, callback_address)
+        ExecuteMsg::UpdateCallbackAddress { callback_contract } => {
+            execute::update_callback_address(deps, info, callback_contract)
         }
         ExecuteMsg::SendCosmosMsgs {
             messages,
             packet_memo,
             timeout_seconds,
         } => execute::send_cosmos_msgs(deps, env, info, messages, packet_memo, timeout_seconds),
-        ExecuteMsg::UpdateOwnership(action) => execute::update_ownership(deps, env, info, action),
+        ExecuteMsg::UpdateOwnership {owner} => execute::update_ownership(deps, info, owner),
     }
 }
 
@@ -90,29 +92,16 @@ pub fn execute(
 #[allow(clippy::pedantic)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetContractState {} => to_json_binary(&query::state(deps)?),
-        QueryMsg::GetChannel {} => to_json_binary(&query::channel(deps)?),
-        QueryMsg::Ownership {} => to_json_binary(&cw_ownable::get_ownership(deps.storage)?),
+        QueryMsg::GetContractState {} => to_binary(&query::state(deps)?),
+        QueryMsg::GetChannel {} => to_binary(&query::channel(deps)?),
+        QueryMsg::Ownership {} => to_binary(&query::ownership(deps.storage)?),
     }
 }
 
-/// Migrate contract if version is lower than current version
-#[entry_point]
-#[allow(clippy::pedantic)]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    migrate::validate_semver(deps.as_ref())?;
-
-    cw2::set_contract_version(deps.storage, keys::CONTRACT_NAME, keys::CONTRACT_VERSION)?;
-    // If state structure changed in any contract version in the way migration is needed, it
-    // should occur here
-
-    Ok(Response::default())
-}
-
 mod execute {
-    use cosmwasm_std::{CosmosMsg, IbcMsg};
+    use cosmwasm_std::{ContractInfo, CosmosMsg, IbcMsg, StdResult};
 
-    use crate::{ibc::types::packet::IcaPacketData, types::msg::options::ChannelOpenInitOptions};
+    use crate::{ibc::types::packet::IcaPacketData, types::msg::{options::ChannelOpenInitOptions, CallbackInfo}};
 
     use super::{
         new_ica_channel_open_init_cosmos_msg, state, Binary, ContractError, DepsMut, Env,
@@ -129,7 +118,7 @@ mod execute {
         info: MessageInfo,
         options: Option<ChannelOpenInitOptions>,
     ) -> Result<Response, ContractError> {
-        cw_ownable::assert_owner(deps.storage, &info.sender)?;
+        state::assert_owner(deps.storage, info.sender)?;
 
         let options = if let Some(new_options) = options {
             state::CHANNEL_OPEN_INIT_OPTIONS.save(deps.storage, &new_options)?;
@@ -157,7 +146,7 @@ mod execute {
     /// Submits a [`IbcMsg::CloseChannel`].
     #[allow(clippy::needless_pass_by_value)]
     pub fn close_channel(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
-        cw_ownable::assert_owner(deps.storage, &info.sender)?;
+        state::assert_owner(deps.storage, info.sender)?;
 
         let channel_state = state::CHANNEL_STATE.load(deps.storage)?;
         if !channel_state.is_open() {
@@ -186,7 +175,7 @@ mod execute {
         packet_memo: Option<String>,
         timeout_seconds: Option<u64>,
     ) -> Result<Response, ContractError> {
-        cw_ownable::assert_owner(deps.storage, &info.sender)?;
+        state::assert_owner(deps.storage, info.sender)?;
 
         let contract_state = state::STATE.load(deps.storage)?;
         let ica_info = contract_state.get_ica_info()?;
@@ -207,7 +196,7 @@ mod execute {
         packet_memo: Option<String>,
         timeout_seconds: Option<u64>,
     ) -> Result<Response, ContractError> {
-        cw_ownable::assert_owner(deps.storage, &info.sender)?;
+        state::assert_owner(deps.storage, info.sender)?;
 
         let contract_state = state::STATE.load(deps.storage)?;
         let ica_info = contract_state.get_ica_info()?;
@@ -227,15 +216,13 @@ mod execute {
     #[allow(clippy::needless_pass_by_value)]
     pub fn update_ownership(
         deps: DepsMut,
-        env: Env,
         info: MessageInfo,
-        action: cw_ownable::Action,
+        owner: String,
     ) -> Result<Response, ContractError> {
-        if action == cw_ownable::Action::RenounceOwnership {
-            return Err(ContractError::OwnershipCannotBeRenounced);
-        };
+        state::assert_owner(deps.storage, info.sender)?;
+        let owner = deps.api.addr_validate(&owner)?;
 
-        cw_ownable::update_ownership(deps, &env.block, &info.sender, action)?;
+        state::OWNER.save(deps.storage, &owner)?;
 
         Ok(Response::default())
     }
@@ -245,15 +232,18 @@ mod execute {
     pub fn update_callback_address(
         deps: DepsMut,
         info: MessageInfo,
-        callback_address: Option<String>,
+        callback_contract: Option<CallbackInfo>,
     ) -> Result<Response, ContractError> {
-        cw_ownable::assert_owner(deps.storage, &info.sender)?;
+        state::assert_owner(deps.storage, info.sender)?;
 
         let mut contract_state = state::STATE.load(deps.storage)?;
 
-        contract_state.callback_address = callback_address
-            .map(|addr| deps.api.addr_validate(&addr))
-            .transpose()?;
+        contract_state.callback_contract = callback_contract
+            .map(|cb| -> StdResult<ContractInfo> { Ok(ContractInfo {
+            address: deps.api.addr_validate(&cb.address)?,
+            code_hash: cb.code_hash,
+        })})
+        .transpose()?;
 
         state::STATE.save(deps.storage, &contract_state)?;
 
@@ -273,29 +263,10 @@ mod query {
     pub fn channel(deps: Deps) -> StdResult<ChannelState> {
         state::CHANNEL_STATE.load(deps.storage)
     }
-}
 
-mod migrate {
-    use super::{keys, ContractError, Deps};
-
-    pub fn validate_semver(deps: Deps) -> Result<(), ContractError> {
-        let prev_cw2_version = cw2::get_contract_version(deps.storage)?;
-        if prev_cw2_version.contract != keys::CONTRACT_NAME {
-            return Err(ContractError::InvalidMigrationVersion {
-                expected: keys::CONTRACT_NAME.to_string(),
-                actual: prev_cw2_version.contract,
-            });
-        }
-
-        let version: semver::Version = keys::CONTRACT_VERSION.parse()?;
-        let prev_version: semver::Version = prev_cw2_version.version.parse()?;
-        if prev_version >= version {
-            return Err(ContractError::InvalidMigrationVersion {
-                expected: format!("> {prev_version}"),
-                actual: keys::CONTRACT_VERSION.to_string(),
-            });
-        }
-        Ok(())
+    /// Returns the owner of the contract.
+    pub fn ownership(storage: &dyn cosmwasm_std::Storage) -> StdResult<String> {
+        state::OWNER.load(storage).map(Into::into)
     }
 }
 
@@ -306,7 +277,7 @@ mod tests {
 
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{Api, SubMsg};
+    use cosmwasm_std::SubMsg;
 
     #[test]
     fn test_instantiate() {
@@ -352,16 +323,8 @@ mod tests {
         assert_eq!(res.messages[0], SubMsg::new(expected_msg));
 
         // Ensure the admin is saved correctly
-        let owner = cw_ownable::get_ownership(&deps.storage)
-            .unwrap()
-            .owner
-            .unwrap();
+        let owner = state::OWNER.load(&deps.storage).unwrap();
         assert_eq!(owner, info.sender);
-
-        // Ensure that the contract name and version are saved correctly
-        let contract_version = cw2::get_contract_version(&deps.storage).unwrap();
-        assert_eq!(contract_version.contract, keys::CONTRACT_NAME);
-        assert_eq!(contract_version.version, keys::CONTRACT_VERSION);
     }
 
     #[test]
@@ -431,119 +394,6 @@ mod tests {
         assert_eq!(
             res.unwrap_err().to_string(),
             "Caller is not the contract's current owner".to_string()
-        );
-    }
-
-    #[test]
-    fn test_update_callback_address() {
-        let mut deps = mock_dependencies();
-
-        let env = mock_env();
-        let info = mock_info("creator", &[]);
-
-        let channel_open_init_options = ChannelOpenInitOptions {
-            connection_id: "connection-0".to_string(),
-            counterparty_connection_id: "connection-1".to_string(),
-            counterparty_port_id: None,
-            tx_encoding: None,
-            channel_ordering: None,
-        };
-
-        // Instantiate the contract
-        let _res = instantiate(
-            deps.as_mut(),
-            env.clone(),
-            info.clone(),
-            InstantiateMsg {
-                owner: None,
-                channel_open_init_options,
-                send_callbacks_to: None,
-            },
-        )
-        .unwrap();
-
-        // Ensure the contract admin can update the callback address
-        let new_callback_address = "new_callback_address".to_string();
-        let msg = ExecuteMsg::UpdateCallbackAddress {
-            callback_address: Some(new_callback_address.clone()),
-        };
-        let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
-
-        assert_eq!(0, res.messages.len());
-
-        let state = state::STATE.load(&deps.storage).unwrap();
-        assert_eq!(
-            state.callback_address,
-            Some(deps.api.addr_validate(&new_callback_address).unwrap())
-        );
-
-        // Ensure a non-admin cannot update the callback address
-        let info = mock_info("non-admin", &[]);
-        let msg = ExecuteMsg::UpdateCallbackAddress {
-            callback_address: Some("new_callback_address".to_string()),
-        };
-
-        let res = execute(deps.as_mut(), env, info, msg);
-        assert_eq!(
-            res.unwrap_err().to_string(),
-            "Caller is not the contract's current owner".to_string()
-        );
-    }
-
-    // In this test, we aim to verify that the semver validation is performed correctly.
-    // And that the contract version in cw2 is updated correctly.
-    #[test]
-    fn test_migrate() {
-        let mut deps = mock_dependencies();
-
-        let info = mock_info("creator", &[]);
-
-        let channel_open_init_options = ChannelOpenInitOptions {
-            connection_id: "connection-0".to_string(),
-            counterparty_connection_id: "connection-1".to_string(),
-            counterparty_port_id: None,
-            tx_encoding: None,
-            channel_ordering: None,
-        };
-
-        // Instantiate the contract
-        let _res = instantiate(
-            deps.as_mut(),
-            mock_env(),
-            info,
-            InstantiateMsg {
-                owner: None,
-                channel_open_init_options,
-                send_callbacks_to: None,
-            },
-        )
-        .unwrap();
-
-        // We need to set the contract version manually to a lower version than the current version
-        cw2::set_contract_version(&mut deps.storage, keys::CONTRACT_NAME, "0.0.1").unwrap();
-
-        // Ensure that the contract version is updated correctly
-        let contract_version = cw2::get_contract_version(&deps.storage).unwrap();
-        assert_eq!(contract_version.contract, keys::CONTRACT_NAME);
-        assert_eq!(contract_version.version, "0.0.1");
-
-        // Perform the migration
-        let _res = migrate(deps.as_mut(), mock_env(), MigrateMsg {}).unwrap();
-
-        let contract_version = cw2::get_contract_version(&deps.storage).unwrap();
-        assert_eq!(contract_version.contract, keys::CONTRACT_NAME);
-        assert_eq!(contract_version.version, keys::CONTRACT_VERSION);
-
-        // Ensure that the contract version cannot be downgraded
-        cw2::set_contract_version(&mut deps.storage, keys::CONTRACT_NAME, "100.0.0").unwrap();
-
-        let res = migrate(deps.as_mut(), mock_env(), MigrateMsg {});
-        assert_eq!(
-            res.unwrap_err().to_string(),
-            format!(
-                "invalid migration version: expected > 100.0.0, got {}",
-                keys::CONTRACT_VERSION
-            )
         );
     }
 }

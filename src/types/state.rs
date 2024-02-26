@@ -1,8 +1,8 @@
 //! This module defines the state storage of the Contract.
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, IbcChannel};
-use cw_storage_plus::Item;
+use cosmwasm_std::{Addr, IbcChannel, Storage};
+use secret_toolkit::storage::Item;
 
 use super::{msg::options::ChannelOpenInitOptions, ContractError};
 
@@ -11,30 +11,46 @@ pub use channel::{State as ChannelState, Status as ChannelStatus};
 #[allow(clippy::module_name_repetitions)]
 pub use contract::State as ContractState;
 
+/// The item used to store the owner of the contract.
+pub const OWNER: Item<Addr> = Item::new(b"owner");
+
 /// The item used to store the state of the IBC application.
-pub const STATE: Item<ContractState> = Item::new("state");
+pub const STATE: Item<ContractState> = Item::new(b"state");
 
 /// The item used to store the state of the IBC application's channel.
-pub const CHANNEL_STATE: Item<ChannelState> = Item::new("ica_channel");
+pub const CHANNEL_STATE: Item<ChannelState> = Item::new(b"ica_channel");
 
 /// The item used to store the channel open init options.
 pub const CHANNEL_OPEN_INIT_OPTIONS: Item<ChannelOpenInitOptions> =
-    Item::new("channel_open_init_options");
+    Item::new(b"channel_open_init_options");
 
 /// The item used to store whether or not channel open init is allowed.
 /// Used to prevent relayers from opening channels. This right is reserved to the contract.
-pub const ALLOW_CHANNEL_OPEN_INIT: Item<bool> = Item::new("allow_channel_open_init");
+pub const ALLOW_CHANNEL_OPEN_INIT: Item<bool> = Item::new(b"allow_channel_open_init");
 
 /// The item used to store whether or not channel close init is allowed.
 /// Used to prevent relayers from closing channels. This right is reserved to the contract.
-pub const ALLOW_CHANNEL_CLOSE_INIT: Item<bool> = Item::new("allow_channel_close_init");
+pub const ALLOW_CHANNEL_CLOSE_INIT: Item<bool> = Item::new(b"allow_channel_close_init");
+
+/// `assert_owner` asserts that the passed address is the owner of the contract.
+///
+/// # Errors
+///
+/// Returns an error if the address is not the owner or if the owner cannot be loaded.
+pub fn assert_owner(storage: &dyn Storage, address: impl Into<String>) -> Result<(), ContractError> {
+    if OWNER.load(storage)? != address.into() {
+        return Err(ContractError::Unauthorized);
+    }
+    Ok(())
+}
 
 mod contract {
     use crate::ibc::types::metadata::TxEncoding;
 
     use cosmwasm_schema::schemars::JsonSchema;
+    use cosmwasm_std::ContractInfo;
 
-    use super::{cw_serde, Addr, ContractError};
+    use super::{cw_serde, ContractError};
 
     /// State is the state of the contract.
     #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -46,17 +62,16 @@ mod contract {
         pub ica_info: Option<IcaInfo>,
         /// The address of the callback contract.
         #[serde(default)]
-        pub callback_address: Option<Addr>,
+        pub callback_contract: Option<ContractInfo>,
     }
 
     impl State {
         /// Creates a new [`State`]
         #[must_use]
-        pub const fn new(callback_address: Option<Addr>) -> Self {
+        pub const fn new(callback_contract: Option<ContractInfo>) -> Self {
             Self {
                 ica_info: None,
-                // We always allow the first `MsgChannelOpenInit` message.
-                callback_address,
+                callback_contract,
             }
         }
 
@@ -194,138 +209,5 @@ mod channel {
                 Self::FlushComplete => "STATE_FLUSHCOMPLETE".to_string(),
             }
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    use cw_ica_controller_v0_1_3::types::state as v0_1_3;
-    use cw_ica_controller_v0_2_0::types::state as v0_2_0;
-    use cw_ica_controller_v0_3_0::types::state as v0_3_0;
-    use cw_ica_controller_v0_4_2 as v0_4_2;
-
-    mod v0_1_2 {
-        use super::*;
-
-        /// This is the contract state at version 0.1.2.
-        #[cw_serde]
-        pub struct ContractState {
-            /// The address of the admin of the IBC application.
-            pub admin: Addr,
-            /// The Interchain Account (ICA) info needed to send packets.
-            /// This is set during the handshake.
-            #[serde(skip_serializing_if = "Option::is_none")]
-            pub ica_info: Option<contract::IcaInfo>,
-        }
-    }
-
-    #[test]
-    fn test_migration_from_v0_1_2_to_v0_1_3() {
-        let mock_state = v0_1_2::ContractState {
-            admin: Addr::unchecked("admin"),
-            ica_info: None,
-        };
-
-        let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
-
-        let deserialized: v0_1_3::ContractState = cosmwasm_std::from_json(serialized).unwrap();
-
-        let exp_state = v0_1_3::ContractState {
-            admin: Addr::unchecked("admin"),
-            ica_info: None,
-            allow_channel_open_init: false,
-        };
-
-        assert_eq!(deserialized, exp_state);
-    }
-
-    #[test]
-    fn test_migration_from_v0_1_3_to_v0_2_0() {
-        let mock_state = v0_1_3::ContractState {
-            admin: Addr::unchecked("admin"),
-            ica_info: None,
-            allow_channel_open_init: false,
-        };
-
-        let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
-
-        let deserialized: v0_2_0::ContractState = cosmwasm_std::from_json(serialized).unwrap();
-
-        let exp_state = v0_2_0::ContractState {
-            admin: Addr::unchecked("admin"),
-            ica_info: None,
-            allow_channel_open_init: false,
-            callback_address: None,
-        };
-
-        assert_eq!(deserialized, exp_state);
-    }
-
-    #[test]
-    fn test_migration_from_v0_2_0_to_v0_3_0() {
-        let mock_state = v0_2_0::ContractState {
-            admin: Addr::unchecked("admin"),
-            ica_info: None,
-            allow_channel_open_init: false,
-            callback_address: Some(Addr::unchecked("callback")),
-        };
-
-        let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
-
-        let deserialized: v0_3_0::ContractState = cosmwasm_std::from_json(serialized).unwrap();
-
-        let exp_state = v0_3_0::ContractState {
-            ica_info: None,
-            allow_channel_open_init: false,
-            callback_address: Some(Addr::unchecked("callback")),
-        };
-
-        assert_eq!(deserialized, exp_state);
-    }
-
-    #[test]
-    fn test_migration_from_v0_4_2_to_v0_5_0() {
-        // Test channel open init options
-        let mock_options = v0_4_2::types::msg::options::ChannelOpenInitOptions {
-            connection_id: "connection-mock".to_string(),
-            counterparty_connection_id: "counterparty-connection-mock".to_string(),
-            counterparty_port_id: Some("counterparty-port-mock".to_string()),
-            tx_encoding: Some(v0_4_2::ibc::types::metadata::TxEncoding::Protobuf),
-        };
-
-        let serialized = cosmwasm_std::to_json_binary(&mock_options).unwrap();
-
-        let deserialized: crate::types::msg::options::ChannelOpenInitOptions =
-            cosmwasm_std::from_json(serialized).unwrap();
-
-        let exp_options = crate::types::msg::options::ChannelOpenInitOptions {
-            connection_id: "connection-mock".to_string(),
-            counterparty_connection_id: "counterparty-connection-mock".to_string(),
-            counterparty_port_id: Some("counterparty-port-mock".to_string()),
-            tx_encoding: Some(crate::ibc::types::metadata::TxEncoding::Protobuf),
-            channel_ordering: None,
-        };
-
-        assert_eq!(deserialized, exp_options);
-
-        // Test contract state
-        let mock_state = v0_4_2::types::state::ContractState {
-            ica_info: None,
-            allow_channel_open_init: false,
-            callback_address: Some(Addr::unchecked("callback")),
-        };
-
-        let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
-
-        let deserialized: ContractState = cosmwasm_std::from_json(serialized).unwrap();
-
-        let exp_state = ContractState {
-            ica_info: None,
-            callback_address: Some(Addr::unchecked("callback")),
-        };
-
-        assert_eq!(deserialized, exp_state);
     }
 }

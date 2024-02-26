@@ -28,9 +28,6 @@ pub enum ContractError {
     #[error("semver parse error: {0}")]
     SemverError(#[from] semver::Error),
 
-    #[error("{0}")]
-    OwnershipError(#[from] cw_ownable::OwnershipError),
-
     #[error("this contract must have an owner")]
     OwnershipCannotBeRenounced,
 
