@@ -34,10 +34,10 @@ export = []
 staking = ["cosmwasm-std/staking"]
 
 [package.metadata.scripts]
-optimize = """docker run --rm -v "$(pwd)":/code \
+optimize = """docker run -it --rm -v "$(pwd)":/contract \
   --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \
   --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/optimizer:0.15.0
+  enigmampc/secret-contract-optimizer:latest
 """
 
 [dependencies]
