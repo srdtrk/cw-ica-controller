@@ -310,7 +310,11 @@ This is useful if the user wants to change the ordering of the channel.
 
 ## Demo
 
-This project was used in the Injective Illuminate hackathon winner project [Tokenized Interchain Accounts](https://dorahacks.io/buidl/8513) where each NFT controls an interchain account. The following is a demo of the project:
+This project was used in the Injective Illuminate hackathon and XION ABSTRACTATHON winner projects [Tokenized Interchain Accounts](https://dorahacks.io/buidl/8513), [Nomos Abstraction on Xion](https://dorahacks.io/buidl/10234)
+
+Injective Illuminate hackathon - 
+
+where each NFT controls an interchain account. The following is a demo of the project:
 
 <div align="center">
   <a href="https://www.loom.com/share/4e85206379354f5182d21d8e384aba74">
@@ -320,6 +324,20 @@ This project was used in the Injective Illuminate hackathon winner project [Toke
     <img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/4e85206379354f5182d21d8e384aba74-1703150524626-with-play.gif">
   </a>
 </div>
+
+XION ABSTRACTATHON - 
+
+Buying and selling and NFT from Xion on Injective using Nomos SDK and ICA controller
+
+<div align="center">
+    <a href="https://www.loom.com/share/21e10037d3e84abeb4f17ef6e3cceac3">
+      <p>Creating Vaults and Buying/Selling NFTs on Injective - Watch Video</p>
+    </a>
+    <a href="https://www.loom.com/share/21e10037d3e84abeb4f17ef6e3cceac3">
+      <img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/21e10037d3e84abeb4f17ef6e3cceac3-with-play.gif">
+    </a>
+  </div>
+
 
 ## Testing
 
