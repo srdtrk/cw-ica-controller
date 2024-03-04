@@ -22,14 +22,18 @@ This contract now supports both `proto3json` and protobuf encoding/decoding for 
   - [Table of Contents](#table-of-contents)
   - [Usage](#usage)
     - [Create an interchain account](#create-an-interchain-account)
-      - [Using `InstantiateMsg` and/or `ExecuteMsg::CreateChannel`](#using-instantiatemsg-andor-executemsgcreatechannel)
-      - [Using the Relayer](#using-the-relayer)
+      - [Using `InstantiateMsg`](#using-instantiatemsg)
+      - [Using `ExecuteMsg::CreateChannel`](#using-executemsgcreatechannel)
     - [Execute an interchain account transaction](#execute-an-interchain-account-transaction)
       - [`SendCosmosMsgs` (recommended)](#sendcosmosmsgs-recommended)
       - [`SendCustomIcaMessages`](#sendcustomicamessages)
     - [Execute a callback](#execute-a-callback)
     - [Channel Closing and Reopening](#channel-closing-and-reopening)
+      - [Channel Closing](#channel-closing)
+      - [Channel Reopening](#channel-reopening)
   - [Demo](#demo)
+    - [Injective Illuminate Hackathon](#injective-illuminate-hackathon)
+    - [XION ABSTRACTATHON](#xion-abstractathon)
   - [Testing](#testing)
     - [Unit tests](#unit-tests)
     - [End to end tests](#end-to-end-tests)
@@ -133,7 +137,6 @@ pub enum ExecuteMsg {
 Note that `SendCosmosMsgs` only supports `Stargate` and `Wasm` messages if the channel is using the protobuf encoding. This is because the `Stargate` and `Wasm` messages are converted to protobuf messages before being sent to the host chain. If the channel is using `proto3json` encoding, then the `Stargate` and `Wasm` messages are not supported.
 
 (`Stargate` allows the user to submit any protobuf message to the host chain.)
-
 
 Here is an example execute message that delegates tokens to a validator on the host chain and then votes on a proposal (atomically).
 
@@ -310,7 +313,11 @@ This is useful if the user wants to change the ordering of the channel.
 
 ## Demo
 
-This project was used in the Injective Illuminate hackathon winner project [Tokenized Interchain Accounts](https://dorahacks.io/buidl/8513) where each NFT controls an interchain account. The following is a demo of the project:
+This project was used in the Injective Illuminate Hackathon and XION ABSTRACTATHON winner projects [Tokenized Interchain Accounts](https://dorahacks.io/buidl/8513), [Nomos Abstraction on Xion](https://dorahacks.io/buidl/10234)
+
+### Injective Illuminate Hackathon
+
+Each NFT controls an interchain account. The following is a demo of the project:
 
 <div align="center">
   <a href="https://www.loom.com/share/4e85206379354f5182d21d8e384aba74">
@@ -320,6 +327,20 @@ This project was used in the Injective Illuminate hackathon winner project [Toke
     <img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/4e85206379354f5182d21d8e384aba74-1703150524626-with-play.gif">
   </a>
 </div>
+
+### XION ABSTRACTATHON
+
+Buying and selling and NFT from Xion on Injective using Nomos SDK and ICA controller
+
+<div align="center">
+    <a href="https://www.loom.com/share/21e10037d3e84abeb4f17ef6e3cceac3">
+      <p>Creating Vaults and Buying/Selling NFTs on Injective - Watch Video</p>
+    </a>
+    <a href="https://www.loom.com/share/21e10037d3e84abeb4f17ef6e3cceac3">
+      <img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/21e10037d3e84abeb4f17ef6e3cceac3-with-play.gif">
+    </a>
+  </div>
+
 
 ## Testing
 
