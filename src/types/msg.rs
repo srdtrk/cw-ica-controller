@@ -3,7 +3,7 @@
 //! This module defines the messages that this contract receives.
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Binary, CosmosMsg};
+use cosmwasm_std::{Binary, CosmosMsg, Empty, QueryRequest};
 
 /// The message to instantiate the ICA controller contract.
 #[cw_serde]
@@ -44,6 +44,19 @@ pub enum ExecuteMsg {
     SendCosmosMsgs {
         /// The stargate messages to convert and send to the ICA host.
         messages: Vec<CosmosMsg>,
+        /// Optional memo to include in the ibc packet.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        packet_memo: Option<String>,
+        /// Optional timeout in seconds to include with the ibc packet.
+        /// If not specified, the [default timeout](crate::ibc::types::packet::DEFAULT_TIMEOUT_SECONDS) is used.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        timeout_seconds: Option<u64>,
+    },
+    /// `SendQueryMsgs` converts the provided array of [`QueryMsgs`] to an ICA tx and sends them to the ICA host.
+    /// Only supported if the [`TxEncoding`](crate::ibc::types::metadata::TxEncoding) is [`TxEncoding::Protobuf`](crate::ibc::types::metadata::TxEncoding).
+    SendQueryMsgs {
+        /// The stargate messages to convert and send to the ICA host.
+        queries: Vec<QueryRequest<Empty>>,
         /// Optional memo to include in the ibc packet.
         #[serde(skip_serializing_if = "Option::is_none")]
         packet_memo: Option<String>,

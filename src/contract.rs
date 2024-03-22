@@ -81,6 +81,7 @@ pub fn execute(
             packet_memo,
             timeout_seconds,
         } => execute::send_cosmos_msgs(deps, env, info, messages, packet_memo, timeout_seconds),
+        ExecuteMsg::SendQueryMsgs { .. } => todo!(),
         ExecuteMsg::UpdateOwnership(action) => execute::update_ownership(deps, env, info, action),
     }
 }
