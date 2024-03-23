@@ -186,24 +186,22 @@ mod convert_to_any {
                 msg,
                 funds,
                 salt,
-            } => {
-                Any::from_msg(&MsgInstantiateContract2 {
-                    sender,
-                    admin: admin.unwrap_or_default(),
-                    code_id,
-                    label,
-                    msg: msg.to_vec(),
-                    funds: funds
-                        .into_iter()
-                        .map(|coin| ProtoCoin {
-                            denom: coin.denom,
-                            amount: coin.amount.to_string(),
-                        })
-                        .collect(),
-                    salt: salt.to_vec(),
-                    fix_msg: false,
-                })
-            }
+            } => Any::from_msg(&MsgInstantiateContract2 {
+                sender,
+                admin: admin.unwrap_or_default(),
+                code_id,
+                label,
+                msg: msg.to_vec(),
+                funds: funds
+                    .into_iter()
+                    .map(|coin| ProtoCoin {
+                        denom: coin.denom,
+                        amount: coin.amount.to_string(),
+                    })
+                    .collect(),
+                salt: salt.to_vec(),
+                fix_msg: false,
+            }),
             _ => panic!("Unsupported WasmMsg"),
         }
     }
@@ -219,13 +217,11 @@ mod convert_to_any {
         }
 
         match msg {
-            GovMsg::Vote { proposal_id, vote } => {
-                Any::from_msg(&MsgVote {
-                    voter,
-                    proposal_id,
-                    option: convert_to_proto_vote_option(&vote) as i32,
-                })
-            }
+            GovMsg::Vote { proposal_id, vote } => Any::from_msg(&MsgVote {
+                voter,
+                proposal_id,
+                option: convert_to_proto_vote_option(&vote) as i32,
+            }),
             GovMsg::VoteWeighted {
                 proposal_id,
                 options,

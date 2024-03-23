@@ -1,6 +1,6 @@
 //! This module contains the helpers to convert [`QueryRequest`] to protobuf bytes and vice versa.
 
-use cosmwasm_std::{QueryRequest, Empty};
+use cosmwasm_std::{Empty, QueryRequest};
 
 /// `MsgModuleQuerySafe` defines the query request tx added in ibc-go v8.2
 #[derive(::prost::Message)]
@@ -58,9 +58,12 @@ pub fn query_to_protobuf(query: QueryRequest<Empty>) -> (String, Vec<u8>) {
 
 mod convert_to_protobuf {
     use cosmos_sdk_proto::{
-        prost::Message,
-        cosmos::bank::v1beta1::{QueryAllBalancesRequest, QueryBalanceRequest, QueryDenomMetadataRequest, QueryDenomsMetadataRequest},
+        cosmos::bank::v1beta1::{
+            QueryAllBalancesRequest, QueryBalanceRequest, QueryDenomMetadataRequest,
+            QueryDenomsMetadataRequest,
+        },
         cosmos::{bank::v1beta1::QuerySupplyOfRequest, base::query::v1beta1::PageRequest},
+        prost::Message,
     };
     use cosmwasm_std::{BankQuery, StakingQuery};
 
@@ -68,23 +71,19 @@ mod convert_to_protobuf {
         match bank_query {
             BankQuery::Balance { address, denom } => (
                 "/cosmos.bank.v1beta1.Query/Balance".to_string(),
-                QueryBalanceRequest {
-                    address,
-                    denom,
-                }.encode_to_vec()
+                QueryBalanceRequest { address, denom }.encode_to_vec(),
             ),
             BankQuery::AllBalances { address } => (
                 "/cosmos.bank.v1beta1.Query/AllBalances".to_string(),
                 QueryAllBalancesRequest {
                     address,
                     pagination: None,
-                }.encode_to_vec()
+                }
+                .encode_to_vec(),
             ),
             BankQuery::DenomMetadata { denom } => (
                 "/cosmos.bank.v1beta1.Query/DenomMetadata".to_string(),
-                QueryDenomMetadataRequest {
-                    denom,
-                }.encode_to_vec()
+                QueryDenomMetadataRequest { denom }.encode_to_vec(),
             ),
             BankQuery::AllDenomMetadata { pagination } => {
                 let pagination = pagination.map(|pagination| PageRequest {
@@ -97,16 +96,12 @@ mod convert_to_protobuf {
 
                 (
                     "/cosmos.bank.v1beta1.Query/AllDenomMetadata".to_string(),
-                    QueryDenomsMetadataRequest {
-                        pagination,
-                    }.encode_to_vec(),
+                    QueryDenomsMetadataRequest { pagination }.encode_to_vec(),
                 )
-            },
+            }
             BankQuery::Supply { denom } => (
                 "/cosmos.bank.v1beta1.Query/Supply".to_string(),
-                QuerySupplyOfRequest {
-                    denom,
-                }.encode_to_vec()
+                QuerySupplyOfRequest { denom }.encode_to_vec(),
             ),
             _ => panic!("Unsupported BankQuery"),
         }
@@ -114,39 +109,49 @@ mod convert_to_protobuf {
 
     #[cfg(feature = "staking")]
     pub fn staking(staking_query: StakingQuery) -> (String, Vec<u8>) {
-        use cosmos_sdk_proto::cosmos::staking::v1beta1::{QueryDelegationRequest, QueryDelegatorDelegationsRequest, QueryParamsRequest, QueryValidatorRequest, QueryValidatorsRequest};
+        use cosmos_sdk_proto::cosmos::staking::v1beta1::{
+            QueryDelegationRequest, QueryDelegatorDelegationsRequest, QueryParamsRequest,
+            QueryValidatorRequest, QueryValidatorsRequest,
+        };
 
         match staking_query {
             StakingQuery::Validator { address } => (
                 "/cosmos.staking.v1beta1.Query/Validator".to_string(),
                 QueryValidatorRequest {
                     validator_addr: address,
-                }.encode_to_vec()
+                }
+                .encode_to_vec(),
             ),
             StakingQuery::AllValidators {} => (
                 "/cosmos.staking.v1beta1.Query/Validators".to_string(),
                 QueryValidatorsRequest {
                     status: String::default(),
                     pagination: None,
-                }.encode_to_vec()
+                }
+                .encode_to_vec(),
             ),
-            StakingQuery::Delegation { delegator, validator } => (
+            StakingQuery::Delegation {
+                delegator,
+                validator,
+            } => (
                 "/cosmos.staking.v1beta1.Query/Delegation".to_string(),
                 QueryDelegationRequest {
                     delegator_addr: delegator,
                     validator_addr: validator,
-                }.encode_to_vec()
+                }
+                .encode_to_vec(),
             ),
             StakingQuery::AllDelegations { delegator } => (
                 "/cosmos.staking.v1beta1.Query/DelegatorDelegations".to_string(),
                 QueryDelegatorDelegationsRequest {
                     delegator_addr: delegator,
                     pagination: None,
-                }.encode_to_vec()
+                }
+                .encode_to_vec(),
             ),
             StakingQuery::BondedDenom {} => (
                 "/cosmos.staking.v1beta1.Query/Params".to_string(),
-                QueryParamsRequest::default().encode_to_vec()
+                QueryParamsRequest::default().encode_to_vec(),
             ),
             _ => panic!("Unsupported StakingQuery"),
         }
