@@ -6,6 +6,8 @@ on:
     paths:
       - '**.rs'
       - '**.go'
+      - '**.toml'
+      - '**.lock'
       - '.github/workflows/e2e.yml'
 permissions:
   contents: read

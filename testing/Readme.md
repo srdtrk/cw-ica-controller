@@ -23,7 +23,7 @@ The contracts are built automatically in the github CI. To build the contracts m
 docker run --rm -v "$(pwd)":/code \
   --mount type=volume,source="devcontract_cache_burner",target=/code/contracts/burner/target \
   --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/optimizer:0.15.0 ./testing/contracts/callback-counter
+  cosmwasm/optimizer:0.15.1 ./testing/contracts/callback-counter
 ```
 
 ### `cw-ica-owner`
@@ -32,5 +32,5 @@ docker run --rm -v "$(pwd)":/code \
 docker run --rm -v "$(pwd)":/code \
   --mount type=volume,source="devcontract_cache_burner",target=/code/contracts/burner/target \
   --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/optimizer:0.15.0 ./testing/contracts/cw-ica-owner
+  cosmwasm/optimizer:0.15.1 ./testing/contracts/cw-ica-owner
 ```
