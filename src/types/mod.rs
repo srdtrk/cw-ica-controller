@@ -2,6 +2,7 @@
 
 pub mod callbacks;
 pub mod cosmos_msg;
+pub mod query_msg;
 mod error;
 pub mod keys;
 #[allow(clippy::module_name_repetitions)]
