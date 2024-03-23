@@ -3,7 +3,7 @@
 //! This module defines the messages that this contract receives.
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Binary, CosmosMsg, Empty, QueryRequest};
+use cosmwasm_std::{Binary, CosmosMsg};
 
 /// The message to instantiate the ICA controller contract.
 #[cw_serde]
@@ -54,9 +54,10 @@ pub enum ExecuteMsg {
     },
     /// `SendQueryMsgs` converts the provided array of [`QueryMsgs`] to an ICA tx and sends them to the ICA host.
     /// Only supported if the [`TxEncoding`](crate::ibc::types::metadata::TxEncoding) is [`TxEncoding::Protobuf`](crate::ibc::types::metadata::TxEncoding).
+    #[cfg(feature = "query")]
     SendQueryMsgs {
         /// The stargate messages to convert and send to the ICA host.
-        queries: Vec<QueryRequest<Empty>>,
+        queries: Vec<cosmwasm_std::QueryRequest<cosmwasm_std::Empty>>,
         /// Optional memo to include in the ibc packet.
         #[serde(skip_serializing_if = "Option::is_none")]
         packet_memo: Option<String>,

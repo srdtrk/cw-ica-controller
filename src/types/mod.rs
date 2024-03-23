@@ -2,6 +2,7 @@
 
 pub mod callbacks;
 pub mod cosmos_msg;
+#[cfg(feature = "query")]
 pub mod query_msg;
 mod error;
 pub mod keys;
