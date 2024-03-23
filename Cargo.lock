@@ -341,6 +341,7 @@ dependencies = [
  "cw-ownable",
  "cw-storage-plus",
  "cw2",
+ "prost",
  "schemars",
  "semver",
  "serde",
