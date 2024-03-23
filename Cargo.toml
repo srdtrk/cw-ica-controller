@@ -55,7 +55,7 @@ schemars = "0.8.10"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde-json-wasm = "1.0.0"
 thiserror = "1.0.50"
-cosmos-sdk-proto = { version = "0.20.0", default-features = false, features = ["cosmwasm"] }
+cosmos-sdk-proto = { version = "0.21.1", default-features = false, features = ["cosmwasm"] }
 semver = "1.0"
 cw-ownable = "0.5.1"
 cw-ica-controller-derive = "0.4.2"
