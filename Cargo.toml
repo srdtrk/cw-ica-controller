@@ -1,6 +1,6 @@
 [package]
 name = "cw-ica-controller"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["srdtrk <srdtrk@hotmail.com>"]
 edition = "2021"
 description = "This is a CosmWasm implementation of an ICS-27 interchain accounts controller."
