@@ -44,7 +44,7 @@ pub fn convert_to_proto_any(msg: CosmosMsg, from_address: String) -> Result<Any,
         CosmosMsg::Bank(bank_msg) => convert_to_any::bank(bank_msg, from_address),
         CosmosMsg::Ibc(ibc_msg) => convert_to_any::ibc(ibc_msg, from_address),
         CosmosMsg::Wasm(wasm_msg) => convert_to_any::wasm(wasm_msg, from_address),
-        CosmosMsg::Gov(gov_msg) => Ok(convert_to_any::gov(gov_msg, from_address)),
+        CosmosMsg::Gov(gov_msg) => convert_to_any::gov(gov_msg, from_address),
         #[cfg(feature = "staking")]
         CosmosMsg::Staking(staking_msg) => convert_to_any::staking(staking_msg, from_address),
         #[cfg(feature = "staking")]
@@ -69,7 +69,6 @@ mod convert_to_any {
         },
         ibc::{applications::transfer::v1::MsgTransfer, core::client::v1::Height},
         prost::EncodeError,
-        traits::Message,
         Any,
     };
 
@@ -188,7 +187,7 @@ mod convert_to_any {
                 funds,
                 salt,
             } => {
-                let proto_msg = MsgInstantiateContract2 {
+                Any::from_msg(&MsgInstantiateContract2 {
                     sender,
                     admin: admin.unwrap_or_default(),
                     code_id,
@@ -203,19 +202,13 @@ mod convert_to_any {
                         .collect(),
                     salt: salt.to_vec(),
                     fix_msg: false,
-                };
-
-                // TODO: use Any::from_msg after cosmos-sdk-proto > 0.20.0
-                Ok(Any {
-                    type_url: "/cosmwasm.wasm.v1.MsgInstantiateContract2".to_string(),
-                    value: proto_msg.encode_to_vec(),
                 })
             }
             _ => panic!("Unsupported WasmMsg"),
         }
     }
 
-    pub fn gov(msg: GovMsg, voter: String) -> Any {
+    pub fn gov(msg: GovMsg, voter: String) -> Result<Any, EncodeError> {
         const fn convert_to_proto_vote_option(option: &VoteOption) -> ProtoVoteOption {
             match option {
                 VoteOption::Yes => ProtoVoteOption::Yes,
@@ -227,17 +220,11 @@ mod convert_to_any {
 
         match msg {
             GovMsg::Vote { proposal_id, vote } => {
-                let value = MsgVote {
+                Any::from_msg(&MsgVote {
                     voter,
                     proposal_id,
                     option: convert_to_proto_vote_option(&vote) as i32,
-                };
-
-                // TODO: use Any::from_msg when cosmos-sdk-proto is > 0.20.0
-                Any {
-                    type_url: "/cosmos.gov.v1beta1.MsgVote".to_string(),
-                    value: value.encode_to_vec(),
-                }
+                })
             }
             GovMsg::VoteWeighted {
                 proposal_id,
@@ -253,17 +240,12 @@ mod convert_to_any {
                     })
                     .collect();
 
-                let value = MsgVoteWeighted {
+                Any::from_msg(&MsgVoteWeighted {
                     proposal_id,
                     voter,
                     options,
                     metadata: String::new(),
-                };
-
-                Any {
-                    type_url: "/cosmos.gov.v1.MsgVoteWeighted".to_string(),
-                    value: value.encode_to_vec(),
-                }
+                })
             }
         }
     }
