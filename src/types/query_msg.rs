@@ -159,15 +159,34 @@ mod convert_to_protobuf {
 
     #[cfg(feature = "staking")]
     pub fn distribution(dist_query: DistributionQuery) -> (String, Vec<u8>) {
-        use cosmos_sdk_proto::cosmos::distribution::v1beta1::QueryDelegatorWithdrawAddressRequest;
+        use cosmos_sdk_proto::cosmos::distribution::v1beta1::{
+            QueryDelegationRewardsRequest, QueryDelegationTotalRewardsRequest,
+            QueryDelegatorValidatorsRequest, QueryDelegatorWithdrawAddressRequest,
+        };
 
         match dist_query {
             DistributionQuery::DelegatorWithdrawAddress { delegator_address } => (
                 "/cosmos.distribution.v1beta1.Query/DelegatorWithdrawAddress".to_string(),
-                QueryDelegatorWithdrawAddressRequest {
+                QueryDelegatorWithdrawAddressRequest { delegator_address }.encode_to_vec(),
+            ),
+            DistributionQuery::DelegationRewards {
+                delegator_address,
+                validator_address,
+            } => (
+                "/cosmos.distribution.v1beta1.Query/DelegationRewards".to_string(),
+                QueryDelegationRewardsRequest {
                     delegator_address,
+                    validator_address,
                 }
                 .encode_to_vec(),
+            ),
+            DistributionQuery::DelegationTotalRewards { delegator_address } => (
+                "/cosmos.distribution.v1beta1.Query/DelegationTotalRewards".to_string(),
+                QueryDelegationTotalRewardsRequest { delegator_address }.encode_to_vec(),
+            ),
+            DistributionQuery::DelegatorValidators { delegator_address } => (
+                "/cosmos.distribution.v1beta1.Query/DelegatorValidators".to_string(),
+                QueryDelegatorValidatorsRequest { delegator_address }.encode_to_vec(),
             ),
             _ => panic!("Unsupported DistributionQuery"),
         }
