@@ -32,7 +32,7 @@ pub struct MsgModuleQuerySafeResponse {
     /// responses is the list of query responses as bytes
     /// The responses are in the same order as the requests
     #[prost(bytes = "vec", repeated, tag = "1")]
-    pub responses: ::prost::alloc::vec::Vec<Vec<u8>>,
+    pub responses: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
 }
 
 /// Converts a [`QueryRequest`] to a gRPC method path and protobuf bytes.
@@ -51,7 +51,7 @@ pub fn query_to_protobuf(query: QueryRequest<Empty>) -> (String, Vec<u8>) {
         #[cfg(feature = "staking")]
         QueryRequest::Staking(staking_query) => convert_to_protobuf::staking(staking_query),
         #[cfg(feature = "staking")]
-        QueryRequest::Distribution(_) => todo!(),
+        QueryRequest::Distribution(dist_query) => convert_to_protobuf::distribution(dist_query),
         _ => panic!("Unsupported QueryRequest"),
     }
 }
@@ -65,7 +65,7 @@ mod convert_to_protobuf {
         cosmos::{bank::v1beta1::QuerySupplyOfRequest, base::query::v1beta1::PageRequest},
         prost::Message,
     };
-    use cosmwasm_std::{BankQuery, StakingQuery};
+    use cosmwasm_std::{BankQuery, DistributionQuery, StakingQuery};
 
     pub fn bank(bank_query: BankQuery) -> (String, Vec<u8>) {
         match bank_query {
@@ -154,6 +154,22 @@ mod convert_to_protobuf {
                 QueryParamsRequest::default().encode_to_vec(),
             ),
             _ => panic!("Unsupported StakingQuery"),
+        }
+    }
+
+    #[cfg(feature = "staking")]
+    pub fn distribution(dist_query: DistributionQuery) -> (String, Vec<u8>) {
+        use cosmos_sdk_proto::cosmos::distribution::v1beta1::QueryDelegatorWithdrawAddressRequest;
+
+        match dist_query {
+            DistributionQuery::DelegatorWithdrawAddress { delegator_address } => (
+                "/cosmos.distribution.v1beta1.Query/DelegatorWithdrawAddress".to_string(),
+                QueryDelegatorWithdrawAddressRequest {
+                    delegator_address,
+                }
+                .encode_to_vec(),
+            ),
+            _ => panic!("Unsupported DistributionQuery"),
         }
     }
 }
