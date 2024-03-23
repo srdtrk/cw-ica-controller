@@ -49,7 +49,7 @@ pub fn query_to_protobuf(query: QueryRequest<Empty>) -> (String, Vec<u8>) {
         QueryRequest::Ibc(_) => panic!("ibc-go queries are not marked module safe (yet)"),
         QueryRequest::Custom(_) => panic!("custom queries are not supported"),
         #[cfg(feature = "staking")]
-        QueryRequest::Staking(_) => todo!(),
+        QueryRequest::Staking(staking_query) => convert_to_protobuf::staking(staking_query),
         #[cfg(feature = "staking")]
         QueryRequest::Distribution(_) => todo!(),
         _ => panic!("Unsupported QueryRequest"),
@@ -62,7 +62,7 @@ mod convert_to_protobuf {
         cosmos::bank::v1beta1::{QueryAllBalancesRequest, QueryBalanceRequest, QueryDenomMetadataRequest, QueryDenomsMetadataRequest},
         cosmos::{bank::v1beta1::QuerySupplyOfRequest, base::query::v1beta1::PageRequest},
     };
-    use cosmwasm_std::BankQuery;
+    use cosmwasm_std::{BankQuery, StakingQuery};
 
     pub fn bank(bank_query: BankQuery) -> (String, Vec<u8>) {
         match bank_query {
@@ -109,6 +109,46 @@ mod convert_to_protobuf {
                 }.encode_to_vec()
             ),
             _ => panic!("Unsupported BankQuery"),
+        }
+    }
+
+    #[cfg(feature = "staking")]
+    pub fn staking(staking_query: StakingQuery) -> (String, Vec<u8>) {
+        use cosmos_sdk_proto::cosmos::staking::v1beta1::{QueryDelegationRequest, QueryDelegatorDelegationsRequest, QueryParamsRequest, QueryValidatorRequest, QueryValidatorsRequest};
+
+        match staking_query {
+            StakingQuery::Validator { address } => (
+                "/cosmos.staking.v1beta1.Query/Validator".to_string(),
+                QueryValidatorRequest {
+                    validator_addr: address,
+                }.encode_to_vec()
+            ),
+            StakingQuery::AllValidators {} => (
+                "/cosmos.staking.v1beta1.Query/Validators".to_string(),
+                QueryValidatorsRequest {
+                    status: String::default(),
+                    pagination: None,
+                }.encode_to_vec()
+            ),
+            StakingQuery::Delegation { delegator, validator } => (
+                "/cosmos.staking.v1beta1.Query/Delegation".to_string(),
+                QueryDelegationRequest {
+                    delegator_addr: delegator,
+                    validator_addr: validator,
+                }.encode_to_vec()
+            ),
+            StakingQuery::AllDelegations { delegator } => (
+                "/cosmos.staking.v1beta1.Query/DelegatorDelegations".to_string(),
+                QueryDelegatorDelegationsRequest {
+                    delegator_addr: delegator,
+                    pagination: None,
+                }.encode_to_vec()
+            ),
+            StakingQuery::BondedDenom {} => (
+                "/cosmos.staking.v1beta1.Query/Params".to_string(),
+                QueryParamsRequest::default().encode_to_vec()
+            ),
+            _ => panic!("Unsupported StakingQuery"),
         }
     }
 }
