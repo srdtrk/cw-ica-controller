@@ -1,6 +1,6 @@
 [package]
 name = "cw-ica-controller"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["srdtrk <srdtrk@hotmail.com>"]
 edition = "2021"
 description = "This is a CosmWasm implementation of an ICS-27 interchain accounts controller."
@@ -37,15 +37,13 @@ staking = ["cosmwasm-std/staking"]
 optimize = """docker run --rm -v "$(pwd)":/code \
   --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \
   --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/optimizer:0.15.0
+  cosmwasm/optimizer:0.15.1
 """
 
 [dependencies]
 cosmwasm-schema = "1.5.0"
 cosmwasm-std = { version = "1.5.0", features = [
-    "cosmwasm_1_3",
-    # Enable this if you only deploy to chains that have CosmWasm 1.4 or higher
-    # "cosmwasm_1_4",
+    "cosmwasm_1_4",
     "stargate",
     "ibc3",
 ] }
