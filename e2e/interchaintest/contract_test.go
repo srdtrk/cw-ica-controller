@@ -106,14 +106,14 @@ func TestWithContractTestSuite(t *testing.T) {
 }
 
 func (s *ContractTestSuite) TestIcaContractChannelHandshake_Ordered_Protobuf() {
-	s.IcaContractChannelHandshakeTest_WithEncodingAndOrdering(icacontroller.IbcOrder_OrderOrdered)
+	s.IcaContractChannelHandshakeTest_WithOrdering(icacontroller.IbcOrder_OrderOrdered)
 }
 
 func (s *ContractTestSuite) TestIcaContractChannelHandshake_Unordered_Protobuf() {
-	s.IcaContractChannelHandshakeTest_WithEncodingAndOrdering(icacontroller.IbcOrder_OrderUnordered)
+	s.IcaContractChannelHandshakeTest_WithOrdering(icacontroller.IbcOrder_OrderUnordered)
 }
 
-func (s *ContractTestSuite) IcaContractChannelHandshakeTest_WithEncodingAndOrdering(ordering icacontroller.IbcOrder) {
+func (s *ContractTestSuite) IcaContractChannelHandshakeTest_WithOrdering(ordering icacontroller.IbcOrder) {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
@@ -329,14 +329,14 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 }
 
 func (s *ContractTestSuite) TestIcaContractExecution_Ordered_Protobuf() {
-	s.IcaContractExecutionTestWithEncoding(icacontroller.IbcOrder_OrderOrdered)
+	s.IcaContractExecutionTestWithOrdering(icacontroller.IbcOrder_OrderOrdered)
 }
 
 func (s *ContractTestSuite) TestIcaContractExecution_Unordered_Protobuf() {
-	s.IcaContractExecutionTestWithEncoding(icacontroller.IbcOrder_OrderUnordered)
+	s.IcaContractExecutionTestWithOrdering(icacontroller.IbcOrder_OrderUnordered)
 }
 
-func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(ordering icacontroller.IbcOrder) {
+func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering icacontroller.IbcOrder) {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
@@ -494,14 +494,14 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(ordering icacon
 }
 
 func (s *ContractTestSuite) TestSendCosmosMsgs_Ordered_Protobuf() {
-	s.SendCosmosMsgsTestWithEncoding(icacontroller.IbcOrder_OrderOrdered)
+	s.SendCosmosMsgsTestWithOrdering(icacontroller.IbcOrder_OrderOrdered)
 }
 
 func (s *ContractTestSuite) TestSendCosmosMsgs_Unordered_Protobuf() {
-	s.SendCosmosMsgsTestWithEncoding(icacontroller.IbcOrder_OrderUnordered)
+	s.SendCosmosMsgsTestWithOrdering(icacontroller.IbcOrder_OrderUnordered)
 }
 
-// SendCosmosMsgsTestWithEncoding tests some more CosmosMsgs that are not covered by the IcaContractExecutionTestWithEncoding.
+// SendCosmosMsgsTestWithOrdering tests some more CosmosMsgs that are not covered by the IcaContractExecutionTestWithOrdering.
 // The following CosmosMsgs are tested here:
 //
 // - Bank::Send
@@ -509,7 +509,7 @@ func (s *ContractTestSuite) TestSendCosmosMsgs_Unordered_Protobuf() {
 // - VoteWeighted
 // - FundCommunityPool
 // - SetWithdrawAddress
-func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(ordering icacontroller.IbcOrder) {
+func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering icacontroller.IbcOrder) {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,

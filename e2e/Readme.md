@@ -15,16 +15,14 @@ These tests are designed to test the ICA contract itself and its interaction wit
 All contract tests are located in `interchaintest/contract_test.go` file. Currently, there are four tests in this file:
 
 - `TestIcaContractChannelHandshake_Ordered_Protobuf`
-- `TestIcaContractChannelHandshake_Ordered_Proto3Json`
 - `TestIcaContractChannelHandshake_Unordered_Protobuf`
-- `TestIcaContractChannelHandshake_Unordered_Proto3Json`
 - `TestIcaRelayerInstantiatedChannelHandshake`
 - `TestRecoveredIcaContractInstantiatedChannelHandshake`
-- `TestIcaContractExecution_Ordered_Proto3Json`
+- `TestIcaContractExecution_Ordered_Protobuf`
 - `TestIcaContractExecution_Unordered_Protobuf`
-- `TestIcaContractTimeoutPacket_Ordered_Proto3Json`
+- `TestIcaContractTimeoutPacket_Ordered_Protobuf`
 - `TestIcaContractTimeoutPacket_Unordered_Protobuf`
-- `TestSendCosmosMsgs_Ordered_Proto3Json`
+- `TestSendCosmosMsgs_Ordered_Protobuf`
 - `TestSendCosmosMsgs_Unordered_Protobuf`
 - `TestSendWasmMsgsProtobufEncoding`
 - `TestMigrateOrderedToUnordered`
