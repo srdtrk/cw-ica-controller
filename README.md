@@ -10,11 +10,9 @@
 
 ![cw-ica-controller](./docs/static/img/cw-ica-controller.svg)
 
-This is a CosmWasm smart contract that communicates with the golang `ica/host` module on the counterparty chain to create and manage **one** interchain account. This contract can also execute callbacks based on the result of the interchain account transaction. Because this is a CosmWasm implementation of the entire ICA controller, the chain that this contract is deployed on need **not** have the ICA module enabled. Moreover, the counterparty chain need not have CosmWasm support. This contract can be deployed on chains that support CosmWasm `v1.3+`.
+This is a CosmWasm smart contract that communicates with the golang `ica/host` module on the counterparty chain to create and manage **one** interchain account. This contract can also execute callbacks based on the result of the interchain account transaction. Because this is a CosmWasm implementation of the entire ICA controller, the chain that this contract is deployed on need **not** have the ICA module enabled. Moreover, the counterparty chain need not have CosmWasm support. This contract can be deployed on chains that support CosmWasm `v1.4+`.
 
 **A documentation website for this contract is [here](https://srdtrk.github.io/cw-ica-controller/).**
-
-This contract now supports both `proto3json` and protobuf encoding/decoding for ICA transactions. **The recommended encoding is protobuf.** If no encoding is specified, then the contract will default to protobuf encoding.
 
 ## Table of Contents
 
@@ -102,13 +100,13 @@ Learn more about channel closing and reopening [here](#channel-closing-and-reope
 
 ### Execute an interchain account transaction
 
-This contract provides two APIs to send ICA transactions. The `ExecuteMsg::SendCustomIcaMessages` and `ExecuteMsg::SendCosmosMsgs` messages are used to commit a packet to be sent to the host chain.
+`ExecuteMsg::SendCosmosMsgs` is used to commit a packet to be sent to the host chain. It accepts `cosmwasm_std::CosmosMsg`s to be sent to the host chain. (The contract then these messages to protobuf messages and sends them to the host chain. You can execute any custom message using `CosmosMsg::Stargate`.
 
-#### `SendCosmosMsgs` (recommended)
+#### `SendCosmosMsgs`
 
 In CosmWasm contracts, `CosmosMsg` are used to execute transactions on the chain that the contract is deployed on. In this contract, we use `CosmosMsg`s to execute transactions on the host chain. This is done by converting the `CosmosMsg`s to an ICA tx based on the encoding of the channel. The ICA tx is then sent to the host chain. The host chain then executes the ICA tx and sends the result back to this contract.
 
-`SendCosmosMsgs` is the recommended way to send ICA transactions in this contract. This execute message allows the user to submit an array of [`cosmwasm_std::CosmosMsg`](https://github.com/CosmWasm/cosmwasm/blob/v1.5.0/packages/std/src/results/cosmos_msg.rs#L27) which are then converted by the contract to an atomic ICA tx.
+This execute message allows the user to submit an array of [`cosmwasm_std::CosmosMsg`](https://github.com/CosmWasm/cosmwasm/blob/v1.5.0/packages/std/src/results/cosmos_msg.rs#L27) which are then converted by the contract to an atomic ICA tx.
 
 ```rust, ignore
 pub enum ExecuteMsg {
@@ -133,8 +131,6 @@ pub enum ExecuteMsg {
     // ...
 }
 ```
-
-Note that `SendCosmosMsgs` only supports `Stargate` and `Wasm` messages if the channel is using the protobuf encoding. This is because the `Stargate` and `Wasm` messages are converted to protobuf messages before being sent to the host chain. If the channel is using `proto3json` encoding, then the `Stargate` and `Wasm` messages are not supported.
 
 (`Stargate` allows the user to submit any protobuf message to the host chain.)
 
@@ -168,108 +164,6 @@ Here is an example execute message that delegates tokens to a validator on the h
 }
 ```
 
-#### `SendCustomIcaMessages`
-
-`SendCustomIcaMessages`: This message requires the sender to give base64 encoded messages that will be sent to the host chain. The host chain will decode the messages and execute them. The result of the execution is sent back to this contract, and a callback is executed based on the result.
-
-This execute message is not recommended because it requires the user to know the encoding of the channel. If the user does not know the encoding of the channel, then they will not be able to submit the correct messages.
-This execute message is only useful if the user wants to submit any arbitrary messages while using the `proto3json` encoding. (This is because `CosmosMsg::Stargate` is not supported if the channel is using `proto3json` encoding.)
-
-If the channel is using `proto3json` encoding, then the format that json messages have to take are defined by the cosmos-sdk's json codec. The following is an example of a json message that is submitting a text legacy governance: (In this example, the `proposer` is the address of the interchain account on the host chain)
-
-```json
-{
-  "messages": [
-    {
-      "@type": "/cosmos.gov.v1beta1.MsgSubmitProposal",
-      "content": {
-        "@type": "/cosmos.gov.v1beta1.TextProposal",
-        "title": "IBC Gov Proposal",
-        "description": "tokens for all!"
-      },
-      "initial_deposit": [{ "denom": "stake", "amount": "5000" }],
-      "proposer": "cosmos1k4epd6js8aa7fk4e5l7u6dwttxfarwu6yald9hlyckngv59syuyqnlqvk8"
-    }
-  ]
-}
-```
-
-If the channel is using `proto3` (protobuf) encoding, then the format that protobuf messages have to take are defined by the cosmos-sdk's protobuf codec. Protobuf messages do not have nice human readable formats like json messages do. In the rust the `cosmos-sdk-proto` library is used to generate the protobuf messages as follows:
-
-```rust, ignore
-use cosmos_sdk_proto::{
-    cosmos::{bank::v1beta1::MsgSend, base::v1beta1::Coin},
-    traits::MessageExt,
-};
-
-// ...
-
-let predefined_proto_message = MsgSend {
-    from_address: ica_info.ica_address,
-    to_address,
-    amount: vec![Coin {
-        denom: "stake".to_string(),
-        amount: "100".to_string(),
-    }],
-};
-
-IcaPacketData::from_proto_anys(predefined_proto_message.to_any()?);
-```
-
-where `from_proto_anys` is defined as:
-
-```rust, ignore
-pub use cosmos_sdk_proto::ibc::applications::interchain_accounts::v1::CosmosTx;
-
-// ...
-
-/// Creates a new IcaPacketData from a list of [`cosmos_sdk_proto::Any`] messages
-pub fn from_proto_anys(messages: Vec<cosmos_sdk_proto::Any>, memo: Option<String>) -> Self {
-    let cosmos_tx = CosmosTx { messages };
-    let data = cosmos_tx.encode_to_vec();
-    Self::new(data, memo)
-}
-```
-
-And in golang [(see e2e tests)](./e2e/interchaintest/types/contract_msg.go) we use the `SerializeCosmosTxWithEncoding` from ibc-go to encode the protobuf messages where encoding is either `proto3` or `proto3json`:
-
-```go
-// NewSendCustomIcaMessagesMsg creates a new SendCustomIcaMessagesMsg.
-func NewSendCustomIcaMessagesMsg(cdc codec.BinaryCodec, msgs []proto.Message, encoding string, memo *string, timeout *uint64) string {
-	type SendCustomIcaMessagesMsg struct {
-		Messages       string  `json:"messages"`
-		PacketMemo     *string `json:"packet_memo,omitempty"`
-		TimeoutSeconds *uint64 `json:"timeout_seconds,omitempty"`
-	}
-
-	type SendCustomIcaMessagesMsgWrapper struct {
-		SendCustomIcaMessagesMsg SendCustomIcaMessagesMsg `json:"send_custom_ica_messages"`
-	}
-
-	bz, err := icatypes.SerializeCosmosTxWithEncoding(cdc, msgs, encoding)
-	if err != nil {
-		panic(err)
-	}
-
-	messages := base64.StdEncoding.EncodeToString(bz)
-
-	msg := SendCustomIcaMessagesMsgWrapper{
-		SendCustomIcaMessagesMsg: SendCustomIcaMessagesMsg{
-			Messages:       messages,
-			PacketMemo:     memo,
-			TimeoutSeconds: timeout,
-		},
-	}
-
-	jsonBytes, err := json.Marshal(msg)
-	if err != nil {
-		panic(err)
-	}
-
-	return string(jsonBytes)
-}
-```
-
 ### Execute a callback
 
 This contract supports external contract callbacks. See [`src/types/callbacks.rs`](./src/types/callbacks.rs) to learn what callbacks are supported.
@@ -295,7 +189,7 @@ This is because the `default-features` of the `cw-ica-controller` crate includes
 
 ```toml
 [dependencies]
-cw-ica-controller = { version = "0.3.0", default-features = false }
+cw-ica-controller = { version = "0.6.0", default-features = false }
 ```
 
 ### Channel Closing and Reopening
