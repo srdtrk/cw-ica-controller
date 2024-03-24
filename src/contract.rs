@@ -90,6 +90,18 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     migrate::validate_semver(deps.as_ref())?;
 
+    // Reject the migration if the channel encoding is not protobuf
+    if let Some(ica_info) = state::STATE.load(deps.storage)?.ica_info {
+        if !matches!(
+            ica_info.encoding,
+            crate::ibc::types::metadata::TxEncoding::Protobuf
+        ) {
+            return Err(ContractError::UnsupportedPacketEncoding(
+                ica_info.encoding.to_string(),
+            ));
+        }
+    }
+
     cw2::set_contract_version(deps.storage, keys::CONTRACT_NAME, keys::CONTRACT_VERSION)?;
     // If state structure changed in any contract version in the way migration is needed, it
     // should occur here
@@ -103,8 +115,8 @@ mod execute {
     use crate::{ibc::types::packet::IcaPacketData, types::msg::options::ChannelOpenInitOptions};
 
     use super::{
-        new_ica_channel_open_init_cosmos_msg, state, ContractError, DepsMut, Env,
-        MessageInfo, Response,
+        new_ica_channel_open_init_cosmos_msg, state, ContractError, DepsMut, Env, MessageInfo,
+        Response,
     };
 
     /// Submits a stargate `MsgChannelOpenInit` to the chain.
@@ -272,7 +284,7 @@ mod tests {
 
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{Api, SubMsg};
+    use cosmwasm_std::{Api, StdError, SubMsg};
 
     #[test]
     fn test_instantiate() {
@@ -438,5 +450,66 @@ mod tests {
                 keys::CONTRACT_VERSION
             )
         );
+    }
+
+    #[test]
+    fn test_migrate_with_encoding() {
+        let mut deps = mock_dependencies();
+
+        let info = mock_info("creator", &[]);
+
+        let channel_open_init_options = ChannelOpenInitOptions {
+            connection_id: "connection-0".to_string(),
+            counterparty_connection_id: "connection-1".to_string(),
+            counterparty_port_id: None,
+            channel_ordering: None,
+        };
+
+        // Instantiate the contract
+        let _res = instantiate(
+            deps.as_mut(),
+            mock_env(),
+            info,
+            InstantiateMsg {
+                owner: None,
+                channel_open_init_options,
+                send_callbacks_to: None,
+            },
+        )
+        .unwrap();
+
+        // We need to set the contract version manually to a lower version than the current version
+        cw2::set_contract_version(&mut deps.storage, keys::CONTRACT_NAME, "0.0.1").unwrap();
+
+        // Ensure that the contract version is updated correctly
+        let contract_version = cw2::get_contract_version(&deps.storage).unwrap();
+        assert_eq!(contract_version.contract, keys::CONTRACT_NAME);
+        assert_eq!(contract_version.version, "0.0.1");
+
+        // Set the encoding to proto3json
+        state::STATE
+            .update::<_, StdError>(&mut deps.storage, |mut state| {
+                state.set_ica_info("", "", crate::ibc::types::metadata::TxEncoding::Proto3Json);
+                Ok(state)
+            })
+            .unwrap();
+
+        // Migration should fail because the encoding is not protobuf
+        let _err = migrate(deps.as_mut(), mock_env(), MigrateMsg {}).unwrap_err();
+
+        // Set the encoding to protobuf
+        state::STATE
+            .update::<_, StdError>(&mut deps.storage, |mut state| {
+                state.set_ica_info("", "", crate::ibc::types::metadata::TxEncoding::Protobuf);
+                Ok(state)
+            })
+            .unwrap();
+
+        // Migration should succeed because the encoding is protobuf
+        let _res = migrate(deps.as_mut(), mock_env(), MigrateMsg {}).unwrap();
+
+        let contract_version = cw2::get_contract_version(&deps.storage).unwrap();
+        assert_eq!(contract_version.contract, keys::CONTRACT_NAME);
+        assert_eq!(contract_version.version, keys::CONTRACT_VERSION);
     }
 }
