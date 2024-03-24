@@ -2,6 +2,74 @@
 
 use cosmwasm_std::{Empty, QueryRequest};
 
+pub use response::*;
+
+#[allow(clippy::module_name_repetitions)]
+mod response {
+    use cosmwasm_schema::cw_serde;
+
+    /// The response for a successful ICA query.
+    #[cw_serde]
+    pub enum IcaQueryResponse {
+        /// Response for a [`cosmwasm_std::BankQuery`].
+        Bank(BankQueryResponse),
+        /// Response for a [`cosmwasm_std::QueryRequest::Stargate`].
+        /// Protobuf encoded bytes stored as [`cosmwasm_std::Binary`].
+        Stargate(cosmwasm_std::Binary),
+        /// Response for a [`cosmwasm_std::StakingQuery`].
+        #[cfg(feature = "staking")]
+        Staking(StakingQueryResponse),
+        /// Response for a [`cosmwasm_std::DistributionQuery`].
+        #[cfg(feature = "staking")]
+        Distribution(DistributionQueryResponse),
+    }
+
+    /// The response type for the [`cosmwasm_std::BankQuery`] queries.
+    #[cw_serde]
+    pub enum BankQueryResponse {
+        /// Response for the [`cosmwasm_std::BankQuery::Supply`] query.
+        Supply(cosmwasm_std::SupplyResponse),
+        /// Response for the [`cosmwasm_std::BankQuery::Balance`] query.
+        Balance(cosmwasm_std::BalanceResponse),
+        /// Response for the [`cosmwasm_std::BankQuery::AllBalances`] query.
+        AllBalances(cosmwasm_std::AllBalanceResponse),
+        /// Response for the [`cosmwasm_std::BankQuery::DenomMetadata`] query.
+        DenomMetadata(cosmwasm_std::DenomMetadataResponse),
+        /// Response for the [`cosmwasm_std::BankQuery::AllDenomMetadata`] query.
+        AllDenomMetadata(cosmwasm_std::AllDenomMetadataResponse),
+    }
+
+    /// The response type for the [`cosmwasm_std::StakingQuery`] queries.
+    #[cfg(feature = "staking")]
+    #[cw_serde]
+    pub enum StakingQueryResponse {
+        /// Response for the [`cosmwasm_std::StakingQuery::BondedDenom`] query.
+        BondedDenom(cosmwasm_std::BondedDenomResponse),
+        /// Response for the [`cosmwasm_std::StakingQuery::AllDelegations`] query.
+        AllDelegations(cosmwasm_std::AllDelegationsResponse),
+        /// Response for the [`cosmwasm_std::StakingQuery::Delegation`] query.
+        Delegation(cosmwasm_std::DelegationResponse),
+        /// Response for the [`cosmwasm_std::StakingQuery::AllValidators`] query.
+        AllValidators(cosmwasm_std::AllValidatorsResponse),
+        /// Response for the [`cosmwasm_std::StakingQuery::Validator`] query.
+        Validator(cosmwasm_std::ValidatorResponse),
+    }
+
+    /// The response type for the [`cosmwasm_std::DistributionQuery`] queries.
+    #[cfg(feature = "staking")]
+    #[cw_serde]
+    pub enum DistributionQueryResponse {
+        /// Response for the [`cosmwasm_std::DistributionQuery::DelegatorWithdrawAddress`] query.
+        DelegatorWithdrawAddress(cosmwasm_std::DelegatorWithdrawAddressResponse),
+        /// Response for the [`cosmwasm_std::DistributionQuery::DelegationRewards`] query.
+        DelegationRewards(cosmwasm_std::DelegationRewardsResponse),
+        /// Response for the [`cosmwasm_std::DistributionQuery::DelegationTotalRewards`] query.
+        DelegationTotalRewards(cosmwasm_std::DelegationTotalRewardsResponse),
+        /// Response for the [`cosmwasm_std::DistributionQuery::DelegatorValidators`] query.
+        DelegatorValidators(cosmwasm_std::DelegatorValidatorsResponse),
+    }
+}
+
 /// Converts a [`QueryRequest`] to a gRPC method path and protobuf bytes.
 ///
 /// # Panics
