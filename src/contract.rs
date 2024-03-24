@@ -40,7 +40,7 @@ pub fn instantiate(
         msg.channel_open_init_options.connection_id,
         msg.channel_open_init_options.counterparty_port_id,
         msg.channel_open_init_options.counterparty_connection_id,
-        msg.channel_open_init_options.tx_encoding,
+        None,
         msg.channel_open_init_options.channel_ordering,
     );
 
@@ -147,7 +147,7 @@ mod execute {
             options.connection_id,
             options.counterparty_port_id,
             options.counterparty_connection_id,
-            options.tx_encoding,
+            None,
             options.channel_ordering,
         );
 
@@ -318,7 +318,6 @@ mod tests {
             connection_id: "connection-0".to_string(),
             counterparty_connection_id: "connection-1".to_string(),
             counterparty_port_id: None,
-            tx_encoding: None,
             channel_ordering: None,
         };
 
@@ -346,7 +345,7 @@ mod tests {
             channel_open_init_options.connection_id,
             channel_open_init_options.counterparty_port_id,
             channel_open_init_options.counterparty_connection_id,
-            channel_open_init_options.tx_encoding,
+            None,
             channel_open_init_options.channel_ordering,
         );
         assert_eq!(res.messages[0], SubMsg::new(expected_msg));
@@ -375,7 +374,6 @@ mod tests {
             connection_id: "connection-0".to_string(),
             counterparty_connection_id: "connection-1".to_string(),
             counterparty_port_id: None,
-            tx_encoding: None,
             channel_ordering: None,
         };
 
@@ -445,7 +443,6 @@ mod tests {
             connection_id: "connection-0".to_string(),
             counterparty_connection_id: "connection-1".to_string(),
             counterparty_port_id: None,
-            tx_encoding: None,
             channel_ordering: None,
         };
 
@@ -502,7 +499,6 @@ mod tests {
             connection_id: "connection-0".to_string(),
             counterparty_connection_id: "connection-1".to_string(),
             counterparty_port_id: None,
-            tx_encoding: None,
             channel_ordering: None,
         };
 

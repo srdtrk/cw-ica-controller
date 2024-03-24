@@ -118,11 +118,17 @@ pub struct MigrateMsg {}
 pub mod options {
     use cosmwasm_std::IbcOrder;
 
-    use super::cw_serde;
-    use crate::ibc::types::{keys::HOST_PORT_ID, metadata::TxEncoding};
-
-    /// The message used to provide the MsgChannelOpenInit with the required data.
-    #[cw_serde]
+    /// The options needed to initialize the IBC channel.
+    #[derive(
+        serde::Serialize,
+        serde::Deserialize,
+        Clone,
+        Debug,
+        PartialEq,
+        cosmwasm_schema::schemars::JsonSchema
+    )]
+    #[allow(clippy::derive_partial_eq_without_eq)] // Allow users of `#[cw_serde]` to not implement Eq without clippy complaining
+    #[schemars(crate = "::cosmwasm_schema::schemars")]
     pub struct ChannelOpenInitOptions {
         /// The connection id on this chain.
         pub connection_id: String,
@@ -131,8 +137,6 @@ pub mod options {
         /// The counterparty port id. If not specified, [`crate::ibc::types::keys::HOST_PORT_ID`] is used.
         /// Currently, this contract only supports the host port.
         pub counterparty_port_id: Option<String>,
-        /// TxEncoding is the encoding used for the ICA txs. If not specified, [`TxEncoding::Protobuf`] is used.
-        pub tx_encoding: Option<TxEncoding>,
         /// The order of the channel. If not specified, [`IbcOrder::Ordered`] is used.
         /// [`IbcOrder::Unordered`] is only supported if the counterparty chain is using `ibc-go`
         /// v8.1.0 or later.
@@ -145,13 +149,7 @@ pub mod options {
         pub fn counterparty_port_id(&self) -> String {
             self.counterparty_port_id
                 .clone()
-                .unwrap_or_else(|| HOST_PORT_ID.to_string())
-        }
-
-        /// Returns the tx encoding.
-        #[must_use]
-        pub fn tx_encoding(&self) -> TxEncoding {
-            self.tx_encoding.clone().unwrap_or(TxEncoding::Protobuf)
+                .unwrap_or_else(|| crate::ibc::types::keys::HOST_PORT_ID.to_string())
         }
     }
 }

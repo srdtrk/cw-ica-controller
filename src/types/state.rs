@@ -205,6 +205,7 @@ mod tests {
     use cw_ica_controller_v0_2_0::types::state as v0_2_0;
     use cw_ica_controller_v0_3_0::types::state as v0_3_0;
     use cw_ica_controller_v0_4_2 as v0_4_2;
+    use cw_ica_controller_v0_5_0 as v0_5_0;
 
     mod v0_1_2 {
         use super::*;
@@ -297,14 +298,14 @@ mod tests {
 
         let serialized = cosmwasm_std::to_json_binary(&mock_options).unwrap();
 
-        let deserialized: crate::types::msg::options::ChannelOpenInitOptions =
+        let deserialized: v0_5_0::types::msg::options::ChannelOpenInitOptions =
             cosmwasm_std::from_json(serialized).unwrap();
 
-        let exp_options = crate::types::msg::options::ChannelOpenInitOptions {
+        let exp_options = v0_5_0::types::msg::options::ChannelOpenInitOptions {
             connection_id: "connection-mock".to_string(),
             counterparty_connection_id: "counterparty-connection-mock".to_string(),
             counterparty_port_id: Some("counterparty-port-mock".to_string()),
-            tx_encoding: Some(crate::ibc::types::metadata::TxEncoding::Protobuf),
+            tx_encoding: Some(v0_5_0::ibc::types::metadata::TxEncoding::Protobuf),
             channel_ordering: None,
         };
 
@@ -327,5 +328,30 @@ mod tests {
         };
 
         assert_eq!(deserialized, exp_state);
+    }
+
+    #[test]
+    fn test_migration_from_v0_5_0_to_v0_6_0() {
+        let mock_channel_open_init_options = v0_5_0::types::msg::options::ChannelOpenInitOptions {
+            connection_id: "connection-mock".to_string(),
+            counterparty_connection_id: "counterparty-connection-mock".to_string(),
+            counterparty_port_id: Some("counterparty-port-mock".to_string()),
+            tx_encoding: Some(v0_5_0::ibc::types::metadata::TxEncoding::Proto3Json),
+            channel_ordering: Some(cosmwasm_std::IbcOrder::Ordered),
+        };
+
+        let serialized = cosmwasm_std::to_json_binary(&mock_channel_open_init_options).unwrap();
+
+        let deserialized: crate::types::msg::options::ChannelOpenInitOptions =
+            cosmwasm_std::from_json(serialized).unwrap();
+
+        let exp_channel_open_init_options = crate::types::msg::options::ChannelOpenInitOptions {
+            connection_id: "connection-mock".to_string(),
+            counterparty_connection_id: "counterparty-connection-mock".to_string(),
+            counterparty_port_id: Some("counterparty-port-mock".to_string()),
+            channel_ordering: Some(cosmwasm_std::IbcOrder::Ordered),
+        };
+
+        assert_eq!(deserialized, exp_channel_open_init_options);
     }
 }
