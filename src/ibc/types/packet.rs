@@ -8,7 +8,7 @@ use cosmwasm_std::{to_json_binary, CosmosMsg, Env, IbcMsg, IbcTimeout, StdError,
 pub use cosmos_sdk_proto::ibc::applications::interchain_accounts::v1::CosmosTx;
 use cosmos_sdk_proto::traits::Message;
 
-use crate::types::cosmos_msg::{convert_to_proto3json, convert_to_proto_any};
+use crate::types::cosmos_msg::convert_to_proto_any;
 
 use super::metadata::TxEncoding;
 
@@ -107,7 +107,6 @@ impl IcaPacketData {
     /// Panics if the [`CosmosMsg`] is not supported for the given encoding.
     ///
     /// The supported [`CosmosMsg`]s for [`TxEncoding::Protobuf`] are listed in [`convert_to_proto_any`].
-    /// The supported [`CosmosMsg`]s for [`TxEncoding::Proto3Json`] are listed in [`convert_to_proto3json`].
     pub fn from_cosmos_msgs(
         messages: Vec<CosmosMsg>,
         encoding: &TxEncoding,
@@ -127,13 +126,9 @@ impl IcaPacketData {
                 )?;
                 Ok(Self::from_proto_anys(proto_anys, memo))
             }
-            TxEncoding::Proto3Json => {
-                let json_strings = messages
-                    .into_iter()
-                    .map(|msg| convert_to_proto3json(msg, ica_address.to_string()))
-                    .collect::<Vec<String>>();
-                Ok(Self::from_json_strings(&json_strings, memo))
-            }
+            TxEncoding::Proto3Json => StdResult::Err(StdError::generic_err(
+                "unsupported encoding: proto3json".to_string(),
+            )),
         }
     }
 
