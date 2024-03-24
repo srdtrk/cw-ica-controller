@@ -260,9 +260,12 @@ pub mod proto {
     /// `MsgModuleQuerySafeResponse` defines the response for Msg/ModuleQuerySafe
     #[derive(::prost::Message)]
     pub struct MsgModuleQuerySafeResponse {
+        /// height is the block height at which the query was executed
+        #[prost(uint64, tag = "1")]
+        pub height: u64,
         /// responses is the list of query responses as bytes
         /// The responses are in the same order as the requests
-        #[prost(bytes = "vec", repeated, tag = "1")]
+        #[prost(bytes = "vec", repeated, tag = "2")]
         pub responses: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
     }
 }
