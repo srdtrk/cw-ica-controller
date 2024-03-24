@@ -5,29 +5,8 @@ import (
 
 	"github.com/cosmos/gogoproto/proto"
 
-	codec "github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-
-	icatypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/types"
 )
-
-// NewExecuteMsg_SendCustomIcaMessages_FromProto creates a new ExecuteMsg_SendCustomIcaMessages.
-func NewExecuteMsg_SendCustomIcaMessages_FromProto(cdc codec.Codec, msgs []proto.Message, encoding string, memo *string, timeout *int) ExecuteMsg {
-	bz, err := icatypes.SerializeCosmosTx(cdc, msgs, encoding)
-	if err != nil {
-		panic(err)
-	}
-
-	messages := base64.StdEncoding.EncodeToString(bz)
-
-	return ExecuteMsg{
-		SendCustomIcaMessages: &ExecuteMsg_SendCustomIcaMessages{
-			Messages:       Binary(messages),
-			PacketMemo:     memo,
-			TimeoutSeconds: timeout,
-		},
-	}
-}
 
 // NewExecuteMsg_SendCosmosMsgs_FromProto creates a new ExecuteMsg_SendCosmosMsgs.
 func NewExecuteMsg_SendCosmosMsgs_FromProto(msgs []proto.Message, memo *string, timeout *int) ExecuteMsg {

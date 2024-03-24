@@ -51,7 +51,7 @@ func (s *ContractTestSuite) SetupSuite(ctx context.Context, chainSpecs []*interc
 
 // SetupContractTestSuite starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 // sets up the contract and does the channel handshake for the contract test suite.
-func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding icacontroller.TxEncoding, ordering icacontroller.IbcOrder) {
+func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, ordering icacontroller.IbcOrder) {
 	s.SetupSuite(ctx, chainSpecs)
 
 	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/callback_counter.wasm")
@@ -72,7 +72,6 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, encoding
 			ConnectionId:             s.ChainAConnID,
 			CounterpartyConnectionId: s.ChainBConnID,
 			CounterpartyPortId:       nil,
-			TxEncoding:               &encoding,
 			ChannelOrdering:          &ordering,
 		},
 		SendCallbacksTo: &callbackAddress,
@@ -107,27 +106,19 @@ func TestWithContractTestSuite(t *testing.T) {
 }
 
 func (s *ContractTestSuite) TestIcaContractChannelHandshake_Ordered_Protobuf() {
-	s.IcaContractChannelHandshakeTest_WithEncodingAndOrdering(icacontroller.TxEncoding_Proto3_Value, icacontroller.IbcOrder_OrderOrdered)
-}
-
-func (s *ContractTestSuite) TestIcaContractChannelHandshake_Ordered_Proto3Json() {
-	s.IcaContractChannelHandshakeTest_WithEncodingAndOrdering(icacontroller.TxEncoding_Proto3Json_Value, icacontroller.IbcOrder_OrderOrdered)
+	s.IcaContractChannelHandshakeTest_WithEncodingAndOrdering(icacontroller.IbcOrder_OrderOrdered)
 }
 
 func (s *ContractTestSuite) TestIcaContractChannelHandshake_Unordered_Protobuf() {
-	s.IcaContractChannelHandshakeTest_WithEncodingAndOrdering(icacontroller.TxEncoding_Proto3_Value, icacontroller.IbcOrder_OrderUnordered)
+	s.IcaContractChannelHandshakeTest_WithEncodingAndOrdering(icacontroller.IbcOrder_OrderUnordered)
 }
 
-func (s *ContractTestSuite) TestIcaContractChannelHandshake_Unordered_Proto3Json() {
-	s.IcaContractChannelHandshakeTest_WithEncodingAndOrdering(icacontroller.TxEncoding_Proto3Json_Value, icacontroller.IbcOrder_OrderUnordered)
-}
-
-func (s *ContractTestSuite) IcaContractChannelHandshakeTest_WithEncodingAndOrdering(encoding icacontroller.TxEncoding, ordering icacontroller.IbcOrder) {
+func (s *ContractTestSuite) IcaContractChannelHandshakeTest_WithEncodingAndOrdering(ordering icacontroller.IbcOrder) {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 	// sets up the contract and does the channel handshake for the contract test suite.
-	s.SetupContractTestSuite(ctx, encoding, ordering)
+	s.SetupContractTestSuite(ctx, ordering)
 	wasmd, simd := s.ChainA, s.ChainB
 
 	s.Run("TestChannelHandshakeSuccess", func() {
@@ -207,7 +198,6 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 			ConnectionId:             s.ChainAConnID,
 			CounterpartyConnectionId: "connection-123",
 			CounterpartyPortId:       nil,
-			TxEncoding:               nil,
 		},
 		SendCallbacksTo: nil,
 	}
@@ -243,7 +233,6 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 				ConnectionId:             "invalid",
 				CounterpartyConnectionId: s.ChainBConnID,
 				CounterpartyPortId:       nil,
-				TxEncoding:               nil,
 			},
 			SendCallbacksTo: nil,
 		}
@@ -260,7 +249,6 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 				ConnectionId:             s.ChainAConnID,
 				CounterpartyConnectionId: "connection-123",
 				CounterpartyPortId:       nil,
-				TxEncoding:               nil,
 			},
 			SendCallbacksTo: nil,
 		}
@@ -276,7 +264,6 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 					ConnectionId:             s.ChainAConnID,
 					CounterpartyConnectionId: s.ChainBConnID,
 					CounterpartyPortId:       nil,
-					TxEncoding:               nil,
 				},
 			},
 		}
@@ -341,27 +328,27 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 	})
 }
 
-func (s *ContractTestSuite) TestIcaContractExecution_Ordered_Proto3Json() {
-	s.IcaContractExecutionTestWithEncoding(icacontroller.TxEncoding_Proto3Json_Value, icacontroller.IbcOrder_OrderOrdered)
+func (s *ContractTestSuite) TestIcaContractExecution_Ordered_Protobuf() {
+	s.IcaContractExecutionTestWithEncoding(icacontroller.IbcOrder_OrderOrdered)
 }
 
 func (s *ContractTestSuite) TestIcaContractExecution_Unordered_Protobuf() {
-	s.IcaContractExecutionTestWithEncoding(icacontroller.TxEncoding_Proto3_Value, icacontroller.IbcOrder_OrderUnordered)
+	s.IcaContractExecutionTestWithEncoding(icacontroller.IbcOrder_OrderUnordered)
 }
 
-func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding icacontroller.TxEncoding, ordering icacontroller.IbcOrder) {
+func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(ordering icacontroller.IbcOrder) {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 	// sets up the contract and does the channel handshake for the contract test suite.
-	s.SetupContractTestSuite(ctx, encoding, ordering)
+	s.SetupContractTestSuite(ctx, ordering)
 	wasmd, simd := s.ChainA, s.ChainB
 	wasmdUser := s.UserA
 
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, s.Contract.IcaAddress)
 
-	s.Run(fmt.Sprintf("TestSendCustomIcaMessagesSuccess-%s", encoding), func() {
+	s.Run("TestStargateMsgSuccess", func() {
 		// Send custom ICA messages through the contract:
 		// Let's create a governance proposal on simd and deposit some funds to it.
 		govAddress := s.GetModuleAddress(ctx, simd, govtypes.ModuleName)
@@ -384,12 +371,10 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding icacon
 		s.Require().NoError(err)
 
 		// Execute the contract:
-		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
-			simd.Config().EncodingConfig.Codec,
-			[]proto.Message{proposalMsg},
-			string(encoding), nil, nil,
+		stargateExecMsg := icacontroller.NewExecuteMsg_SendCosmosMsgs_FromProto(
+			[]proto.Message{proposalMsg}, nil, nil,
 		)
-		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
+		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), stargateExecMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
@@ -414,7 +399,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding icacon
 		s.Require().Equal(intialBalance.Sub(sdkmath.NewInt(10_000_000)), postBalance)
 	})
 
-	s.Run(fmt.Sprintf("TestSendCosmosMsgsSuccess-%s", encoding), func() {
+	s.Run("TestSendCosmosMsgsSuccess", func() {
 		intialBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 
@@ -486,7 +471,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding icacon
 		s.Require().Equal(sdkmath.LegacyNewDec(1).String(), voteResp.Vote.Options[0].Weight)
 	})
 
-	s.Run(fmt.Sprintf("TestSendCustomIcaMessagesError-%s", encoding), func() {
+	s.Run("TestSendCustomIcaMessagesError", func() {
 		// Test erroneous callback:
 		// Send incorrect custom ICA messages through the contract:
 		badMessage := base64.StdEncoding.EncodeToString([]byte("bad message"))
@@ -508,12 +493,12 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithEncoding(encoding icacon
 	})
 }
 
-func (s *ContractTestSuite) TestSendCosmosMsgs_Ordered_Proto3Json() {
-	s.SendCosmosMsgsTestWithEncoding(icacontroller.TxEncoding_Proto3Json_Value, icacontroller.IbcOrder_OrderOrdered)
+func (s *ContractTestSuite) TestSendCosmosMsgs_Ordered_Protobuf() {
+	s.SendCosmosMsgsTestWithEncoding(icacontroller.IbcOrder_OrderOrdered)
 }
 
 func (s *ContractTestSuite) TestSendCosmosMsgs_Unordered_Protobuf() {
-	s.SendCosmosMsgsTestWithEncoding(icacontroller.TxEncoding_Proto3_Value, icacontroller.IbcOrder_OrderUnordered)
+	s.SendCosmosMsgsTestWithEncoding(icacontroller.IbcOrder_OrderUnordered)
 }
 
 // SendCosmosMsgsTestWithEncoding tests some more CosmosMsgs that are not covered by the IcaContractExecutionTestWithEncoding.
@@ -524,12 +509,12 @@ func (s *ContractTestSuite) TestSendCosmosMsgs_Unordered_Protobuf() {
 // - VoteWeighted
 // - FundCommunityPool
 // - SetWithdrawAddress
-func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding icacontroller.TxEncoding, ordering icacontroller.IbcOrder) {
+func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(ordering icacontroller.IbcOrder) {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 	// sets up the contract and does the channel handshake for the contract test suite.
-	s.SetupContractTestSuite(ctx, encoding, ordering)
+	s.SetupContractTestSuite(ctx, ordering)
 	wasmd, simd := s.ChainA, s.ChainB
 	wasmdUser := s.UserA
 	simdUser := s.UserB
@@ -537,7 +522,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding icacontrolle
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, s.Contract.IcaAddress)
 
-	s.Run(fmt.Sprintf("TestStargate-%s", encoding), func() {
+	s.Run("TestStargate", func() {
 		// Send custom ICA messages through the contract:
 		// Let's create a governance proposal on simd and deposit some funds to it.
 		govAddress := s.GetModuleAddress(ctx, simd, govtypes.ModuleName)
@@ -559,22 +544,12 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding icacontrolle
 		initialBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 
-		if encoding == icatypes.EncodingProtobuf {
-			// Execute the contract:
-			sendStargateMsg := icacontroller.NewExecuteMsg_SendCosmosMsgs_FromProto(
-				[]proto.Message{proposalMsg}, nil, nil,
-			)
-			err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendStargateMsg)
-			s.Require().NoError(err)
-		} else if encoding == icatypes.EncodingProto3JSON {
-			sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
-				simd.Config().EncodingConfig.Codec,
-				[]proto.Message{proposalMsg},
-				icatypes.EncodingProto3JSON, nil, nil,
-			)
-			err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
-			s.Require().NoError(err)
-		}
+		// Execute the contract:
+		sendStargateMsg := icacontroller.NewExecuteMsg_SendCosmosMsgs_FromProto(
+			[]proto.Message{proposalMsg}, nil, nil,
+		)
+		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendStargateMsg)
+		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
@@ -598,7 +573,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding icacontrolle
 		s.Require().Equal(initialBalance.Sub(sdkmath.NewInt(10_000_000)), postBalance)
 	})
 
-	s.Run(fmt.Sprintf("TestDelegateAndVoteWeightedAndCommunityPool-%s", encoding), func() {
+	s.Run("TestDelegateAndVoteWeightedAndCommunityPool", func() {
 		intialBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 
@@ -701,7 +676,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding icacontrolle
 		s.Require().True(expWeight.Equal(actualWeight2))
 	})
 
-	s.Run(fmt.Sprintf("TestSendAndSetWithdrawAddress-%s", encoding), func() {
+	s.Run("TestSendAndSetWithdrawAddress", func() {
 		initialBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 
@@ -753,12 +728,12 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithEncoding(encoding icacontrolle
 	})
 }
 
-func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Proto3Json() {
+func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 	// sets up the contract and does the channel handshake for the contract test suite.
-	s.SetupContractTestSuite(ctx, icacontroller.TxEncoding_Proto3Json_Value, icacontroller.IbcOrder_OrderOrdered)
+	s.SetupContractTestSuite(ctx, icacontroller.IbcOrder_OrderOrdered)
 	wasmd, simd := s.ChainA, s.ChainB
 	wasmdUser, _ := s.UserA, s.UserB
 
@@ -785,11 +760,10 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Proto3Json() {
 
 		timeout := int(3)
 		// Execute the contract:
-		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
-			simd.Config().EncodingConfig.Codec, []proto.Message{},
-			icatypes.EncodingProto3JSON, nil, &timeout,
+		stargateExecMsg := icacontroller.NewExecuteMsg_SendCosmosMsgs_FromProto(
+			[]proto.Message{}, nil, &timeout,
 		)
-		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
+		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), stargateExecMsg)
 		s.Require().NoError(err)
 
 		// Wait until timeout:
@@ -833,7 +807,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Proto3Json() {
 		// Check if contract channel state was updated:
 		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(icacontroller.Status_StateClosed_Value, contractChannelState.ChannelStatus)
+		s.Require().Equal(icacontroller.Status_StateClosed, contractChannelState.ChannelStatus)
 	})
 
 	s.Run("TestChannelReopening", func() {
@@ -869,7 +843,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Proto3Json() {
 		// Check if contract channel state was updated:
 		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(icacontroller.Status_StateOpen_Value, contractChannelState.ChannelStatus)
+		s.Require().Equal(icacontroller.Status_StateOpen, contractChannelState.ChannelStatus)
 		s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionId)
 		s.Require().Equal(wasmdChannel.ChannelID, contractChannelState.Channel.Endpoint.ChannelId)
 		s.Require().Equal(wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortId)
@@ -902,10 +876,8 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Proto3Json() {
 		}
 
 		// Execute the contract:
-		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
-			simd.Config().EncodingConfig.Codec,
-			[]proto.Message{sendMsg},
-			icatypes.EncodingProto3JSON, nil, nil,
+		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCosmosMsgs_FromProto(
+			[]proto.Message{sendMsg}, nil, nil,
 		)
 		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 		s.Require().NoError(err)
@@ -932,7 +904,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Unordered_Protobuf() {
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 	// sets up the contract and does the channel handshake for the contract test suite.
-	s.SetupContractTestSuite(ctx, icacontroller.TxEncoding_Proto3_Value, icacontroller.IbcOrder_OrderUnordered)
+	s.SetupContractTestSuite(ctx, icacontroller.IbcOrder_OrderUnordered)
 	wasmd, simd := s.ChainA, s.ChainB
 	wasmdUser, _ := s.UserA, s.UserB
 
@@ -959,9 +931,8 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Unordered_Protobuf() {
 
 		timeout := int(3)
 		// Execute the contract:
-		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
-			simd.Config().EncodingConfig.Codec, []proto.Message{},
-			icatypes.EncodingProto3JSON, nil, &timeout,
+		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCosmosMsgs_FromProto(
+			[]proto.Message{}, nil, &timeout,
 		)
 		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 		s.Require().NoError(err)
@@ -1007,7 +978,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Unordered_Protobuf() {
 		// Check if contract channel state is still open:
 		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(icacontroller.Status_StateOpen_Value, contractChannelState.ChannelStatus)
+		s.Require().Equal(icacontroller.Status_StateOpen, contractChannelState.ChannelStatus)
 	})
 
 	s.Run("TestSendCustomIcaMessagesAfterTimeout", func() {
@@ -1019,10 +990,8 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Unordered_Protobuf() {
 		}
 
 		// Execute the contract:
-		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
-			simd.Config().EncodingConfig.Codec,
-			[]proto.Message{sendMsg},
-			icatypes.EncodingProtobuf, nil, nil,
+		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCosmosMsgs_FromProto(
+			[]proto.Message{sendMsg}, nil, nil,
 		)
 		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 		s.Require().NoError(err)
@@ -1049,7 +1018,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 	// sets up the contract and does the channel handshake for the contract test suite.
-	s.SetupContractTestSuite(ctx, icacontroller.TxEncoding_Proto3Json_Value, icacontroller.IbcOrder_OrderOrdered)
+	s.SetupContractTestSuite(ctx, icacontroller.IbcOrder_OrderOrdered)
 	wasmd, simd := s.ChainA, s.ChainB
 	wasmdUser, _ := s.UserA, s.UserB
 
@@ -1091,15 +1060,12 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		// Check if contract channel state was updated:
 		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(icacontroller.Status_StateClosed_Value, contractChannelState.ChannelStatus)
+		s.Require().Equal(icacontroller.Status_StateClosed, contractChannelState.ChannelStatus)
 	})
 
 	s.Run("TestChannelReopening", func() {
 		// Reopen the channel:
-		var (
-			encoding = icacontroller.TxEncoding_Proto3_Value
-			ordering = icacontroller.IbcOrder_OrderUnordered
-		)
+		ordering := icacontroller.IbcOrder_OrderUnordered
 
 		createChannelMsg := icacontroller.ExecuteMsg{
 			CreateChannel: &icacontroller.ExecuteMsg_CreateChannel{
@@ -1107,7 +1073,6 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 					ConnectionId:             s.ChainAConnID,
 					CounterpartyConnectionId: s.ChainBConnID,
 					CounterpartyPortId:       nil,
-					TxEncoding:               &encoding,
 					ChannelOrdering:          &ordering,
 				},
 			},
@@ -1140,7 +1105,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		// Check if contract channel state was updated:
 		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(icacontroller.Status_StateOpen_Value, contractChannelState.ChannelStatus)
+		s.Require().Equal(icacontroller.Status_StateOpen, contractChannelState.ChannelStatus)
 		s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionId)
 		s.Require().Equal(wasmdChannel.ChannelID, contractChannelState.Channel.Endpoint.ChannelId)
 		s.Require().Equal(wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortId)
@@ -1173,10 +1138,8 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		}
 
 		// Execute the contract:
-		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCustomIcaMessages_FromProto(
-			simd.Config().EncodingConfig.Codec,
-			[]proto.Message{sendMsg},
-			icatypes.EncodingProtobuf, nil, nil,
+		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCosmosMsgs_FromProto(
+			[]proto.Message{sendMsg}, nil, nil,
 		)
 		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 		s.Require().NoError(err)
@@ -1203,7 +1166,7 @@ func (s *ContractTestSuite) TestCloseChannel_Protobuf_Unordered() {
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 	// sets up the contract and does the channel handshake for the contract test suite.
-	s.SetupContractTestSuite(ctx, icacontroller.TxEncoding_Proto3_Value, icacontroller.IbcOrder_OrderUnordered)
+	s.SetupContractTestSuite(ctx, icacontroller.IbcOrder_OrderUnordered)
 	wasmd, simd := s.ChainA, s.ChainB
 	wasmdUser, _ := s.UserA, s.UserB
 
@@ -1244,7 +1207,7 @@ func (s *ContractTestSuite) TestCloseChannel_Protobuf_Unordered() {
 		// Check if contract channel state was updated:
 		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
 		s.Require().NoError(err)
-		s.Require().Equal(icacontroller.Status_StateClosed_Value, contractChannelState.ChannelStatus)
+		s.Require().Equal(icacontroller.Status_StateClosed, contractChannelState.ChannelStatus)
 	})
 }
 
