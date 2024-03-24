@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -343,7 +342,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering icacon
 	// sets up the contract and does the channel handshake for the contract test suite.
 	s.SetupContractTestSuite(ctx, ordering)
 	wasmd, simd := s.ChainA, s.ChainB
-	wasmdUser := s.UserA
+	wasmdUser, simdUser := s.UserA, s.UserB
 
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, s.Contract.IcaAddress)
@@ -471,14 +470,30 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering icacon
 		s.Require().Equal(sdkmath.LegacyNewDec(1).String(), voteResp.Vote.Options[0].Weight)
 	})
 
-	s.Run("TestSendCustomIcaMessagesError", func() {
+	s.Run("TestIcaError", func() {
 		// Test erroneous callback:
 		// Send incorrect custom ICA messages through the contract:
-		badMessage := base64.StdEncoding.EncodeToString([]byte("bad message"))
-		badCustomMsg := `{"send_custom_ica_messages":{"messages":"` + badMessage + `"}}`
+		badSendMsg := icacontroller.CosmosMsg_for_Empty{
+			Bank: &icacontroller.CosmosMsg_for_Empty_Bank{
+				Send: &icacontroller.BankMsg_Send{
+					ToAddress: simdUser.FormattedAddress(),
+					Amount: []icacontroller.Coin{
+						{
+							Denom:  "INVALID_DENOM",
+							Amount: "1",
+						},
+					},
+				},
+			},
+		}
 
 		// Execute the contract:
-		err := s.Contract.ExecAnyMsg(ctx, wasmdUser.KeyName(), badCustomMsg)
+		badMsg := icacontroller.ExecuteMsg{
+			SendCosmosMsgs: &icacontroller.ExecuteMsg_SendCosmosMsgs{
+				Messages: []icacontroller.CosmosMsg_for_Empty{badSendMsg},
+			},
+		}
+		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), badMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
