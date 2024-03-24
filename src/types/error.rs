@@ -87,4 +87,7 @@ pub enum ContractError {
 
     #[error("invalid channel status: expected {expected}, got {actual}")]
     InvalidChannelStatus { expected: String, actual: String },
+
+    #[error("no callback address is set for the contract")]
+    NoCallbackAddress,
 }

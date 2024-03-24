@@ -192,3 +192,5 @@ mod convert_to_protobuf {
         }
     }
 }
+
+mod from_protobuf {}

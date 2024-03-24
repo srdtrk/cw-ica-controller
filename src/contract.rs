@@ -83,7 +83,11 @@ pub fn execute(
         } => execute::send_cosmos_msgs(deps, env, info, messages, packet_memo, timeout_seconds),
         ExecuteMsg::UpdateOwnership(action) => execute::update_ownership(deps, env, info, action),
         #[cfg(feature = "query")]
-        ExecuteMsg::SendQueryMsgs { .. } => todo!(),
+        ExecuteMsg::SendQueryMsgs {
+            queries,
+            packet_memo,
+            timeout_seconds,
+        } => execute::send_query_msgs(deps, env, info, queries, packet_memo, timeout_seconds),
     }
 }
 
@@ -120,6 +124,9 @@ mod execute {
         new_ica_channel_open_init_cosmos_msg, state, Binary, ContractError, DepsMut, Env,
         MessageInfo, Response,
     };
+
+    #[cfg(feature = "query")]
+    use cosmwasm_std::{Empty, QueryRequest};
 
     /// Submits a stargate `MsgChannelOpenInit` to the chain.
     /// Can only be called by the contract owner or a whitelisted address.
@@ -260,6 +267,26 @@ mod execute {
         state::STATE.save(deps.storage, &contract_state)?;
 
         Ok(Response::default())
+    }
+
+    /// Sends query messages to the ICA host.
+    #[cfg(feature = "query")]
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn send_query_msgs(
+        deps: DepsMut,
+        _env: Env,
+        info: MessageInfo,
+        _messages: Vec<QueryRequest<Empty>>,
+        _packet_memo: Option<String>,
+        _timeout_seconds: Option<u64>,
+    ) -> Result<Response, ContractError> {
+        cw_ownable::assert_owner(deps.storage, &info.sender)?;
+
+        let contract_state = state::STATE.load(deps.storage)?;
+        let _callback_address = contract_state
+            .callback_address
+            .ok_or(ContractError::NoCallbackAddress)?;
+        todo!()
     }
 }
 
