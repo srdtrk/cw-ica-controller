@@ -125,7 +125,7 @@ pub mod options {
         Clone,
         Debug,
         PartialEq,
-        cosmwasm_schema::schemars::JsonSchema
+        cosmwasm_schema::schemars::JsonSchema,
     )]
     #[allow(clippy::derive_partial_eq_without_eq)] // Allow users of `#[cw_serde]` to not implement Eq without clippy complaining
     #[schemars(crate = "::cosmwasm_schema::schemars")]
