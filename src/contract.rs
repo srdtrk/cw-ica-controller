@@ -89,18 +89,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 #[allow(clippy::pedantic)]
 pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     migrate::validate_semver(deps.as_ref())?;
-
-    // Reject the migration if the channel encoding is not protobuf
-    if let Some(ica_info) = state::STATE.load(deps.storage)?.ica_info {
-        if !matches!(
-            ica_info.encoding,
-            crate::ibc::types::metadata::TxEncoding::Protobuf
-        ) {
-            return Err(ContractError::UnsupportedPacketEncoding(
-                ica_info.encoding.to_string(),
-            ));
-        }
-    }
+    migrate::validate_channel_encoding(deps.as_ref())?;
 
     cw2::set_contract_version(deps.storage, keys::CONTRACT_NAME, keys::CONTRACT_VERSION)?;
     // If state structure changed in any contract version in the way migration is needed, it
@@ -255,8 +244,10 @@ mod query {
 }
 
 mod migrate {
-    use super::{keys, ContractError, Deps};
+    use super::{keys, state, ContractError, Deps};
 
+    /// Validate that the contract version is semver compliant
+    /// and greater than the previous version.
     pub fn validate_semver(deps: Deps) -> Result<(), ContractError> {
         let prev_cw2_version = cw2::get_contract_version(deps.storage)?;
         if prev_cw2_version.contract != keys::CONTRACT_NAME {
@@ -274,6 +265,23 @@ mod migrate {
                 actual: keys::CONTRACT_VERSION.to_string(),
             });
         }
+        Ok(())
+    }
+
+    /// Validate that the channel encoding is protobuf if set.
+    pub fn validate_channel_encoding(deps: Deps) -> Result<(), ContractError> {
+        // Reject the migration if the channel encoding is not protobuf
+        if let Some(ica_info) = state::STATE.load(deps.storage)?.ica_info {
+            if !matches!(
+                ica_info.encoding,
+                crate::ibc::types::metadata::TxEncoding::Protobuf
+            ) {
+                return Err(ContractError::UnsupportedPacketEncoding(
+                    ica_info.encoding.to_string(),
+                ));
+            }
+        }
+
         Ok(())
     }
 }
@@ -495,7 +503,14 @@ mod tests {
             .unwrap();
 
         // Migration should fail because the encoding is not protobuf
-        let _err = migrate(deps.as_mut(), mock_env(), MigrateMsg {}).unwrap_err();
+        let err = migrate(deps.as_mut(), mock_env(), MigrateMsg {}).unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            ContractError::UnsupportedPacketEncoding(
+                crate::ibc::types::metadata::TxEncoding::Proto3Json.to_string()
+            )
+            .to_string()
+        );
 
         // Set the encoding to protobuf
         state::STATE
