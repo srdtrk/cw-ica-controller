@@ -2,39 +2,6 @@
 
 use cosmwasm_std::{Empty, QueryRequest};
 
-/// `MsgModuleQuerySafe` defines the query request tx added in ibc-go v8.2
-#[derive(::prost::Message)]
-pub struct MsgModuleQuerySafe {
-    #[prost(string, tag = "1")]
-    /// signer is the address of the account that signed the transaction
-    pub signer: ::prost::alloc::string::String,
-    /// requests is the list of query requests
-    #[prost(message, repeated, tag = "2")]
-    pub requests: ::prost::alloc::vec::Vec<AbciQueryRequest>,
-}
-
-/// `AbciQueryRequest` defines the parameters for a particular query request by an interchain account.
-#[derive(::prost::Message)]
-pub struct AbciQueryRequest {
-    #[prost(string, tag = "1")]
-    /// `path` defines the path of the query request as defined by ADR-021.
-    /// https://github.com/cosmos/cosmos-sdk/blob/main/docs/architecture/adr-021-protobuf-query-encoding.md#custom-query-registration-and-routing
-    pub path: ::prost::alloc::string::String,
-    #[prost(bytes = "vec", tag = "2")]
-    /// `data` defines the payload of the query request as defined by ADR-021.
-    /// https://github.com/cosmos/cosmos-sdk/blob/main/docs/architecture/adr-021-protobuf-query-encoding.md#custom-query-registration-and-routing
-    pub data: ::prost::alloc::vec::Vec<u8>,
-}
-
-/// `MsgModuleQuerySafeResponse` defines the response for Msg/ModuleQuerySafe
-#[derive(::prost::Message)]
-pub struct MsgModuleQuerySafeResponse {
-    /// responses is the list of query responses as bytes
-    /// The responses are in the same order as the requests
-    #[prost(bytes = "vec", repeated, tag = "1")]
-    pub responses: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
-}
-
 /// Converts a [`QueryRequest`] to a gRPC method path and protobuf bytes.
 ///
 /// # Panics
@@ -194,3 +161,40 @@ mod convert_to_protobuf {
 }
 
 mod from_protobuf {}
+
+/// This module defines the protobuf messages for the query module.
+/// This module can be removed once these types are included in `cosmos_sdk_proto` crate.
+pub mod proto {
+    /// `MsgModuleQuerySafe` defines the query request tx added in ibc-go v8.2
+    #[derive(::prost::Message)]
+    pub struct MsgModuleQuerySafe {
+        #[prost(string, tag = "1")]
+        /// signer is the address of the account that signed the transaction
+        pub signer: ::prost::alloc::string::String,
+        /// requests is the list of query requests
+        #[prost(message, repeated, tag = "2")]
+        pub requests: ::prost::alloc::vec::Vec<AbciQueryRequest>,
+    }
+
+    /// `AbciQueryRequest` defines the parameters for a particular query request by an interchain account.
+    #[derive(::prost::Message)]
+    pub struct AbciQueryRequest {
+        #[prost(string, tag = "1")]
+        /// `path` defines the path of the query request as defined by ADR-021.
+        /// https://github.com/cosmos/cosmos-sdk/blob/main/docs/architecture/adr-021-protobuf-query-encoding.md#custom-query-registration-and-routing
+        pub path: ::prost::alloc::string::String,
+        #[prost(bytes = "vec", tag = "2")]
+        /// `data` defines the payload of the query request as defined by ADR-021.
+        /// https://github.com/cosmos/cosmos-sdk/blob/main/docs/architecture/adr-021-protobuf-query-encoding.md#custom-query-registration-and-routing
+        pub data: ::prost::alloc::vec::Vec<u8>,
+    }
+
+    /// `MsgModuleQuerySafeResponse` defines the response for Msg/ModuleQuerySafe
+    #[derive(::prost::Message)]
+    pub struct MsgModuleQuerySafeResponse {
+        /// responses is the list of query responses as bytes
+        /// The responses are in the same order as the requests
+        #[prost(bytes = "vec", repeated, tag = "1")]
+        pub responses: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
+    }
+}
