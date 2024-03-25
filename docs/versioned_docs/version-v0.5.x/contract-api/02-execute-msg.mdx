@@ -1,0 +1,135 @@
+---
+title: ExecuteMsg
+sidebar_label: ExecuteMsg
+sidebar_position: 2
+slug: /contract-api/execute-msg
+---
+
+# `ExecuteMsg`
+
+The `ExecuteMsg` is the message that is used to interact with the `cw-ica-controller` contract.
+**All execute messages are only callable by the owner of the contract.**
+
+## `CreateChannel`
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/msg.rs#L27-L37
+```
+
+This message is used to initiate an ICS-27 channel open handshake. It is only callable by the owner.
+This message only takes one optional parameter: `channel_open_init_options`.
+
+If this parameter is left empty, then the contract will use the `channel_open_init_options` that were last
+passed to the `InstantiateMsg` or `CreateChannel` messages.
+
+If this parameter is set, then the contract will use the `channel_open_init_options` that are passed to this
+message and save them for future `CreateChannel` messages.
+
+## `CloseChannel`
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/msg.rs#L38-L39
+```
+
+This message is used to close the ICS-27 channel. It is only callable by the owner.
+The channel can then be reopened with parameters (e.g. channel ordering and version) that are different from the
+original channel open handshake.
+
+## `SendCosmosMsgs`
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/msg.rs#L40-L54
+```
+
+Once an ICS-27 channel open handshake is complete, the owner can control the interchain account on the counterparty
+chain. To give the owner a familiar interface, this message allows the owner to take actions with the interchain
+account using `CosmosMsg`s. This is the recommended way to use the interchain account. We will go over the fields of
+this message in detail.
+
+### `messages`
+
+This is a list of `CosmosMsg`s that the contract will execute on the counterparty chain using the interchain account.
+This execution is atomic. If any of the `CosmosMsg`s fail, then the entire execution will fail.
+
+:::note
+
+All applicable `CosmosMsg`s are supported if the channel was opened with `tx_encoding` set to `proto3`.
+However, if the channel was opened with `tx_encoding` set to `proto3json`, then some `CosmosMsg`s are not supported.
+Below is a table of the supported `CosmosMsg`s for each `tx_encoding`.
+
+|                **CosmosMsg**               | `proto3` | `proto3json` |
+|:------------------------------------------:|:--------:|:------------:|
+|                 `Stargate`                 |     ✅    |       ❌      |
+|               `BankMsg::Send`              |     ✅    |       ✅      |
+|               `BankMsg::Burn`              |     ❌    |       ❌      |
+|             `IbcMsg::Transfer`             |     ✅    |       🟢      |
+|            `IbcMsg::SendPacket`            |    N/A   |      N/A     |
+|           `IbcMsg::CloseChannel`           |    N/A   |      N/A     |
+|                `WasmMsg::*`                |     ✅    |       ❌      |
+|                 `GovMsg::*`                |     ✅    |       ✅      |
+|           `StakingMsg::Delegate`           |     ✅    |       ✅      |
+|               `StakingMsg::*`              |     🟢    |       🟢      |
+| `DistributionMsg::WithdrawDelegatorReward` |     🟢    |       🟢      |
+|            `DistributionMsg::*`            |     ✅    |       ✅      |
+
+Note that `🟢` means that the `CosmosMsg` is supported but not tested in the contract's test suite.
+These will be tested in the future.
+
+:::
+
+### `packet_memo`
+
+This is the IBC packet memo that will be included in the ICS-27 packet. It is optional and defaults to `""`.
+Additionally, the memo field is used by some IBC middleware to execute custom logic on the counterparty chain.
+But most of these middlewares do not yet support ICS-27 channels.
+
+### `timeout_seconds`
+
+This is the timeout in seconds that will be used for the ICS-27 packet. It is optional and defaults to [`DEFAULT_TIMEOUT_SECONDS`](https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/ibc/types/packet.rs#L15-L16).
+
+## `SendCustomIcaMessages`
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/msg.rs#L55-L91
+```
+
+Recall that the `SendCosmosMsgs` message is the recommended way to use the interchain account. Use this only if you
+insist on using `proto3json` encoding and you need to send messages that are not supported by the `SendCosmosMsgs`.
+
+:::note
+
+This message is redundant if the channel was opened with `tx_encoding` set to `proto3`. This is because any custom
+message you might want to send will be supported through `CosmosMsg::Stargate`.
+
+:::
+
+I will not go into the details of the fields of this message since it is not recommended to use this message.
+
+## `UpdateCallbackAddress`
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/msg.rs#L92-L97
+```
+
+This message is used to update the contract address that this contract will send callbacks to.
+This is useful if the owner wants to change the contract that receives the callbacks.
+If set to `None`, then no callbacks will be sent.
+
+## `UpdateOwnership`
+
+```rust reference
+https://github.com/larry0x/cw-plus-plus/blob/ownable-v0.5.0/packages/ownable/derive/src/lib.rs#L86-L90
+```
+
+This message type is provided by the [cw-ownable](https://crates.io/crates/cw-ownable) crate. It wraps a
+`cw_ownable::Action` enum.
+
+```rust reference
+https://github.com/larry0x/cw-plus-plus/blob/ownable-v0.5.0/packages/ownable/src/lib.rs#L31-L57
+```
+
+The owner can propose to transfer the ownership of the contract to a new address using `Action::TransferOwnership` and
+set and expiry time for the proposal. If the proposal is accepted before the expiry time through
+`Action::AcceptOwnership`, then the ownership of the contract is transferred to the new address.
+
+You can learn more about `cw-ownable` in its crate documentation.
