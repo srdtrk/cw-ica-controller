@@ -38,20 +38,24 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/srdtrk/cw-ica-controller/tree/feat/docusaurus-docs/docs',
+            'https://github.com/srdtrk/cw-ica-controller/tree/main/docs',
           // Routed the docs to the root path
           routeBasePath: "/",
           sidebarCollapsed: false,
           // Select the latest version
-          lastVersion: "v0.4.x",
+          lastVersion: "v0.5.x",
           versions: {
             current: {
               label: 'main',
               path: 'main',
               banner: 'unreleased',
             },
+            "v0.5.x": {
+              label: 'v0.5.x',
+              path: 'v0.5',
+            },
             "v0.4.x": {
-              label: 'v0.4',
+              label: 'v0.4.x',
               path: 'v0.4',
             },
           },
