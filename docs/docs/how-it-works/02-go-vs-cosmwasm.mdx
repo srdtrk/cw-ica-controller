@@ -36,13 +36,13 @@ This means that the users of `cw-ica-controller` can use the same contract on an
 
 But there is more! `cw-ica-controller` is also able to do some things that the golang API limits you from doing.
 
-|                 **Feature**                 | `cw-ica-controller` | golang `ica-controller` |                                                      **Description**                                                      |
-|:-------------------------------------------:|:-------------------:|:-----------------------:|:-------------------------------------------------------------------------------------------------------------------------:|
-|                  Callbacks                  |          ✅          |            ❌            |                                       Golang implementation does not make callbacks                                       |
-|      Submit `cosmwasm_std::CosmosMsg`s      |          ✅          |            ❌            |            Golang implementation requires ICA transactions to be submitted in protobuf or `proto3json` format.            |
-| Reopen an ICA channel with different params |          ✅          |            ❌            | In golang implementation, if the channel closes due to timeout the channel can only be reopened with the same parameters. |
-|                 Change owner                |          ✅          |            ❌            |                              `cw-ica-controller` uses [`cw-ownable`][1] for owner management                              |
-|                Live upgrades                |          ✅          |            ❌            | In golang implementation, new features require coordinated chain upgrades which could get blocked on upgrading CosmosSDK. |
-|          Permanent channel closure          |          ✅          |            ❌            |           Golang implementation allows any relayer to always reopen any ICA channel (with the same parameters).           |
+|                 **Feature**                 | `cw-ica-controller` | golang `ica-controller` | neutron bindings |                                                      **Description**                                                      |
+|:-------------------------------------------:|:-------------------:|:-----------------------:|------------------|:-------------------------------------------------------------------------------------------------------------------------:|
+|                  Callbacks                  |          ✅          |            ❌            |         ✅        |                                       Golang implementation does not make callbacks                                       |
+|      Submit `cosmwasm_std::CosmosMsg`s      |          ✅          |            ❌            |         ❌        |            Golang implementation requires ICA transactions to be submitted in protobuf or `proto3json` format.            |
+| Reopen an ICA channel with different params |          ✅          |            ❌            |         ❌        | In golang implementation, if the channel closes due to timeout the channel can only be reopened with the same parameters. |
+|                 Change owner                |          ✅          |            ❌            |         ✅        |                              `cw-ica-controller` uses [`cw-ownable`][1] for owner management                              |
+|                Live upgrades                |          ✅          |            ❌            |         ❌        | In golang implementation, new features require coordinated chain upgrades which could get blocked on upgrading CosmosSDK. |
+|          Permanent channel closure          |          ✅          |            ❌            |         ❌        |           Golang implementation allows any relayer to always reopen any ICA channel (with the same parameters).           |
 
 [1]: https://github.com/larry0x/cw-plus-plus/tree/main/packages/ownable

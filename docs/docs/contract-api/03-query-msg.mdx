@@ -13,25 +13,25 @@ understand the state of the contract.
 ## `GetChannel`
 
 ```rust reference
-https://github.com/srdtrk/cw-ica-controller/blob/v0.4.0/src/types/msg.rs#L103-L105
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/msg.rs#L105-L107
 ```
 
 This message is used to query the state of the ICS-27 channel as tracked by the contract. It returns
 
 ```rust reference
-https://github.com/srdtrk/cw-ica-controller/blob/v0.4.0/src/types/state.rs#L156-L164
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/state.rs#L158-L166
 ```
 
 ## `GetContractState`
 
 ```rust reference
-https://github.com/srdtrk/cw-ica-controller/blob/v0.4.0/src/types/msg.rs#L106-L108
+https://github.com/srdtrk/cw-ica-controller/blob/v0.4.0/src/types/msg.rs#L108-L110
 ```
 
 This message is used to query the state of the contract. It returns
 
 ```rust reference
-https://github.com/srdtrk/cw-ica-controller/blob/9890793d3a19a9ec068e26627ec99ec48b3b9d92/src/types/state.rs#L39-L50
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/state.rs#L39-L50
 ```
 
 Lets look at the fields of the `ContractState`:
@@ -42,7 +42,7 @@ This field will be empty if the channel handshake has not been completed. Otherw
 following information:
 
 ```rust reference
-https://github.com/srdtrk/cw-ica-controller/blob/v0.4.0/src/types/state.rs#L109-L115
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/state.rs#L90-L96
 ```
 
 ### `callback_address`

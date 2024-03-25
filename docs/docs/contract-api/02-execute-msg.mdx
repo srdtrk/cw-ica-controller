@@ -13,7 +13,7 @@ The `ExecuteMsg` is the message that is used to interact with the `cw-ica-contro
 ## `CreateChannel`
 
 ```rust reference
-https://github.com/srdtrk/cw-ica-controller/blob/v0.4.0/src/types/msg.rs#L27-L37
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/msg.rs#L27-L37
 ```
 
 This message is used to initiate an ICS-27 channel open handshake. It is only callable by the owner.
@@ -28,7 +28,7 @@ message and save them for future `CreateChannel` messages.
 ## `CloseChannel`
 
 ```rust reference
-https://github.com/srdtrk/cw-ica-controller/blob/9890793d3a19a9ec068e26627ec99ec48b3b9d92/src/types/msg.rs#L38-L39
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/msg.rs#L38-L39
 ```
 
 This message is used to close the ICS-27 channel. It is only callable by the owner.
@@ -38,7 +38,7 @@ original channel open handshake.
 ## `SendCosmosMsgs`
 
 ```rust reference
-https://github.com/srdtrk/cw-ica-controller/blob/v0.4.0/src/types/msg.rs#L38-L52
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/msg.rs#L40-L54
 ```
 
 Once an ICS-27 channel open handshake is complete, the owner can control the interchain account on the counterparty
@@ -85,12 +85,12 @@ But most of these middlewares do not yet support ICS-27 channels.
 
 ### `timeout_seconds`
 
-This is the timeout in seconds that will be used for the ICS-27 packet. It is optional and defaults to [`DEFAULT_TIMEOUT_SECONDS`](https://github.com/srdtrk/cw-ica-controller/blob/v0.4.0/src/ibc/types/packet.rs#L15-L16).
+This is the timeout in seconds that will be used for the ICS-27 packet. It is optional and defaults to [`DEFAULT_TIMEOUT_SECONDS`](https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/ibc/types/packet.rs#L15-L16).
 
 ## `SendCustomIcaMessages`
 
 ```rust reference
-https://github.com/srdtrk/cw-ica-controller/blob/v0.4.0/src/types/msg.rs#L53-L89
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/msg.rs#L55-L91
 ```
 
 Recall that the `SendCosmosMsgs` message is the recommended way to use the interchain account. Use this only if you
@@ -108,7 +108,7 @@ I will not go into the details of the fields of this message since it is not rec
 ## `UpdateCallbackAddress`
 
 ```rust reference
-https://github.com/srdtrk/cw-ica-controller/blob/v0.4.0/src/types/msg.rs#L90-L95
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/msg.rs#L92-L97
 ```
 
 This message is used to update the contract address that this contract will send callbacks to.
