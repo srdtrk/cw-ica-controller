@@ -37,7 +37,7 @@ This means that the users of `cw-ica-controller` can use the same contract on an
 But there is more! `cw-ica-controller` is also able to do some things that the golang API limits you from doing.
 
 |                 **Feature**                 | `cw-ica-controller` | golang `ica-controller` | neutron bindings |                                                      **Description**                                                      |
-|:-------------------------------------------:|:-------------------:|:-----------------------:|------------------|:-------------------------------------------------------------------------------------------------------------------------:|
+|:-------------------------------------------:|:-------------------:|:-----------------------:|:----------------:|:-------------------------------------------------------------------------------------------------------------------------:|
 |                  Callbacks                  |          ✅          |            ❌            |         ✅        |                                       Golang implementation does not make callbacks                                       |
 |      Submit `cosmwasm_std::CosmosMsg`s      |          ✅          |            ❌            |         ❌        |            Golang implementation requires ICA transactions to be submitted in protobuf or `proto3json` format.            |
 | Reopen an ICA channel with different params |          ✅          |            ❌            |         ❌        | In golang implementation, if the channel closes due to timeout the channel can only be reopened with the same parameters. |
