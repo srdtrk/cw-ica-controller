@@ -90,7 +90,7 @@ pub mod options {
         PartialEq,
         cosmwasm_schema::schemars::JsonSchema,
     )]
-    #[allow(clippy::derive_partial_eq_without_eq)] // Allow users of `#[cw_serde]` to not implement Eq without clippy complaining
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[schemars(crate = "::cosmwasm_schema::schemars")]
     pub struct ChannelOpenInitOptions {
         /// The connection id on this chain.
