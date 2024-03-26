@@ -24,7 +24,7 @@ If left empty, the owner is set to the sender of the `InstantiateMsg`.
 ### `channel_open_init_options`
 
 ```rust reference
-https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/msg.rs#L124-L140
+https://github.com/srdtrk/cw-ica-controller/blob/6843b80b29af97b9c4561ad487420e2f54857553/src/types/msg.rs#L95-L107
 ```
 
 These are the options required for the contract to initiate an ICS-27 channel open handshake.
@@ -50,13 +50,6 @@ end on the counterparty chain, then the owner must call [`ExecuteMsg::CreateChan
 This is a required parameter for the ICS-27 channel version metadata. I've added it here for consistency.
 Currently, the only supported value is `icahost`. If left empty, it is set to `icahost`.
 **So you should ignore this field.**
-
-#### `tx_encoding`
-
-The ICS-27 implementation in `ibc-go` supports two transaction encoding formats: `proto3` and `proto3json`.
-This contract supports both formats, but defaults to `proto3`. This is because most chains don't yet support
-`proto3json` encoding. Moreover, this contract does not support some `CosmosMsg` while using `proto3json`.
-**So, if you are unsure, leave this field empty.**
 
 ### `send_callbacks_to`
 
