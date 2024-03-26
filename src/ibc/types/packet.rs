@@ -18,8 +18,9 @@ pub const DEFAULT_TIMEOUT_SECONDS: u64 = 600;
 /// `IcaPacketData` is comprised of a raw transaction, type of transaction and optional memo field.
 /// Currently, the host only supports [protobuf](super::metadata::TxEncoding::Protobuf) or
 /// [proto3json](super::metadata::TxEncoding::Proto3Json) serialized Cosmos transactions.
+/// This contract only supports the protobuf encoding.
 ///
-/// If protobuf is used, then the raw transaction must encoded using
+/// When protobuf is used, then the raw transaction must encoded using
 /// [`CosmosTx`](cosmos_sdk_proto::ibc::applications::interchain_accounts::v1::CosmosTx).
 #[allow(clippy::module_name_repetitions)]
 #[cw_serde]
@@ -54,39 +55,6 @@ impl IcaPacketData {
         }
     }
 
-    /// Creates a new [`IcaPacketData`] from a list of JSON strings
-    ///
-    /// The messages must be serialized as JSON strings in the format expected by the ICA host.
-    /// The following is an example with one legacy gov proposal message:
-    ///
-    /// ## Format
-    ///
-    /// ```json
-    /// {
-    ///   "messages": [
-    ///     {
-    ///       "@type": "/cosmos.gov.v1beta1.MsgSubmitProposal",
-    ///       "content": {
-    ///         "@type": "/cosmos.gov.v1beta1.TextProposal",
-    ///         "title": "IBC Gov Proposal",
-    ///         "description": "tokens for all!"
-    ///       },
-    ///       "initial_deposit": [{ "denom": "stake", "amount": "5000" }],
-    ///       "proposer": "cosmos1k4epd6js8aa7fk4e5l7u6dwttxfarwu6yald9hlyckngv59syuyqnlqvk8"
-    ///     }
-    ///   ]
-    /// }
-    /// ```
-    ///
-    /// In this example, the proposer must be the ICA controller's address.
-    #[must_use]
-    pub fn from_json_strings(messages: &[String], memo: Option<String>) -> Self {
-        let combined_messages = messages.join(", ");
-        let json_txs = format!(r#"{{"messages": [{combined_messages}]}}"#);
-        let data = json_txs.into_bytes();
-        Self::new(data, memo)
-    }
-
     /// Creates a new [`IcaPacketData`] from a list of [`cosmos_sdk_proto::Any`] messages
     #[must_use]
     pub fn from_proto_anys(messages: Vec<cosmos_sdk_proto::Any>, memo: Option<String>) -> Self {
@@ -104,7 +72,7 @@ impl IcaPacketData {
     ///
     /// # Panics
     ///
-    /// Panics if the [`CosmosMsg`] is not supported for the given encoding.
+    /// Panics if the [`CosmosMsg`] is not supported.
     ///
     /// The supported [`CosmosMsg`]s for [`TxEncoding::Protobuf`] are listed in [`convert_to_proto_any`].
     pub fn from_cosmos_msgs(
