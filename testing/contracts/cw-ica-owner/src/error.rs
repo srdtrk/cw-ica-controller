@@ -9,9 +9,6 @@ pub enum ContractError {
     #[error("error when computing the instantiate2 address: {0}")]
     Instantiate2AddressError(#[from] Instantiate2AddressError),
 
-    #[error("prost encoding error: {0}")]
-    ProstEncodeError(#[from] cosmos_sdk_proto::prost::EncodeError),
-
     #[error("unauthorized")]
     Unauthorized {},
 

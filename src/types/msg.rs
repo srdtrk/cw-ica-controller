@@ -3,7 +3,7 @@
 //! This module defines the messages that this contract receives.
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Binary, CosmosMsg};
+use cosmwasm_std::CosmosMsg;
 
 /// The message to instantiate the ICA controller contract.
 #[cw_serde]
@@ -52,43 +52,6 @@ pub enum ExecuteMsg {
         #[serde(skip_serializing_if = "Option::is_none")]
         timeout_seconds: Option<u64>,
     },
-    /// `SendCustomIcaMessages` sends custom messages from the ICA controller to the ICA host.
-    ///
-    /// **Use this only if you know what you are doing.**
-    SendCustomIcaMessages {
-        /// Base64-encoded json or proto messages to send to the ICA host.
-        ///
-        /// # Example JSON Message:
-        ///
-        /// This is a legacy text governance proposal message serialized using proto3json.
-        ///
-        /// ```json
-        ///  {
-        ///    "messages": [
-        ///      {
-        ///        "@type": "/cosmos.gov.v1beta1.MsgSubmitProposal",
-        ///        "content": {
-        ///          "@type": "/cosmos.gov.v1beta1.TextProposal",
-        ///          "title": "IBC Gov Proposal",
-        ///          "description": "tokens for all!"
-        ///        },
-        ///        "initial_deposit": [{ "denom": "stake", "amount": "5000" }],
-        ///        "proposer": "cosmos1k4epd6js8aa7fk4e5l7u6dwttxfarwu6yald9hlyckngv59syuyqnlqvk8"
-        ///      }
-        ///    ]
-        ///  }
-        /// ```
-        ///
-        /// where proposer is the ICA controller's address.
-        messages: Binary,
-        /// Optional memo to include in the ibc packet.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        packet_memo: Option<String>,
-        /// Optional timeout in seconds to include with the ibc packet.
-        /// If not specified, the [default timeout](crate::ibc::types::packet::DEFAULT_TIMEOUT_SECONDS) is used.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        timeout_seconds: Option<u64>,
-    },
     /// `UpdateCallbackAddress` updates the contract callback address.
     UpdateCallbackAddress {
         /// The new callback address.
@@ -118,11 +81,17 @@ pub struct MigrateMsg {}
 pub mod options {
     use cosmwasm_std::IbcOrder;
 
-    use super::cw_serde;
-    use crate::ibc::types::{keys::HOST_PORT_ID, metadata::TxEncoding};
-
-    /// The message used to provide the MsgChannelOpenInit with the required data.
-    #[cw_serde]
+    /// The options needed to initialize the IBC channel.
+    #[derive(
+        serde::Serialize,
+        serde::Deserialize,
+        Clone,
+        Debug,
+        PartialEq,
+        cosmwasm_schema::schemars::JsonSchema,
+    )]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[schemars(crate = "::cosmwasm_schema::schemars")]
     pub struct ChannelOpenInitOptions {
         /// The connection id on this chain.
         pub connection_id: String,
@@ -131,8 +100,6 @@ pub mod options {
         /// The counterparty port id. If not specified, [`crate::ibc::types::keys::HOST_PORT_ID`] is used.
         /// Currently, this contract only supports the host port.
         pub counterparty_port_id: Option<String>,
-        /// TxEncoding is the encoding used for the ICA txs. If not specified, [`TxEncoding::Protobuf`] is used.
-        pub tx_encoding: Option<TxEncoding>,
         /// The order of the channel. If not specified, [`IbcOrder::Ordered`] is used.
         /// [`IbcOrder::Unordered`] is only supported if the counterparty chain is using `ibc-go`
         /// v8.1.0 or later.
@@ -145,13 +112,7 @@ pub mod options {
         pub fn counterparty_port_id(&self) -> String {
             self.counterparty_port_id
                 .clone()
-                .unwrap_or_else(|| HOST_PORT_ID.to_string())
-        }
-
-        /// Returns the tx encoding.
-        #[must_use]
-        pub fn tx_encoding(&self) -> TxEncoding {
-            self.tx_encoding.clone().unwrap_or(TxEncoding::Protobuf)
+                .unwrap_or_else(|| crate::ibc::types::keys::HOST_PORT_ID.to_string())
         }
     }
 }

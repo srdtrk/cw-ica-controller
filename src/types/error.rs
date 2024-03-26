@@ -87,4 +87,7 @@ pub enum ContractError {
 
     #[error("invalid channel status: expected {expected}, got {actual}")]
     InvalidChannelStatus { expected: String, actual: String },
+
+    #[error("unsupported packet encoding: {0}")]
+    UnsupportedPacketEncoding(String),
 }

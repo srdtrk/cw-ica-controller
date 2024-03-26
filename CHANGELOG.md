@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### API Breaking Changes
+
+- Removed support for `proto3json` encoding. (https://github.com/srdtrk/cw-ica-controller/pull/92)
+- Removed `tx_encoding` field from `ChannelOpenInitOptions`. (https://github.com/srdtrk/cw-ica-controller/pull/92)
+- Removed `ExecuteMsg::SendCustomIcaMessages`. (https://github.com/srdtrk/cw-ica-controller/pull/92)
+
 ## v0.5.0 (2024-02-05)
 
 ### Features
