@@ -54,22 +54,23 @@ This execution is atomic. If any of the `CosmosMsg`s fail, then the entire execu
 :::note
 
 All applicable `CosmosMsg`s are supported if the channel was opened with `tx_encoding` set to `proto3`.
-The `proto3json` encoding is not supported by this contract anymore.
+However, if the channel was opened with `tx_encoding` set to `proto3json`, then some `CosmosMsg`s are not supported.
+Below is a table of the supported `CosmosMsg`s for each `tx_encoding`.
 
-|                **CosmosMsg**               | `proto3` |
-|:------------------------------------------:|:--------:|
-|                 `Stargate`                 |     ✅    |
-|               `BankMsg::Send`              |     ✅    |
-|               `BankMsg::Burn`              |     ❌    |
-|             `IbcMsg::Transfer`             |     ✅    |
-|            `IbcMsg::SendPacket`            |    N/A   |
-|           `IbcMsg::CloseChannel`           |    N/A   |
-|                `WasmMsg::*`                |     ✅    |
-|                 `GovMsg::*`                |     ✅    |
-|           `StakingMsg::Delegate`           |     ✅    |
-|               `StakingMsg::*`              |     🟢    |
-| `DistributionMsg::WithdrawDelegatorReward` |     🟢    |
-|            `DistributionMsg::*`            |     ✅    |
+|                **CosmosMsg**               | `proto3` | `proto3json` |
+|:------------------------------------------:|:--------:|:------------:|
+|                 `Stargate`                 |     ✅    |       ❌      |
+|               `BankMsg::Send`              |     ✅    |       ✅      |
+|               `BankMsg::Burn`              |     ❌    |       ❌      |
+|             `IbcMsg::Transfer`             |     ✅    |       🟢      |
+|            `IbcMsg::SendPacket`            |    N/A   |      N/A     |
+|           `IbcMsg::CloseChannel`           |    N/A   |      N/A     |
+|                `WasmMsg::*`                |     ✅    |       ❌      |
+|                 `GovMsg::*`                |     ✅    |       ✅      |
+|           `StakingMsg::Delegate`           |     ✅    |       ✅      |
+|               `StakingMsg::*`              |     🟢    |       🟢      |
+| `DistributionMsg::WithdrawDelegatorReward` |     🟢    |       🟢      |
+|            `DistributionMsg::*`            |     ✅    |       ✅      |
 
 Note that `🟢` means that the `CosmosMsg` is supported but not tested in the contract's test suite.
 These will be tested in the future.
@@ -85,6 +86,24 @@ But most of these middlewares do not yet support ICS-27 channels.
 ### `timeout_seconds`
 
 This is the timeout in seconds that will be used for the ICS-27 packet. It is optional and defaults to [`DEFAULT_TIMEOUT_SECONDS`](https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/ibc/types/packet.rs#L15-L16).
+
+## `SendCustomIcaMessages`
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/msg.rs#L55-L91
+```
+
+Recall that the `SendCosmosMsgs` message is the recommended way to use the interchain account. Use this only if you
+insist on using `proto3json` encoding and you need to send messages that are not supported by the `SendCosmosMsgs`.
+
+:::note
+
+This message is redundant if the channel was opened with `tx_encoding` set to `proto3`. This is because any custom
+message you might want to send will be supported through `CosmosMsg::Stargate`.
+
+:::
+
+I will not go into the details of the fields of this message since it is not recommended to use this message.
 
 ## `UpdateCallbackAddress`
 

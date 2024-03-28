@@ -3,12 +3,9 @@ package main
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"strconv"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-
-	icatypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/types"
 
 	interchaintest "github.com/strangelove-ventures/interchaintest/v8"
 	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos/wasm"
@@ -25,7 +22,7 @@ type GetCountResponse struct {
 	Count int64 `json:"count"`
 }
 
-func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding icacontroller.TxEncoding) int {
+func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context) int {
 	wasmChainSpecs := []*interchaintest.ChainSpec{
 		chainSpecs[0],
 		{
@@ -72,7 +69,6 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding ica
 			ConnectionId:             s.ChainAConnID,
 			CounterpartyConnectionId: s.ChainBConnID,
 			CounterpartyPortId:       nil,
-			TxEncoding:               &encoding,
 		},
 		SendCallbacksTo: &callbackAddress,
 	}
@@ -112,16 +108,11 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context, encoding ica
 }
 
 func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
-	s.SendWasmMsgsTestWithEncoding(icatypes.EncodingProtobuf)
-}
-
-// currently, Wasm is only supported with protobuf encoding
-func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding icacontroller.TxEncoding) {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 	// sets up the contract and does the channel handshake for the contract test suite.
-	counterCodeID := s.SetupWasmTestSuite(ctx, encoding)
+	counterCodeID := s.SetupWasmTestSuite(ctx)
 	wasmd, wasmd2 := s.ChainA, s.ChainB
 	wasmdUser, wasmd2User := s.UserA, s.UserB
 
@@ -129,7 +120,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding icacontroller.
 	s.FundAddressChainB(ctx, s.Contract.IcaAddress)
 
 	var counterContract *types.Contract
-	s.Run(fmt.Sprintf("TestInstantiate-%s", encoding), func() {
+	s.Run("TestInstantiate", func() {
 		// Instantiate the contract:
 		instantiateMsg := icacontroller.CosmosMsg_for_Empty{
 			Wasm: &icacontroller.CosmosMsg_for_Empty_Wasm{
@@ -182,7 +173,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding icacontroller.
 	})
 
 	var counter2Contract *types.Contract
-	s.Run(fmt.Sprintf("TestExecuteAndInstantiate2AndClearAdminMsg-%s", encoding), func() {
+	s.Run("TestExecuteAndInstantiate2AndClearAdminMsg", func() {
 		// Execute the contract:
 		executeMsg := icacontroller.CosmosMsg_for_Empty{
 			Wasm: &icacontroller.CosmosMsg_for_Empty_Wasm{
@@ -261,7 +252,7 @@ func (s *ContractTestSuite) SendWasmMsgsTestWithEncoding(encoding icacontroller.
 		)
 	})
 
-	s.Run(fmt.Sprintf("TestMigrateAndUpdateAdmin-%s", encoding), func() {
+	s.Run("TestMigrateAndUpdateAdmin", func() {
 		migrateMsg := icacontroller.CosmosMsg_for_Empty{
 			Wasm: &icacontroller.CosmosMsg_for_Empty_Wasm{
 				Migrate: &icacontroller.WasmMsg_Migrate{

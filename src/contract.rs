@@ -40,7 +40,7 @@ pub fn instantiate(
         msg.channel_open_init_options.connection_id,
         msg.channel_open_init_options.counterparty_port_id,
         msg.channel_open_init_options.counterparty_connection_id,
-        msg.channel_open_init_options.tx_encoding,
+        None,
         msg.channel_open_init_options.channel_ordering,
     );
 
@@ -61,18 +61,6 @@ pub fn execute(
             channel_open_init_options,
         } => execute::create_channel(deps, env, info, channel_open_init_options),
         ExecuteMsg::CloseChannel {} => execute::close_channel(deps, info),
-        ExecuteMsg::SendCustomIcaMessages {
-            messages,
-            packet_memo,
-            timeout_seconds,
-        } => execute::send_custom_ica_messages(
-            deps,
-            env,
-            info,
-            messages,
-            packet_memo,
-            timeout_seconds,
-        ),
         ExecuteMsg::UpdateCallbackAddress { callback_address } => {
             execute::update_callback_address(deps, info, callback_address)
         }
@@ -107,6 +95,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 #[allow(clippy::pedantic)]
 pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     migrate::validate_semver(deps.as_ref())?;
+    migrate::validate_channel_encoding(deps.as_ref())?;
 
     cw2::set_contract_version(deps.storage, keys::CONTRACT_NAME, keys::CONTRACT_VERSION)?;
     // If state structure changed in any contract version in the way migration is needed, it
@@ -121,8 +110,8 @@ mod execute {
     use crate::{ibc::types::packet::IcaPacketData, types::msg::options::ChannelOpenInitOptions};
 
     use super::{
-        new_ica_channel_open_init_cosmos_msg, state, Binary, ContractError, DepsMut, Env,
-        MessageInfo, Response,
+        new_ica_channel_open_init_cosmos_msg, state, ContractError, DepsMut, Env, MessageInfo,
+        Response,
     };
 
     #[cfg(feature = "query")]
@@ -156,7 +145,7 @@ mod execute {
             options.connection_id,
             options.counterparty_port_id,
             options.counterparty_connection_id,
-            options.tx_encoding,
+            None,
             options.channel_ordering,
         );
 
@@ -183,27 +172,6 @@ mod execute {
         });
 
         Ok(Response::new().add_message(channel_close_msg))
-    }
-
-    // Sends custom messages to the ICA host.
-    #[allow(clippy::needless_pass_by_value)]
-    pub fn send_custom_ica_messages(
-        deps: DepsMut,
-        env: Env,
-        info: MessageInfo,
-        messages: Binary,
-        packet_memo: Option<String>,
-        timeout_seconds: Option<u64>,
-    ) -> Result<Response, ContractError> {
-        cw_ownable::assert_owner(deps.storage, &info.sender)?;
-
-        let contract_state = state::STATE.load(deps.storage)?;
-        let ica_info = contract_state.get_ica_info()?;
-
-        let ica_packet = IcaPacketData::new(messages.to_vec(), packet_memo);
-        let send_packet_msg = ica_packet.to_ibc_msg(&env, ica_info.channel_id, timeout_seconds)?;
-
-        Ok(Response::default().add_message(send_packet_msg))
     }
 
     /// Sends an array of [`CosmosMsg`] to the ICA host.
@@ -305,8 +273,10 @@ mod query {
 }
 
 mod migrate {
-    use super::{keys, ContractError, Deps};
+    use super::{keys, state, ContractError, Deps};
 
+    /// Validate that the contract version is semver compliant
+    /// and greater than the previous version.
     pub fn validate_semver(deps: Deps) -> Result<(), ContractError> {
         let prev_cw2_version = cw2::get_contract_version(deps.storage)?;
         if prev_cw2_version.contract != keys::CONTRACT_NAME {
@@ -326,16 +296,32 @@ mod migrate {
         }
         Ok(())
     }
+
+    /// Validate that the channel encoding is protobuf if set.
+    pub fn validate_channel_encoding(deps: Deps) -> Result<(), ContractError> {
+        // Reject the migration if the channel encoding is not protobuf
+        if let Some(ica_info) = state::STATE.load(deps.storage)?.ica_info {
+            if !matches!(
+                ica_info.encoding,
+                crate::ibc::types::metadata::TxEncoding::Protobuf
+            ) {
+                return Err(ContractError::UnsupportedPacketEncoding(
+                    ica_info.encoding.to_string(),
+                ));
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::ibc::types::{metadata::TxEncoding, packet::IcaPacketData};
     use crate::types::msg::options::ChannelOpenInitOptions;
 
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{Api, SubMsg};
+    use cosmwasm_std::{Api, StdError, SubMsg};
 
     #[test]
     fn test_instantiate() {
@@ -347,7 +333,6 @@ mod tests {
             connection_id: "connection-0".to_string(),
             counterparty_connection_id: "connection-1".to_string(),
             counterparty_port_id: None,
-            tx_encoding: None,
             channel_ordering: None,
         };
 
@@ -375,7 +360,7 @@ mod tests {
             channel_open_init_options.connection_id,
             channel_open_init_options.counterparty_port_id,
             channel_open_init_options.counterparty_connection_id,
-            channel_open_init_options.tx_encoding,
+            None,
             channel_open_init_options.channel_ordering,
         );
         assert_eq!(res.messages[0], SubMsg::new(expected_msg));
@@ -394,76 +379,6 @@ mod tests {
     }
 
     #[test]
-    fn test_execute_send_custom_json_ica_messages() {
-        let mut deps = mock_dependencies();
-
-        let env = mock_env();
-        let info = mock_info("creator", &[]);
-
-        let channel_open_init_options = ChannelOpenInitOptions {
-            connection_id: "connection-0".to_string(),
-            counterparty_connection_id: "connection-1".to_string(),
-            counterparty_port_id: None,
-            tx_encoding: None,
-            channel_ordering: None,
-        };
-
-        // Instantiate the contract
-        let _res = instantiate(
-            deps.as_mut(),
-            env.clone(),
-            info.clone(),
-            InstantiateMsg {
-                owner: None,
-                channel_open_init_options,
-                send_callbacks_to: None,
-            },
-        )
-        .unwrap();
-
-        // for this unit test, we have to set ica info manually or else the contract will error
-        state::STATE
-            .update(&mut deps.storage, |mut state| -> StdResult<ContractState> {
-                state.set_ica_info("ica_address", "channel-0", TxEncoding::Proto3Json);
-                Ok(state)
-            })
-            .unwrap();
-
-        // Ensure the contract admin can send custom messages
-        let custom_msg_str = r#"{"@type": "/cosmos.bank.v1beta1.MsgSend", "from_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "to_address": "cosmos15ulrf36d4wdtrtqzkgaan9ylwuhs7k7qz753uk", "amount": [{"denom": "stake", "amount": "5000"}]}"#;
-        let messages_str = format!(r#"{{"messages": [{custom_msg_str}]}}"#);
-        let base64_json_messages = base64::encode(messages_str.as_bytes());
-        let messages = Binary::from_base64(&base64_json_messages).unwrap();
-
-        let msg = ExecuteMsg::SendCustomIcaMessages {
-            messages,
-            packet_memo: None,
-            timeout_seconds: None,
-        };
-        let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
-
-        let expected_packet = IcaPacketData::from_json_strings(&[custom_msg_str.to_string()], None);
-        let expected_msg = expected_packet.to_ibc_msg(&env, "channel-0", None).unwrap();
-
-        assert_eq!(1, res.messages.len());
-        assert_eq!(res.messages[0], SubMsg::new(expected_msg));
-
-        // Ensure a non-admin cannot send custom messages
-        let info = mock_info("non-admin", &[]);
-        let msg = ExecuteMsg::SendCustomIcaMessages {
-            messages: Binary(vec![]),
-            packet_memo: None,
-            timeout_seconds: None,
-        };
-
-        let res = execute(deps.as_mut(), env, info, msg);
-        assert_eq!(
-            res.unwrap_err().to_string(),
-            "Caller is not the contract's current owner".to_string()
-        );
-    }
-
-    #[test]
     fn test_update_callback_address() {
         let mut deps = mock_dependencies();
 
@@ -474,7 +389,6 @@ mod tests {
             connection_id: "connection-0".to_string(),
             counterparty_connection_id: "connection-1".to_string(),
             counterparty_port_id: None,
-            tx_encoding: None,
             channel_ordering: None,
         };
 
@@ -531,7 +445,6 @@ mod tests {
             connection_id: "connection-0".to_string(),
             counterparty_connection_id: "connection-1".to_string(),
             counterparty_port_id: None,
-            tx_encoding: None,
             channel_ordering: None,
         };
 
@@ -574,5 +487,73 @@ mod tests {
                 keys::CONTRACT_VERSION
             )
         );
+    }
+
+    #[test]
+    fn test_migrate_with_encoding() {
+        let mut deps = mock_dependencies();
+
+        let info = mock_info("creator", &[]);
+
+        let channel_open_init_options = ChannelOpenInitOptions {
+            connection_id: "connection-0".to_string(),
+            counterparty_connection_id: "connection-1".to_string(),
+            counterparty_port_id: None,
+            channel_ordering: None,
+        };
+
+        // Instantiate the contract
+        let _res = instantiate(
+            deps.as_mut(),
+            mock_env(),
+            info,
+            InstantiateMsg {
+                owner: None,
+                channel_open_init_options,
+                send_callbacks_to: None,
+            },
+        )
+        .unwrap();
+
+        // We need to set the contract version manually to a lower version than the current version
+        cw2::set_contract_version(&mut deps.storage, keys::CONTRACT_NAME, "0.0.1").unwrap();
+
+        // Ensure that the contract version is updated correctly
+        let contract_version = cw2::get_contract_version(&deps.storage).unwrap();
+        assert_eq!(contract_version.contract, keys::CONTRACT_NAME);
+        assert_eq!(contract_version.version, "0.0.1");
+
+        // Set the encoding to proto3json
+        state::STATE
+            .update::<_, StdError>(&mut deps.storage, |mut state| {
+                state.set_ica_info("", "", crate::ibc::types::metadata::TxEncoding::Proto3Json);
+                Ok(state)
+            })
+            .unwrap();
+
+        // Migration should fail because the encoding is not protobuf
+        let err = migrate(deps.as_mut(), mock_env(), MigrateMsg {}).unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            ContractError::UnsupportedPacketEncoding(
+                crate::ibc::types::metadata::TxEncoding::Proto3Json.to_string()
+            )
+            .to_string()
+        );
+
+        // Set the encoding to protobuf
+        state::STATE
+            .update::<_, StdError>(&mut deps.storage, |mut state| {
+                state.set_ica_info("", "", crate::ibc::types::metadata::TxEncoding::Protobuf);
+                Ok(state)
+            })
+            .unwrap();
+
+        // Migration should succeed because the encoding is protobuf
+        let _res = migrate(deps.as_mut(), mock_env(), MigrateMsg {}).unwrap();
+
+        let contract_version = cw2::get_contract_version(&deps.storage).unwrap();
+        assert_eq!(contract_version.contract, keys::CONTRACT_NAME);
+        assert_eq!(contract_version.version, keys::CONTRACT_VERSION);
     }
 }

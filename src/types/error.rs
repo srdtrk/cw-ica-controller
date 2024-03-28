@@ -90,4 +90,7 @@ pub enum ContractError {
 
     #[error("no callback address is set for the contract")]
     NoCallbackAddress,
+
+    #[error("unsupported packet encoding: {0}")]
+    UnsupportedPacketEncoding(String),
 }

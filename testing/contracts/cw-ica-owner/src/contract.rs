@@ -66,21 +66,16 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 mod execute {
-    use cosmwasm_std::Addr;
+    use cosmwasm_std::{Addr, BankMsg, Coin, CosmosMsg, Uint128};
     use cw_ica_controller::helpers::CwIcaControllerContract;
-    use cw_ica_controller::ibc::types::packet::IcaPacketData;
     use cw_ica_controller::types::callbacks::IcaControllerCallbackMsg;
     use cw_ica_controller::types::msg::ExecuteMsg as IcaControllerExecuteMsg;
     use cw_ica_controller::types::state::{ChannelState, ChannelStatus};
     use cw_ica_controller::{
-        helpers::CwIcaControllerCode, ibc::types::metadata::TxEncoding,
+        helpers::CwIcaControllerCode,
         types::msg::options::ChannelOpenInitOptions,
     };
 
-    use cosmos_sdk_proto::cosmos::{bank::v1beta1::MsgSend, base::v1beta1::Coin};
-    use cosmos_sdk_proto::Any;
-
-    use crate::cosmos_msg::ExampleCosmosMessages;
     use crate::state::{self, CONTRACT_ADDR_TO_ICA_ID, ICA_COUNT, ICA_STATES};
 
     use super::*;
@@ -143,44 +138,20 @@ mod execute {
 
         let ica_state = ICA_STATES.load(deps.storage, ica_id)?;
 
-        let ica_info = if let Some(ica_info) = ica_state.ica_state {
-            ica_info
-        } else {
-            return Err(ContractError::IcaInfoNotSet {});
-        };
-
         let cw_ica_contract =
-            CwIcaControllerContract::new(Addr::unchecked(&ica_state.contract_addr));
+            CwIcaControllerContract::new(Addr::unchecked(ica_state.contract_addr));
 
-        let ica_packet = match ica_info.tx_encoding {
-            TxEncoding::Protobuf => {
-                let predefined_proto_message = MsgSend {
-                    from_address: ica_info.ica_addr,
-                    to_address,
-                    amount: vec![Coin {
-                        denom: "stake".to_string(),
-                        amount: "100".to_string(),
-                    }],
-                };
-                IcaPacketData::from_proto_anys(
-                    vec![Any::from_msg(&predefined_proto_message)?],
-                    None,
-                )
-            }
-            TxEncoding::Proto3Json => {
-                let predefined_json_message = ExampleCosmosMessages::MsgSend {
-                    from_address: ica_info.ica_addr,
-                    to_address,
-                    amount: cosmwasm_std::coins(100, "stake"),
-                }
-                .to_string();
-                IcaPacketData::from_json_strings(&[predefined_json_message], None)
-            }
-        };
+        let send_msg = CosmosMsg::Bank(BankMsg::Send {
+            to_address,
+            amount: vec![Coin {
+                denom: "stake".to_string(),
+                amount: Uint128::new(100),
+            }],
+        });
 
-        let ica_controller_msg = IcaControllerExecuteMsg::SendCustomIcaMessages {
-            messages: Binary(ica_packet.data),
-            packet_memo: ica_packet.memo,
+        let ica_controller_msg = IcaControllerExecuteMsg::SendCosmosMsgs {
+            messages: vec![send_msg],
+            packet_memo: None,
             timeout_seconds: None,
         };
 
