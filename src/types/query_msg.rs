@@ -86,7 +86,7 @@ pub fn query_to_protobuf(query: QueryRequest<Empty>) -> (String, Vec<u8>) {
         #[cfg(feature = "staking")]
         QueryRequest::Staking(staking_query) => convert_to_protobuf::staking(staking_query),
         #[cfg(feature = "staking")]
-        QueryRequest::Distribution(dist_query) => convert_to_protobuf::distribution(dist_query),
+        QueryRequest::Distribution(_) => panic!("distribution queries are not marked module safe (yet)"),
         _ => panic!("Unsupported QueryRequest"),
     }
 }
@@ -100,7 +100,7 @@ mod convert_to_protobuf {
         cosmos::{bank::v1beta1::QuerySupplyOfRequest, base::query::v1beta1::PageRequest},
         prost::Message,
     };
-    use cosmwasm_std::{BankQuery, DistributionQuery, StakingQuery};
+    use cosmwasm_std::BankQuery;
 
     pub fn bank(bank_query: BankQuery) -> (String, Vec<u8>) {
         match bank_query {
@@ -143,21 +143,21 @@ mod convert_to_protobuf {
     }
 
     #[cfg(feature = "staking")]
-    pub fn staking(staking_query: StakingQuery) -> (String, Vec<u8>) {
+    pub fn staking(staking_query: cosmwasm_std::StakingQuery) -> (String, Vec<u8>) {
         use cosmos_sdk_proto::cosmos::staking::v1beta1::{
             QueryDelegationRequest, QueryDelegatorDelegationsRequest, QueryParamsRequest,
             QueryValidatorRequest, QueryValidatorsRequest,
         };
 
         match staking_query {
-            StakingQuery::Validator { address } => (
+            cosmwasm_std::StakingQuery::Validator { address } => (
                 "/cosmos.staking.v1beta1.Query/Validator".to_string(),
                 QueryValidatorRequest {
                     validator_addr: address,
                 }
                 .encode_to_vec(),
             ),
-            StakingQuery::AllValidators {} => (
+            cosmwasm_std::StakingQuery::AllValidators {} => (
                 "/cosmos.staking.v1beta1.Query/Validators".to_string(),
                 QueryValidatorsRequest {
                     status: String::default(),
@@ -165,7 +165,7 @@ mod convert_to_protobuf {
                 }
                 .encode_to_vec(),
             ),
-            StakingQuery::Delegation {
+            cosmwasm_std::StakingQuery::Delegation {
                 delegator,
                 validator,
             } => (
@@ -176,7 +176,7 @@ mod convert_to_protobuf {
                 }
                 .encode_to_vec(),
             ),
-            StakingQuery::AllDelegations { delegator } => (
+            cosmwasm_std::StakingQuery::AllDelegations { delegator } => (
                 "/cosmos.staking.v1beta1.Query/DelegatorDelegations".to_string(),
                 QueryDelegatorDelegationsRequest {
                     delegator_addr: delegator,
@@ -184,46 +184,11 @@ mod convert_to_protobuf {
                 }
                 .encode_to_vec(),
             ),
-            StakingQuery::BondedDenom {} => (
+            cosmwasm_std::StakingQuery::BondedDenom {} => (
                 "/cosmos.staking.v1beta1.Query/Params".to_string(),
                 QueryParamsRequest::default().encode_to_vec(),
             ),
             _ => panic!("Unsupported StakingQuery"),
-        }
-    }
-
-    #[cfg(feature = "staking")]
-    pub fn distribution(dist_query: DistributionQuery) -> (String, Vec<u8>) {
-        use cosmos_sdk_proto::cosmos::distribution::v1beta1::{
-            QueryDelegationRewardsRequest, QueryDelegationTotalRewardsRequest,
-            QueryDelegatorValidatorsRequest, QueryDelegatorWithdrawAddressRequest,
-        };
-
-        match dist_query {
-            DistributionQuery::DelegatorWithdrawAddress { delegator_address } => (
-                "/cosmos.distribution.v1beta1.Query/DelegatorWithdrawAddress".to_string(),
-                QueryDelegatorWithdrawAddressRequest { delegator_address }.encode_to_vec(),
-            ),
-            DistributionQuery::DelegationRewards {
-                delegator_address,
-                validator_address,
-            } => (
-                "/cosmos.distribution.v1beta1.Query/DelegationRewards".to_string(),
-                QueryDelegationRewardsRequest {
-                    delegator_address,
-                    validator_address,
-                }
-                .encode_to_vec(),
-            ),
-            DistributionQuery::DelegationTotalRewards { delegator_address } => (
-                "/cosmos.distribution.v1beta1.Query/DelegationTotalRewards".to_string(),
-                QueryDelegationTotalRewardsRequest { delegator_address }.encode_to_vec(),
-            ),
-            DistributionQuery::DelegatorValidators { delegator_address } => (
-                "/cosmos.distribution.v1beta1.Query/DelegatorValidators".to_string(),
-                QueryDelegatorValidatorsRequest { delegator_address }.encode_to_vec(),
-            ),
-            _ => panic!("Unsupported DistributionQuery"),
         }
     }
 }
