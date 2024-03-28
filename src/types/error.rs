@@ -8,6 +8,7 @@ use thiserror::Error;
 /// `ContractError` is the error type returned by contract's functions.
 #[allow(missing_docs)]
 #[allow(clippy::module_name_repetitions)]
+#[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum ContractError {
     #[error("{0}")]

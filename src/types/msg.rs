@@ -22,6 +22,7 @@ pub struct InstantiateMsg {
 
 /// The messages to execute the ICA controller contract.
 #[cw_ownable::cw_ownable_execute]
+#[non_exhaustive]
 #[cw_serde]
 pub enum ExecuteMsg {
     /// `CreateChannel` makes the contract submit a stargate MsgChannelOpenInit to the chain.
@@ -76,6 +77,7 @@ pub enum ExecuteMsg {
 
 /// The messages to query the ICA controller contract.
 #[cw_ownable::cw_ownable_query]
+#[non_exhaustive]
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
