@@ -19,9 +19,6 @@ mod response {
         /// Response for a [`cosmwasm_std::StakingQuery`].
         #[cfg(feature = "staking")]
         Staking(StakingQueryResponse),
-        /// Response for a [`cosmwasm_std::DistributionQuery`].
-        #[cfg(feature = "staking")]
-        Distribution(DistributionQueryResponse),
     }
 
     /// The response type for the [`cosmwasm_std::BankQuery`] queries.
@@ -53,20 +50,6 @@ mod response {
         AllValidators(cosmwasm_std::AllValidatorsResponse),
         /// Response for the [`cosmwasm_std::StakingQuery::Validator`] query.
         Validator(cosmwasm_std::ValidatorResponse),
-    }
-
-    /// The response type for the [`cosmwasm_std::DistributionQuery`] queries.
-    #[cfg(feature = "staking")]
-    #[cw_serde]
-    pub enum DistributionQueryResponse {
-        /// Response for the [`cosmwasm_std::DistributionQuery::DelegatorWithdrawAddress`] query.
-        DelegatorWithdrawAddress(cosmwasm_std::DelegatorWithdrawAddressResponse),
-        /// Response for the [`cosmwasm_std::DistributionQuery::DelegationRewards`] query.
-        DelegationRewards(cosmwasm_std::DelegationRewardsResponse),
-        /// Response for the [`cosmwasm_std::DistributionQuery::DelegationTotalRewards`] query.
-        DelegationTotalRewards(cosmwasm_std::DelegationTotalRewardsResponse),
-        /// Response for the [`cosmwasm_std::DistributionQuery::DelegatorValidators`] query.
-        DelegatorValidators(cosmwasm_std::DelegatorValidatorsResponse),
     }
 }
 
