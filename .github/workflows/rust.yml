@@ -7,9 +7,10 @@ on:
   pull_request:
     paths-ignore:
       - '**/*.md'
+      - '**/*.go'
 
 jobs:
-  test:
+  build-wasm:
     name: Build Wasm
     runs-on: ubuntu-latest
     steps:
@@ -39,6 +40,90 @@ jobs:
           args: --locked
         env:
           RUSTFLAGS: "-C link-arg=-s"
+
+  build-no-default:
+    name: Build with No Default Features
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: 1.73.0
+          override: true
+
+      - name: Run unit tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: unit-test
+          args: --locked --no-default-features
+        env:
+          RUST_BACKTRACE: 1
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked --no-default-features
+
+  build-all-features:
+    name: Build with All Features
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: 1.73.0
+          override: true
+
+      - name: Run unit tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: unit-test
+          args: --locked --all-features
+        env:
+          RUST_BACKTRACE: 1
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked --all-features
+
+  build-with-staking:
+    name: Build with Staking Feature
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: 1.73.0
+          override: true
+
+      - name: Run unit tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: unit-test
+          args: --locked --features=staking
+        env:
+          RUST_BACKTRACE: 1
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked --features=staking
 
   lints:
     name: Lint Contract
