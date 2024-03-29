@@ -197,6 +197,25 @@ mod channel {
     }
 }
 
+/// This module defines the types stored in the state for ICA queries.
+#[cfg(feature = "query")]
+pub mod ica_query {
+    use super::cw_serde;
+
+    /// PendingQuery is the query packet that is pending a response.
+    #[cw_serde]
+    pub struct PendingQuery {
+        /// The source channel ID of the query packet.
+        pub channel_id: String,
+        /// The sequence number of the query packet.
+        pub sequence: u64,
+        /// The gRPC query path.
+        pub path: String,
+        /// Whether the query was [`cosmwasm_std::QueryRequest::Stargate`] or not.
+        pub is_stargate: bool,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -7,3 +7,11 @@ pub const CONTRACT_NAME: &str = "crates.io:cw-ica-controller";
 /// `CONTRACT_VERSION` is the version of the cargo package.
 /// This is also the version of the contract recorded in [`cw2`]
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+/// This module contains [`cosmwasm_std::SubMsg`] reply ids.
+pub mod reply_ids {
+    /// `SEND_QUERY_PACKET` is the reply id for a packet sent using
+    /// [`crate::types::msg::ExecuteMsg::SendQueryMsgs`]
+    #[cfg(feature = "query")]
+    pub const SEND_QUERY_PACKET: u64 = 1;
+}
