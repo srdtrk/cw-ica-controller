@@ -97,4 +97,7 @@ pub enum ContractError {
 
     #[error("unsupported packet encoding: {0}")]
     UnsupportedPacketEncoding(String),
+
+    #[error("empty response: {0}")]
+    EmptyResponse(String),
 }

@@ -63,13 +63,41 @@ mod response {
         /// Response for the [`cosmwasm_std::StakingQuery::BondedDenom`] query.
         BondedDenom(cosmwasm_std::BondedDenomResponse),
         /// Response for the [`cosmwasm_std::StakingQuery::AllDelegations`] query.
-        AllDelegations(cosmwasm_std::AllDelegationsResponse),
+        AllDelegations(IcaAllDelegationsResponse),
         /// Response for the [`cosmwasm_std::StakingQuery::Delegation`] query.
-        Delegation(cosmwasm_std::DelegationResponse),
+        Delegation(IcaDelegationResponse),
         /// Response for the [`cosmwasm_std::StakingQuery::AllValidators`] query.
         AllValidators(cosmwasm_std::AllValidatorsResponse),
         /// Response for the [`cosmwasm_std::StakingQuery::Validator`] query.
         Validator(cosmwasm_std::ValidatorResponse),
+    }
+
+    /// Response for the [`cosmwasm_std::StakingQuery::Delegation`] query over ICA.
+    #[cfg(feature = "staking")]
+    #[cw_serde]
+    pub struct IcaDelegationResponse {
+        /// The delegation response if it exists.
+        pub delegation: Option<Delegation>,
+    }
+
+    /// Response for the [`cosmwasm_std::StakingQuery::AllDelegations`] query over ICA.
+    #[cfg(feature = "staking")]
+    #[cw_serde]
+    pub struct IcaAllDelegationsResponse {
+        /// The delegations.
+        pub delegations: Vec<Delegation>,
+    }
+
+    /// Delegation is the detailed information about a delegation.
+    #[cfg(feature = "staking")]
+    #[cw_serde]
+    pub struct Delegation {
+        /// The delegator address.
+        pub delegator: String,
+        /// A validator address (e.g. cosmosvaloper1...)
+        pub validator: String,
+        /// Delegation amount.
+        pub amount: cosmwasm_std::Coin,
     }
 }
 
@@ -89,7 +117,9 @@ pub fn query_to_protobuf(query: QueryRequest<Empty>) -> (String, Vec<u8>) {
         #[cfg(feature = "staking")]
         QueryRequest::Staking(staking_query) => convert_to_protobuf::staking(staking_query),
         #[cfg(feature = "staking")]
-        QueryRequest::Distribution(_) => panic!("distribution queries are not marked module safe (yet)"),
+        QueryRequest::Distribution(_) => {
+            panic!("distribution queries are not marked module safe (yet)")
+        }
         _ => panic!("Unsupported QueryRequest"),
     }
 }
@@ -200,15 +230,24 @@ mod convert_to_protobuf {
 pub mod from_protobuf {
     use std::str::FromStr;
 
-    use super::{IcaQueryResponse, BankQueryResponse};
+    use super::{BankQueryResponse, IcaQueryResponse};
 
     use crate::types::ContractError;
 
     use cosmos_sdk_proto::{
+        cosmos::{
+            bank::v1beta1::{
+                Metadata as ProtoMetadata, QueryAllBalancesResponse, QueryBalanceResponse,
+                QueryDenomMetadataResponse, QueryDenomsMetadataResponse, QuerySupplyOfResponse,
+            },
+            base::v1beta1::Coin as ProtoCoin,
+        },
         prost::Message,
-        cosmos::{bank::v1beta1::{Metadata as ProtoMetadata, QueryAllBalancesResponse, QueryBalanceResponse, QueryDenomMetadataResponse, QueryDenomsMetadataResponse, QuerySupplyOfResponse}, base::v1beta1::Coin as ProtoCoin},
     };
-    use cosmwasm_std::{AllBalanceResponse, AllDenomMetadataResponse, BalanceResponse, Binary, Coin, DenomMetadata, DenomMetadataResponse, DenomUnit, StdResult, SupplyResponse, Uint128};
+    use cosmwasm_std::{
+        AllBalanceResponse, AllDenomMetadataResponse, BalanceResponse, Binary, Coin, DenomMetadata,
+        DenomMetadataResponse, DenomUnit, StdResult, SupplyResponse, Uint128,
+    };
 
     fn convert_to_coin(coin: ProtoCoin) -> StdResult<Coin> {
         Ok(Coin {
@@ -226,21 +265,49 @@ pub mod from_protobuf {
             display: metadata.display,
             uri: metadata.uri,
             uri_hash: metadata.uri_hash,
-            denom_units: metadata.denom_units.into_iter().map(|unit| DenomUnit {
-                denom: unit.denom,
-                exponent: unit.exponent,
-                aliases: unit.aliases,
-            }).collect(),
+            denom_units: metadata
+                .denom_units
+                .into_iter()
+                .map(|unit| DenomUnit {
+                    denom: unit.denom,
+                    exponent: unit.exponent,
+                    aliases: unit.aliases,
+                })
+                .collect(),
         }
+    }
+
+    #[cfg(feature = "staking")]
+    fn convert_to_validator(
+        validator: cosmos_sdk_proto::cosmos::staking::v1beta1::Validator,
+    ) -> StdResult<cosmwasm_std::Validator> {
+        use cosmwasm_std::Decimal;
+
+        let commission_rates = validator
+            .commission
+            .unwrap_or_default()
+            .commission_rates
+            .unwrap_or_default();
+
+        Ok(cosmwasm_std::Validator {
+            address: validator.operator_address,
+            commission: Decimal::from_str(&commission_rates.rate)?,
+            max_commission: Decimal::from_str(&commission_rates.max_rate)?,
+            max_change_rate: Decimal::from_str(&commission_rates.max_change_rate)?,
+        })
     }
 
     /// Converts the response bytes to a [`IcaQueryResponse`] using the query path.
     ///
     /// # Errors
     /// Returns an error if the response bytes cannot be decoded.
-    pub fn response(path: &str, resp: Vec<u8>, is_stargate: bool) -> Result<IcaQueryResponse, ContractError> {
+    pub fn response(
+        path: &str,
+        resp: Vec<u8>,
+        is_stargate: bool,
+    ) -> Result<IcaQueryResponse, ContractError> {
         if is_stargate {
-            return Ok(IcaQueryResponse::Stargate{
+            return Ok(IcaQueryResponse::Stargate {
                 data: Binary(resp),
                 path: path.to_string(),
             });
@@ -248,7 +315,11 @@ pub mod from_protobuf {
 
         match path {
             x if x.starts_with("/cosmos.bank.v1beta1.Query/") => bank_response(path, resp.as_ref()),
-            _ => todo!(),
+            #[cfg(feature = "staking")]
+            x if x.starts_with("/cosmos.staking.v1beta1.Query/") => {
+                staking_response(path, resp.as_ref())
+            }
+            _ => Err(ContractError::UnknownDataType(path.to_string())),
         }
     }
 
@@ -256,35 +327,142 @@ pub mod from_protobuf {
         match path {
             "/cosmos.bank.v1beta1.Query/Balance" => {
                 let resp = QueryBalanceResponse::decode(resp)?;
-                Ok(IcaQueryResponse::Bank(BankQueryResponse::Balance(BalanceResponse::new(
-                    resp.balance.map_or_else(|| Ok(Coin::default()), convert_to_coin)?,
-                ))))
+                Ok(IcaQueryResponse::Bank(BankQueryResponse::Balance(
+                    BalanceResponse::new(
+                        resp.balance
+                            .map_or_else(|| Ok(Coin::default()), convert_to_coin)?,
+                    ),
+                )))
             }
             "/cosmos.bank.v1beta1.Query/AllBalances" => {
                 let resp = QueryAllBalancesResponse::decode(resp)?;
-                Ok(IcaQueryResponse::Bank(BankQueryResponse::AllBalances(AllBalanceResponse::new(
-                    resp.balances.into_iter().map(convert_to_coin).collect::<StdResult<_>>()?,
-                ))))
+                Ok(IcaQueryResponse::Bank(BankQueryResponse::AllBalances(
+                    AllBalanceResponse::new(
+                        resp.balances
+                            .into_iter()
+                            .map(convert_to_coin)
+                            .collect::<StdResult<_>>()?,
+                    ),
+                )))
             }
             "/cosmos.bank.v1beta1.Query/DenomMetadata" => {
                 let resp = QueryDenomMetadataResponse::decode(resp)?;
-                Ok(IcaQueryResponse::Bank(BankQueryResponse::DenomMetadata(DenomMetadataResponse::new(
-                    resp.metadata.map_or_else(DenomMetadata::default, convert_to_metadata),
-                ))))
-            },
+                Ok(IcaQueryResponse::Bank(BankQueryResponse::DenomMetadata(
+                    DenomMetadataResponse::new(
+                        resp.metadata
+                            .map_or_else(DenomMetadata::default, convert_to_metadata),
+                    ),
+                )))
+            }
             "/cosmos.bank.v1beta1.Query/DenomsMetadata" => {
                 let resp = QueryDenomsMetadataResponse::decode(resp)?;
-                Ok(IcaQueryResponse::Bank(BankQueryResponse::AllDenomMetadata(AllDenomMetadataResponse::new(
-                    resp.metadatas.into_iter().map(convert_to_metadata).collect(),
-                    resp.pagination.map(|pagination| Binary(pagination.next_key)),
-                ))))
-            },
+                Ok(IcaQueryResponse::Bank(BankQueryResponse::AllDenomMetadata(
+                    AllDenomMetadataResponse::new(
+                        resp.metadatas
+                            .into_iter()
+                            .map(convert_to_metadata)
+                            .collect(),
+                        resp.pagination
+                            .map(|pagination| Binary(pagination.next_key)),
+                    ),
+                )))
+            }
             "/cosmos.bank.v1beta1.Query/SupplyOf" => {
                 let resp = QuerySupplyOfResponse::decode(resp)?;
-                Ok(IcaQueryResponse::Bank(BankQueryResponse::Supply(SupplyResponse::new(
-                    resp.amount.map_or_else(|| Ok(Coin::default()), convert_to_coin)?,
-                ))))
-            },
+                Ok(IcaQueryResponse::Bank(BankQueryResponse::Supply(
+                    SupplyResponse::new(
+                        resp.amount
+                            .map_or_else(|| Ok(Coin::default()), convert_to_coin)?,
+                    ),
+                )))
+            }
+            _ => Err(ContractError::UnknownDataType(path.to_string())),
+        }
+    }
+
+    #[cfg(feature = "staking")]
+    fn staking_response(path: &str, resp: &[u8]) -> Result<IcaQueryResponse, ContractError> {
+        use super::{
+            Delegation, IcaAllDelegationsResponse, IcaDelegationResponse, StakingQueryResponse,
+        };
+
+        use cosmos_sdk_proto::cosmos::staking::v1beta1::{
+            QueryDelegationResponse, QueryDelegatorDelegationsResponse, QueryParamsResponse,
+            QueryValidatorResponse, QueryValidatorsResponse,
+        };
+        use cosmwasm_std::{AllValidatorsResponse, BondedDenomResponse, ValidatorResponse};
+
+        match path {
+            "/cosmos.staking.v1beta1.Query/Validator" => {
+                let resp = QueryValidatorResponse::decode(resp)?;
+                Ok(IcaQueryResponse::Staking(StakingQueryResponse::Validator(
+                    ValidatorResponse::new(resp.validator.map(convert_to_validator).transpose()?),
+                )))
+            }
+            "/cosmos.staking.v1beta1.Query/Validators" => {
+                let resp = QueryValidatorsResponse::decode(resp)?;
+                Ok(IcaQueryResponse::Staking(
+                    StakingQueryResponse::AllValidators(AllValidatorsResponse::new(
+                        resp.validators
+                            .into_iter()
+                            .map(convert_to_validator)
+                            .collect::<StdResult<_>>()?,
+                    )),
+                ))
+            }
+            "/cosmos.staking.v1beta1.Query/Delegation" => {
+                let resp = QueryDelegationResponse::decode(resp)?;
+                Ok(IcaQueryResponse::Staking(StakingQueryResponse::Delegation(
+                    IcaDelegationResponse {
+                        delegation: resp
+                            .delegation_response
+                            .and_then(|del_resp| {
+                                del_resp.delegation.map(|del| -> StdResult<_> {
+                                    Ok(Delegation {
+                                        delegator: del.delegator_address,
+                                        validator: del.validator_address,
+                                        amount: convert_to_coin(
+                                            del_resp.balance.unwrap_or_default(),
+                                        )?,
+                                    })
+                                })
+                            })
+                            .transpose()?,
+                    },
+                )))
+            }
+            "/cosmos.staking.v1beta1.Query/DelegatorDelegations" => {
+                let resp = QueryDelegatorDelegationsResponse::decode(resp)?;
+                Ok(IcaQueryResponse::Staking(
+                    StakingQueryResponse::AllDelegations(IcaAllDelegationsResponse {
+                        delegations: resp
+                            .delegation_responses
+                            .into_iter()
+                            .filter_map(|del_resp| {
+                                del_resp.delegation.map(|del| -> StdResult<_> {
+                                    Ok(Delegation {
+                                        delegator: del.delegator_address,
+                                        validator: del.validator_address,
+                                        amount: convert_to_coin(
+                                            del_resp.balance.unwrap_or_default(),
+                                        )?,
+                                    })
+                                })
+                            })
+                            .collect::<StdResult<_>>()?,
+                    }),
+                ))
+            }
+            "/cosmos.staking.v1beta1.Query/Params" => {
+                let resp = QueryParamsResponse::decode(resp)?;
+                Ok(IcaQueryResponse::Staking(
+                    StakingQueryResponse::BondedDenom(BondedDenomResponse::new(
+                        resp.params
+                            .ok_or_else(|| ContractError::EmptyResponse(path.to_string()))?
+                            .bond_denom,
+                    )),
+                ))
+            }
             _ => Err(ContractError::UnknownDataType(path.to_string())),
         }
     }
