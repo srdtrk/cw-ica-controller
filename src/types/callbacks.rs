@@ -43,6 +43,17 @@ pub enum IcaControllerCallbackMsg {
         /// The tx encoding this ICA channel uses.
         tx_encoding: TxEncoding,
     },
+    #[cfg(feature = "query")]
+    /// QueryResponseCallback is the callback that this contract makes to other contracts
+    /// when it receives a query response to a [`crate::types::msg::ExecuteMsg::SendQueryMsgs`]
+    QueryResponseCallback {
+        /// The original packet that was sent
+        original_packet: IbcPacket,
+        /// The responses to the queries.
+        result: super::query_msg::IcaQueryResult,
+        /// The relayer that submitted acknowledgement packet
+        relayer: Addr,
+    },
 }
 
 impl IcaControllerCallbackMsg {

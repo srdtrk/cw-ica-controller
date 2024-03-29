@@ -26,6 +26,9 @@ pub enum ContractError {
     #[error("prost encoding error: {0}")]
     ProstEncodeError(#[from] cosmos_sdk_proto::prost::EncodeError),
 
+    #[error("prost decoding error: {0}")]
+    ProstDecodeError(#[from] cosmos_sdk_proto::prost::DecodeError),
+
     #[error("semver parse error: {0}")]
     SemverError(#[from] semver::Error),
 

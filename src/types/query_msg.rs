@@ -8,6 +8,21 @@ pub use response::*;
 mod response {
     use cosmwasm_schema::cw_serde;
 
+    /// The result of an ICA query packet.
+    #[cw_serde]
+    pub enum IcaQueryResult {
+        /// The query was successful and the responses are included.
+        Success {
+            /// The height of the block at which the queries were executed on the counterparty chain.
+            height: u64,
+            /// The responses to the queries.
+            responses: Vec<IcaQueryResponse>,
+        },
+        /// The query failed with an error message. The error string
+        /// often does not contain useful information for the end user.
+        Error(String),
+    }
+
     /// The response for a successful ICA query.
     #[cw_serde]
     pub enum IcaQueryResponse {
@@ -15,7 +30,12 @@ mod response {
         Bank(BankQueryResponse),
         /// Response for a [`cosmwasm_std::QueryRequest::Stargate`].
         /// Protobuf encoded bytes stored as [`cosmwasm_std::Binary`].
-        Stargate(cosmwasm_std::Binary),
+        Stargate {
+            /// The response bytes.
+            data: cosmwasm_std::Binary,
+            /// The query grpc method
+            path: String,
+        },
         /// Response for a [`cosmwasm_std::StakingQuery`].
         #[cfg(feature = "staking")]
         Staking(StakingQueryResponse),
@@ -113,12 +133,12 @@ mod convert_to_protobuf {
                 });
 
                 (
-                    "/cosmos.bank.v1beta1.Query/AllDenomMetadata".to_string(),
+                    "/cosmos.bank.v1beta1.Query/DenomsMetadata".to_string(),
                     QueryDenomsMetadataRequest { pagination }.encode_to_vec(),
                 )
             }
             BankQuery::Supply { denom } => (
-                "/cosmos.bank.v1beta1.Query/Supply".to_string(),
+                "/cosmos.bank.v1beta1.Query/SupplyOf".to_string(),
                 QuerySupplyOfRequest { denom }.encode_to_vec(),
             ),
             _ => panic!("Unsupported BankQuery"),
@@ -176,7 +196,99 @@ mod convert_to_protobuf {
     }
 }
 
-mod from_protobuf {}
+/// TODO
+pub mod from_protobuf {
+    use std::str::FromStr;
+
+    use super::{IcaQueryResponse, BankQueryResponse};
+
+    use crate::types::ContractError;
+
+    use cosmos_sdk_proto::{
+        prost::Message,
+        cosmos::{bank::v1beta1::{Metadata as ProtoMetadata, QueryAllBalancesResponse, QueryBalanceResponse, QueryDenomMetadataResponse, QueryDenomsMetadataResponse, QuerySupplyOfResponse}, base::v1beta1::Coin as ProtoCoin},
+    };
+    use cosmwasm_std::{AllBalanceResponse, AllDenomMetadataResponse, BalanceResponse, Binary, Coin, DenomMetadata, DenomMetadataResponse, DenomUnit, StdResult, SupplyResponse, Uint128};
+
+    fn convert_to_coin(coin: ProtoCoin) -> StdResult<Coin> {
+        Ok(Coin {
+            denom: coin.denom,
+            amount: Uint128::from_str(&coin.amount)?,
+        })
+    }
+
+    fn convert_to_metadata(metadata: ProtoMetadata) -> DenomMetadata {
+        DenomMetadata {
+            name: metadata.name,
+            symbol: metadata.symbol,
+            description: metadata.description,
+            base: metadata.base,
+            display: metadata.display,
+            uri: metadata.uri,
+            uri_hash: metadata.uri_hash,
+            denom_units: metadata.denom_units.into_iter().map(|unit| DenomUnit {
+                denom: unit.denom,
+                exponent: unit.exponent,
+                aliases: unit.aliases,
+            }).collect(),
+        }
+    }
+
+    /// Converts the response bytes to a [`IcaQueryResponse`] using the query path.
+    ///
+    /// # Errors
+    /// Returns an error if the response bytes cannot be decoded.
+    pub fn response(path: &str, resp: Vec<u8>, is_stargate: bool) -> Result<IcaQueryResponse, ContractError> {
+        if is_stargate {
+            return Ok(IcaQueryResponse::Stargate{
+                data: Binary(resp),
+                path: path.to_string(),
+            });
+        }
+
+        match path {
+            x if x.starts_with("/cosmos.bank.v1beta1.Query/") => bank_response(path, resp.as_ref()),
+            _ => todo!(),
+        }
+    }
+
+    fn bank_response(path: &str, resp: &[u8]) -> Result<IcaQueryResponse, ContractError> {
+        match path {
+            "/cosmos.bank.v1beta1.Query/Balance" => {
+                let resp = QueryBalanceResponse::decode(resp)?;
+                Ok(IcaQueryResponse::Bank(BankQueryResponse::Balance(BalanceResponse::new(
+                    resp.balance.map_or_else(|| Ok(Coin::default()), convert_to_coin)?,
+                ))))
+            }
+            "/cosmos.bank.v1beta1.Query/AllBalances" => {
+                let resp = QueryAllBalancesResponse::decode(resp)?;
+                Ok(IcaQueryResponse::Bank(BankQueryResponse::AllBalances(AllBalanceResponse::new(
+                    resp.balances.into_iter().map(convert_to_coin).collect::<StdResult<_>>()?,
+                ))))
+            }
+            "/cosmos.bank.v1beta1.Query/DenomMetadata" => {
+                let resp = QueryDenomMetadataResponse::decode(resp)?;
+                Ok(IcaQueryResponse::Bank(BankQueryResponse::DenomMetadata(DenomMetadataResponse::new(
+                    resp.metadata.map_or_else(DenomMetadata::default, convert_to_metadata),
+                ))))
+            },
+            "/cosmos.bank.v1beta1.Query/DenomsMetadata" => {
+                let resp = QueryDenomsMetadataResponse::decode(resp)?;
+                Ok(IcaQueryResponse::Bank(BankQueryResponse::AllDenomMetadata(AllDenomMetadataResponse::new(
+                    resp.metadatas.into_iter().map(convert_to_metadata).collect(),
+                    resp.pagination.map(|pagination| Binary(pagination.next_key)),
+                ))))
+            },
+            "/cosmos.bank.v1beta1.Query/SupplyOf" => {
+                let resp = QuerySupplyOfResponse::decode(resp)?;
+                Ok(IcaQueryResponse::Bank(BankQueryResponse::Supply(SupplyResponse::new(
+                    resp.amount.map_or_else(|| Ok(Coin::default()), convert_to_coin)?,
+                ))))
+            },
+            _ => Err(ContractError::UnknownDataType(path.to_string())),
+        }
+    }
+}
 
 /// This module defines the protobuf messages for the query module.
 /// This module can be removed once these types are included in `cosmos_sdk_proto` crate.
