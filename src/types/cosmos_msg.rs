@@ -56,7 +56,6 @@ pub fn convert_to_proto_any(msg: CosmosMsg, from_address: String) -> Result<Any,
 }
 
 mod convert_to_any {
-    #[cfg(feature = "staking")]
     use cosmos_sdk_proto::{
         cosmos::{
             bank::v1beta1::MsgSend,
