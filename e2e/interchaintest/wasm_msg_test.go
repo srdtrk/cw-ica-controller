@@ -52,7 +52,7 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context) int {
 	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/callback_counter.wasm")
 	s.Require().NoError(err)
 
-  s.CallbackCounterContract, err = types.Instantiate[callbackcounter.InstantiateMsg, callbackcounter.ExecuteMsg, callbackcounter.QueryMsg](ctx, s.UserA.KeyName(), codeId, s.ChainA, callbackcounter.InstantiateMsg{})
+	s.CallbackCounterContract, err = types.Instantiate[callbackcounter.InstantiateMsg, callbackcounter.ExecuteMsg, callbackcounter.QueryMsg](ctx, s.UserA.KeyName(), codeId, s.ChainA, callbackcounter.InstantiateMsg{})
 	s.Require().NoError(err)
 
 	codeId, err = s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
@@ -69,24 +69,24 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context) int {
 		SendCallbacksTo: &s.CallbackCounterContract.Address,
 	}
 
-  s.Contract, err = types.Instantiate[icacontroller.InstantiateMsg, icacontroller.ExecuteMsg, icacontroller.QueryMsg](ctx, s.UserA.KeyName(), codeId, s.ChainA, instantiateMsg)
+	s.Contract, err = types.Instantiate[icacontroller.InstantiateMsg, icacontroller.ExecuteMsg, icacontroller.QueryMsg](ctx, s.UserA.KeyName(), codeId, s.ChainA, instantiateMsg)
 	s.Require().NoError(err)
 
 	// Wait for the channel to get set up
 	err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
 	s.Require().NoError(err)
 
-  // Query the contract state:
-  contractState := &icacontroller.State_2{}
-  err = s.Contract.Query(ctx, icacontroller.GetContractStateRequest, contractState)
+	// Query the contract state:
+	contractState := &icacontroller.State_2{}
+	err = s.Contract.Query(ctx, icacontroller.GetContractStateRequest, contractState)
 	s.Require().NoError(err)
 
-  // Check the ownership:
-  ownershipResponse := &icacontroller.Ownership_for_String{}
-  err = s.Contract.Query(ctx, icacontroller.OwnershipRequest, ownershipResponse)
+	// Check the ownership:
+	ownershipResponse := &icacontroller.Ownership_for_String{}
+	err = s.Contract.Query(ctx, icacontroller.OwnershipRequest, ownershipResponse)
 	s.Require().NoError(err)
 
-  s.IcaContractToAddrMap[s.Contract.Address] = contractState.IcaInfo.IcaAddress
+	s.IcaContractToAddrMap[s.Contract.Address] = contractState.IcaInfo.IcaAddress
 
 	s.Require().Equal(s.UserA.FormattedAddress(), *ownershipResponse.Owner)
 	s.Require().Nil(ownershipResponse.PendingOwner)
@@ -118,7 +118,7 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 
 	var counterContract *types.Contract[simplecounter.InstantiateMsg, simplecounter.ExecuteMsg, simplecounter.QueryMsg]
 	s.Run("TestInstantiate", func() {
-    icaAddress := s.IcaContractToAddrMap[s.Contract.Address]
+		icaAddress := s.IcaContractToAddrMap[s.Contract.Address]
 
 		// Instantiate the contract:
 		instantiateMsg := icacontroller.CosmosMsg_for_Empty{
@@ -146,8 +146,8 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-    callbackCounter := &callbackcounter.CallbackCounter{}
-    err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
+		callbackCounter := &callbackcounter.CallbackCounter{}
+		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)
@@ -161,14 +161,14 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		s.Require().Len(contractByCodeResp.Contracts, 1)
 
 		counterContract = &types.Contract[simplecounter.InstantiateMsg, simplecounter.ExecuteMsg, simplecounter.QueryMsg]{
-      Address: contractByCodeResp.Contracts[0],
-      CodeID: strconv.FormatUint(uint64(counterCodeID), 10),
-      Chain: wasmd2,
-    }
+			Address: contractByCodeResp.Contracts[0],
+			CodeID:  strconv.FormatUint(uint64(counterCodeID), 10),
+			Chain:   wasmd2,
+		}
 
-    // Query the simple counter state:
-    counterState := &simplecounter.GetCountResponse{}
-    err = counterContract.Query(ctx, simplecounter.GetCountRequest, counterState)
+		// Query the simple counter state:
+		counterState := &simplecounter.GetCountResponse{}
+		err = counterContract.Query(ctx, simplecounter.GetCountRequest, counterState)
 		s.Require().NoError(err)
 
 		s.Require().Equal(int64(0), counterState.Count)
@@ -176,7 +176,7 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 
 	var counterContract2 *types.Contract[simplecounter.InstantiateMsg, simplecounter.ExecuteMsg, simplecounter.QueryMsg]
 	s.Run("TestExecuteAndInstantiate2AndClearAdminMsg", func() {
-    icaAddress := s.IcaContractToAddrMap[s.Contract.Address]
+		icaAddress := s.IcaContractToAddrMap[s.Contract.Address]
 
 		// Execute the contract:
 		executeMsg := icacontroller.CosmosMsg_for_Empty{
@@ -223,16 +223,16 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-    callbackCounter := &callbackcounter.CallbackCounter{}
-    err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
+		callbackCounter := &callbackcounter.CallbackCounter{}
+		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(2), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 
-    // Query the simple counter state:
-    counterState := &simplecounter.GetCountResponse{}
-    err = counterContract.Query(ctx, simplecounter.GetCountRequest, counterState)
+		// Query the simple counter state:
+		counterState := &simplecounter.GetCountResponse{}
+		err = counterContract.Query(ctx, simplecounter.GetCountRequest, counterState)
 		s.Require().NoError(err)
 
 		s.Require().Equal(int64(1), counterState.Count)
@@ -253,10 +253,10 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		s.Require().Len(contractByCodeResp.Contracts, 2)
 
 		counterContract2 = &types.Contract[simplecounter.InstantiateMsg, simplecounter.ExecuteMsg, simplecounter.QueryMsg]{
-      Address: contractByCodeResp.Contracts[1],
-      CodeID: strconv.FormatUint(uint64(counterCodeID), 10),
-      Chain: wasmd2,
-    }
+			Address: contractByCodeResp.Contracts[1],
+			CodeID:  strconv.FormatUint(uint64(counterCodeID), 10),
+			Chain:   wasmd2,
+		}
 	})
 
 	s.Run("TestMigrateAndUpdateAdmin", func() {
@@ -292,17 +292,17 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-    callbackCounter := &callbackcounter.CallbackCounter{}
-    err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
+		callbackCounter := &callbackcounter.CallbackCounter{}
+		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
 		// s.Require().Equal(uint64(1), callbackCounter.Error)
 		s.Require().Equal(uint64(3), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 
-    // Query the simple counter state:
-    counterState := &simplecounter.GetCountResponse{}
-    err = counterContract2.Query(ctx, simplecounter.GetCountRequest, counterState)
+		// Query the simple counter state:
+		counterState := &simplecounter.GetCountResponse{}
+		err = counterContract2.Query(ctx, simplecounter.GetCountRequest, counterState)
 		s.Require().NoError(err)
 
 		s.Require().Equal(int64(0), counterState.Count)

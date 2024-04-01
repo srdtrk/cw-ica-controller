@@ -32,13 +32,13 @@ func newContract[I, E, Q any](address string, codeId string, chain *cosmos.Cosmo
 // I is the instantiate message type
 // E is the execute message type
 // Q is the query message type
-func Instantiate[I,E,Q any](ctx context.Context, callerKeyName string, codeId string, chain *cosmos.CosmosChain, msg I, extraExecTxArgs ...string) (*Contract[I, E, Q], error) {
-  contractAddr, err := chain.InstantiateContract(ctx, callerKeyName, codeId, toString(msg), true, extraExecTxArgs...)
-  if err != nil {
-    return nil, err
-  }
+func Instantiate[I, E, Q any](ctx context.Context, callerKeyName string, codeId string, chain *cosmos.CosmosChain, msg I, extraExecTxArgs ...string) (*Contract[I, E, Q], error) {
+	contractAddr, err := chain.InstantiateContract(ctx, callerKeyName, codeId, toString(msg), true, extraExecTxArgs...)
+	if err != nil {
+		return nil, err
+	}
 
-  return newContract[I, E, Q](contractAddr, codeId, chain), nil
+	return newContract[I, E, Q](contractAddr, codeId, chain), nil
 }
 
 func (c *Contract[I, E, Q]) Port() string {
@@ -47,7 +47,7 @@ func (c *Contract[I, E, Q]) Port() string {
 
 // Execute executes the contract with the given execute message and returns the transaction response
 func (c *Contract[I, E, Q]) Execute(ctx context.Context, callerKeyName string, msg E, extraExecTxArgs ...string) (*sdk.TxResponse, error) {
-  return c.Chain.ExecuteContract(ctx, callerKeyName, c.Address, toString(msg), extraExecTxArgs...)
+	return c.Chain.ExecuteContract(ctx, callerKeyName, c.Address, toString(msg), extraExecTxArgs...)
 }
 
 // Query queries the contract with the given query message
