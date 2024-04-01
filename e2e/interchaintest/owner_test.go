@@ -14,6 +14,7 @@ import (
 
 	"github.com/strangelove-ventures/interchaintest/v8/testutil"
 
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/chainconfig"
 	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
@@ -31,7 +32,7 @@ type OwnerTestSuite struct {
 // SetupOwnerTestSuite starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 // sets up the contract and does the channel handshake for the contract test suite.
 func (s *OwnerTestSuite) SetupOwnerTestSuite(ctx context.Context) {
-	s.SetupSuite(ctx, chainSpecs)
+	s.SetupSuite(ctx, chainconfig.DefaultChainSpecs)
 
 	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)

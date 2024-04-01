@@ -26,6 +26,7 @@ import (
 	"github.com/strangelove-ventures/interchaintest/v8/ibc"
 	"github.com/strangelove-ventures/interchaintest/v8/testutil"
 
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/chainconfig"
 	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
 	callbackcounter "github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/callback-counter"
@@ -51,7 +52,7 @@ func (s *ContractTestSuite) SetupSuite(ctx context.Context, chainSpecs []*interc
 // SetupContractTestSuite starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 // sets up the contract and does the channel handshake for the contract test suite.
 func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, ordering icacontroller.IbcOrder) {
-	s.SetupSuite(ctx, chainSpecs)
+	s.SetupSuite(ctx, chainconfig.DefaultChainSpecs)
 
 	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/callback_counter.wasm")
 	s.Require().NoError(err)
@@ -181,7 +182,7 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, and creates the ibc clients and connections.
-	s.SetupSuite(ctx, chainSpecs)
+	s.SetupSuite(ctx, chainconfig.DefaultChainSpecs)
 	wasmd := s.ChainA
 	wasmdUser := s.UserA
 
@@ -217,7 +218,7 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake() {
 	ctx := context.Background()
 
-	s.SetupSuite(ctx, chainSpecs)
+	s.SetupSuite(ctx, chainconfig.DefaultChainSpecs)
 	wasmd, simd := s.ChainA, s.ChainB
 	wasmdUser := s.UserA
 

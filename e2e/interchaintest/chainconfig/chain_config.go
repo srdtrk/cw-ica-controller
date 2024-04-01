@@ -1,4 +1,4 @@
-package main
+package chainconfig
 
 import (
 	interchaintest "github.com/strangelove-ventures/interchaintest/v8"
@@ -8,7 +8,7 @@ import (
 	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
 )
 
-var chainSpecs = []*interchaintest.ChainSpec{
+var DefaultChainSpecs = []*interchaintest.ChainSpec{
 	// -- WASMD --
 	{
 		ChainConfig: ibc.ChainConfig{

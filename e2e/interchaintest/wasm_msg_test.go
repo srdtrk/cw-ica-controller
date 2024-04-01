@@ -12,6 +12,7 @@ import (
 	"github.com/strangelove-ventures/interchaintest/v8/ibc"
 	"github.com/strangelove-ventures/interchaintest/v8/testutil"
 
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/chainconfig"
 	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
 	callbackcounter "github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/callback-counter"
@@ -24,7 +25,7 @@ type GetCountResponse struct {
 
 func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context) int {
 	wasmChainSpecs := []*interchaintest.ChainSpec{
-		chainSpecs[0],
+		chainconfig.DefaultChainSpecs[0],
 		{
 			ChainConfig: ibc.ChainConfig{
 				Type:    "cosmos",
