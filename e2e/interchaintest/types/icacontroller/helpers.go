@@ -24,10 +24,6 @@ func NewExecuteMsg_SendCosmosMsgs_FromProto(msgs []proto.Message, memo *string, 
 				Value:   Binary(base64.StdEncoding.EncodeToString(protoAny.Value)),
 			},
 		}
-
-		if err != nil {
-			panic(err)
-		}
 	}
 
 	return ExecuteMsg{

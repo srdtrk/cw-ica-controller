@@ -150,8 +150,8 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
-		s.Require().Equal(uint64(1), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
+		s.Require().Equal(int(1), callbackCounter.Success)
+		s.Require().Equal(int(0), callbackCounter.Error)
 
 		contractByCodeRequest := wasmtypes.QueryContractsByCodeRequest{
 			CodeId: uint64(counterCodeID),
@@ -227,8 +227,8 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
-		s.Require().Equal(uint64(2), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
+		s.Require().Equal(int(2), callbackCounter.Success)
+		s.Require().Equal(int(0), callbackCounter.Error)
 
 		// Query the simple counter state:
 		counterState := &simplecounter.GetCountResponse{}
@@ -296,9 +296,8 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
-		// s.Require().Equal(uint64(1), callbackCounter.Error)
-		s.Require().Equal(uint64(3), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
+		s.Require().Equal(int(3), callbackCounter.Success)
+		s.Require().Equal(int(0), callbackCounter.Error)
 
 		// Query the simple counter state:
 		counterState := &simplecounter.GetCountResponse{}

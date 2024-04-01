@@ -384,8 +384,8 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering icacon
 		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
-		s.Require().Equal(uint64(1), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
+		s.Require().Equal(int(1), callbackCounter.Success)
+		s.Require().Equal(int(0), callbackCounter.Error)
 
 		// Check if the proposal was created:
 		proposalResp, err := mysuite.GRPCQuery[govv1.QueryProposalResponse](ctx, simd, &govv1.QueryProposalRequest{
@@ -444,8 +444,8 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering icacon
 		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
-		s.Require().Equal(uint64(2), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
+		s.Require().Equal(int(2), callbackCounter.Success)
+		s.Require().Equal(int(0), callbackCounter.Error)
 
 		// Check if the delegation was successful:
 		postBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
@@ -505,9 +505,9 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering icacon
 		callbackCounter := &callbackcounter.CallbackCounter{}
 		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
-		s.Require().Equal(uint64(2), callbackCounter.Success)
-		s.Require().Equal(uint64(1), callbackCounter.Error)
-		s.Require().Equal(uint64(0), callbackCounter.Timeout)
+		s.Require().Equal(int(2), callbackCounter.Success)
+		s.Require().Equal(int(1), callbackCounter.Error)
+		s.Require().Equal(int(0), callbackCounter.Timeout)
 	})
 }
 
@@ -577,8 +577,8 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering icacontrolle
 		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
-		s.Require().Equal(uint64(1), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
+		s.Require().Equal(int(1), callbackCounter.Success)
+		s.Require().Equal(int(0), callbackCounter.Error)
 
 		// Check if the proposal was created:
 		proposalResp, err := mysuite.GRPCQuery[govv1.QueryProposalResponse](ctx, simd, &govv1.QueryProposalRequest{
@@ -658,8 +658,8 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering icacontrolle
 		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
-		s.Require().Equal(uint64(2), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
+		s.Require().Equal(int(2), callbackCounter.Success)
+		s.Require().Equal(int(0), callbackCounter.Error)
 
 		// Check if the delegation was successful:
 		postBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
@@ -739,8 +739,8 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering icacontrolle
 		callbackCounter := &callbackcounter.CallbackCounter{}
 		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
-		s.Require().Equal(uint64(3), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
+		s.Require().Equal(int(3), callbackCounter.Success)
+		s.Require().Equal(int(0), callbackCounter.Error)
 
 		// Check if the send was successful:
 		postBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
@@ -820,9 +820,9 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 		callbackCounter := &callbackcounter.CallbackCounter{}
 		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
-		s.Require().Equal(uint64(0), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
-		s.Require().Equal(uint64(1), callbackCounter.Timeout)
+		s.Require().Equal(int(0), callbackCounter.Success)
+		s.Require().Equal(int(0), callbackCounter.Error)
+		s.Require().Equal(int(1), callbackCounter.Timeout)
 
 		// Check if contract channel state was updated:
 		contractChannelState := &icacontroller.State{}
@@ -883,9 +883,9 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
-		s.Require().Equal(uint64(0), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
-		s.Require().Equal(uint64(1), callbackCounter.Timeout)
+		s.Require().Equal(int(0), callbackCounter.Success)
+		s.Require().Equal(int(0), callbackCounter.Error)
+		s.Require().Equal(int(1), callbackCounter.Timeout)
 	})
 
 	s.Run("TestSendCustomIcaMessagesAfterReopen", func() {
@@ -915,9 +915,9 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
-		s.Require().Equal(uint64(1), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
-		s.Require().Equal(uint64(1), callbackCounter.Timeout)
+		s.Require().Equal(int(1), callbackCounter.Success)
+		s.Require().Equal(int(0), callbackCounter.Error)
+		s.Require().Equal(int(1), callbackCounter.Timeout)
 	})
 }
 
@@ -992,9 +992,9 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Unordered_Protobuf() {
 		callbackCounter := &callbackcounter.CallbackCounter{}
 		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
-		s.Require().Equal(uint64(0), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
-		s.Require().Equal(uint64(1), callbackCounter.Timeout)
+		s.Require().Equal(int(0), callbackCounter.Success)
+		s.Require().Equal(int(0), callbackCounter.Error)
+		s.Require().Equal(int(1), callbackCounter.Timeout)
 
 		// Check if contract channel state is still open:
 		contractChannelState := &icacontroller.State{}
@@ -1030,9 +1030,9 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Unordered_Protobuf() {
 		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
-		s.Require().Equal(uint64(1), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
-		s.Require().Equal(uint64(1), callbackCounter.Timeout)
+		s.Require().Equal(int(1), callbackCounter.Success)
+		s.Require().Equal(int(0), callbackCounter.Error)
+		s.Require().Equal(int(1), callbackCounter.Timeout)
 	})
 }
 
@@ -1077,9 +1077,9 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		callbackCounter := &callbackcounter.CallbackCounter{}
 		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
-		s.Require().Equal(uint64(0), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
-		s.Require().Equal(uint64(0), callbackCounter.Timeout)
+		s.Require().Equal(int(0), callbackCounter.Success)
+		s.Require().Equal(int(0), callbackCounter.Error)
+		s.Require().Equal(int(0), callbackCounter.Timeout)
 
 		// Check if contract channel state was updated:
 		contractChannelState := &icacontroller.State{}
@@ -1149,9 +1149,9 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
-		s.Require().Equal(uint64(0), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
-		s.Require().Equal(uint64(0), callbackCounter.Timeout)
+		s.Require().Equal(int(0), callbackCounter.Success)
+		s.Require().Equal(int(0), callbackCounter.Error)
+		s.Require().Equal(int(0), callbackCounter.Timeout)
 	})
 
 	s.Run("TestSendCustomIcaMessagesAfterReopen", func() {
@@ -1181,9 +1181,9 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
-		s.Require().Equal(uint64(1), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
-		s.Require().Equal(uint64(0), callbackCounter.Timeout)
+		s.Require().Equal(int(1), callbackCounter.Success)
+		s.Require().Equal(int(0), callbackCounter.Error)
+		s.Require().Equal(int(0), callbackCounter.Timeout)
 	})
 }
 
@@ -1227,9 +1227,9 @@ func (s *ContractTestSuite) TestCloseChannel_Protobuf_Unordered() {
 		callbackCounter := &callbackcounter.CallbackCounter{}
 		err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
-		s.Require().Equal(uint64(0), callbackCounter.Success)
-		s.Require().Equal(uint64(0), callbackCounter.Error)
-		s.Require().Equal(uint64(0), callbackCounter.Timeout)
+		s.Require().Equal(int(0), callbackCounter.Success)
+		s.Require().Equal(int(0), callbackCounter.Error)
+		s.Require().Equal(int(0), callbackCounter.Timeout)
 
 		// Check if contract channel state was updated:
 		contractChannelState := &icacontroller.State{}
