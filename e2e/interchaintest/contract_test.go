@@ -36,17 +36,23 @@ import (
 type ContractTestSuite struct {
 	mysuite.TestSuite
 
-	Contract *types.IcaContract
+	Contract *types.Contract[
+    icacontroller.InstantiateMsg, icacontroller.ExecuteMsg, icacontroller.QueryMsg,
+  ]
 	// CallbackCounterContract is the address of the callback counter contract
-	CallbackCounterContract *types.Contract
+	CallbackCounterContract *types.Contract[
+    callbackcounter.InstantiateMsg, callbackcounter.ExecuteMsg, callbackcounter.QueryMsg,
+  ]
+
+  // IcaContractToAddrMap is a map of ICA contract address to the address of ICA
+  IcaContractToAddrMap map[string]string
 }
 
-// SetupSuite calls the underlying TestSuite's SetupSuite method and initializes an empty contract
+// SetupSuite calls the underlying TestSuite's SetupSuite method
 func (s *ContractTestSuite) SetupSuite(ctx context.Context, chainSpecs []*interchaintest.ChainSpec) {
 	s.TestSuite.SetupSuite(ctx, chainSpecs)
 
-	// Initialize an empty contract so that we can use the methods of the contract
-	s.Contract = types.NewIcaContract(types.Contract{})
+  s.IcaContractToAddrMap = make(map[string]string)
 }
 
 // SetupContractTestSuite starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
@@ -57,10 +63,8 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, ordering
 	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/callback_counter.wasm")
 	s.Require().NoError(err)
 
-	callbackAddress, err := s.ChainA.InstantiateContract(ctx, s.UserA.KeyName(), codeId, callbackcounter.InstantiateMsg, true)
-	s.Require().NoError(err)
-
-	s.CallbackCounterContract = types.NewContract(callbackAddress, codeId, s.ChainA)
+	s.CallbackCounterContract, err = types.Instantiate[callbackcounter.InstantiateMsg, callbackcounter.ExecuteMsg, callbackcounter.QueryMsg](ctx, s.UserA.KeyName(), codeId, s.ChainA, callbackcounter.InstantiateMsg{})
+  s.Require().NoError(err)
 
 	codeId, err = s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
@@ -74,27 +78,26 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, ordering
 			CounterpartyPortId:       nil,
 			ChannelOrdering:          &ordering,
 		},
-		SendCallbacksTo: &callbackAddress,
+		SendCallbacksTo: &s.CallbackCounterContract.Address,
 	}
 
-	err = s.Contract.Instantiate(ctx, s.UserA.KeyName(), s.ChainA, codeId, instantiateMsg, "--gas", "500000")
+  s.Contract, err = types.Instantiate[icacontroller.InstantiateMsg, icacontroller.ExecuteMsg, icacontroller.QueryMsg](ctx, s.UserA.KeyName(), codeId, s.ChainA, instantiateMsg, "--gas", "500000")
 	s.Require().NoError(err)
 
 	// Wait for the channel to get set up
 	err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
 	s.Require().NoError(err)
 
-	contractState, err := types.QueryAnyMsg[icacontroller.State_2](
-		ctx, &s.Contract.Contract,
-		icacontroller.GetContractStateRequest,
-	)
+  contractState := &icacontroller.State_2{}
+  err = s.Contract.Query(ctx, icacontroller.GetContractStateRequest, contractState)
 	s.Require().NoError(err)
 
-	ownershipResponse, err := types.QueryAnyMsg[icacontroller.Ownership_for_String](ctx, &s.Contract.Contract, icacontroller.OwnershipRequest)
+  ownershipResponse := icacontroller.Ownership_for_String{}
+  err = s.Contract.Query(ctx, icacontroller.OwnershipRequest, &ownershipResponse)
 	s.Require().NoError(err)
-
 	s.Require().NotEmpty(contractState.IcaInfo.IcaAddress)
-	s.Contract.SetIcaAddress(contractState.IcaInfo.IcaAddress)
+
+	s.IcaContractToAddrMap[s.Contract.Address] = contractState.IcaInfo.IcaAddress
 
 	s.Require().Equal(s.UserA.FormattedAddress(), *ownershipResponse.Owner)
 	s.Require().Nil(ownershipResponse.PendingOwner)
@@ -152,7 +155,8 @@ func (s *ContractTestSuite) IcaContractChannelHandshakeTest_WithOrdering(orderin
 		s.Require().Equal(string(ordering), simdChannel.Ordering)
 
 		// Check contract's channel state
-		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
+    contractChannelState := &icacontroller.State{}
+    err = s.Contract.Query(ctx, icacontroller.GetChannelRequest, contractChannelState)
 		s.Require().NoError(err)
 
 		s.T().Logf("contract's channel store after handshake: %s", toJSONString(contractChannelState))
@@ -167,10 +171,8 @@ func (s *ContractTestSuite) IcaContractChannelHandshakeTest_WithOrdering(orderin
 		s.Require().Equal(wasmdChannel.Ordering, string(contractChannelState.Channel.Order))
 
 		// Check contract state
-		contractState, err := types.QueryAnyMsg[icacontroller.State_2](
-			ctx, &s.Contract.Contract,
-			icacontroller.GetContractStateRequest,
-		)
+    contractState := &icacontroller.State_2{}
+    err = s.Contract.Query(ctx, icacontroller.GetContractStateRequest, contractState)
 		s.Require().NoError(err)
 
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelId)
@@ -202,7 +204,7 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 		SendCallbacksTo: nil,
 	}
 
-	err = s.Contract.Instantiate(ctx, wasmdUser.KeyName(), wasmd, codeId, instantiateMsg, "--gas", "500000")
+  s.Contract, err = types.Instantiate[icacontroller.InstantiateMsg, icacontroller.ExecuteMsg, icacontroller.QueryMsg](ctx, wasmdUser.KeyName(), codeId, wasmd, instantiateMsg, "--gas", "500000")
 	s.Require().NoError(err)
 
 	version := fmt.Sprintf(`{"version":"%s","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"%s","tx_type":"%s"}`, icatypes.Version, s.ChainAConnID, s.ChainBConnID, icatypes.EncodingProtobuf, icatypes.TxTypeSDKMultiMsg)
@@ -237,7 +239,7 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 			SendCallbacksTo: nil,
 		}
 
-		err = s.Contract.Instantiate(ctx, wasmdUser.KeyName(), wasmd, codeId, instantiateMsg, "--gas", "500000")
+    _, err = types.Instantiate[icacontroller.InstantiateMsg, icacontroller.ExecuteMsg, icacontroller.QueryMsg](ctx, wasmdUser.KeyName(), codeId, wasmd, instantiateMsg, "--gas", "500000")
 		s.Require().ErrorContains(err, "submessages: invalid connection hop ID")
 	})
 
@@ -253,7 +255,7 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 			SendCallbacksTo: nil,
 		}
 
-		err = s.Contract.Instantiate(ctx, wasmdUser.KeyName(), wasmd, codeId, instantiateMsg, "--gas", "500000")
+    s.Contract, err = types.Instantiate[icacontroller.InstantiateMsg, icacontroller.ExecuteMsg, icacontroller.QueryMsg](ctx, wasmdUser.KeyName(), codeId, wasmd, instantiateMsg, "--gas", "500000")
 		s.Require().NoError(err)
 	})
 
@@ -268,7 +270,7 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 			},
 		}
 
-		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), createChannelMsg, "--gas", "500000")
+    _, err = s.Contract.Execute(ctx, wasmdUser.KeyName(), createChannelMsg, "--gas", "500000")
 		s.Require().NoError(err)
 
 		// Wait for the channel to get set up
@@ -303,10 +305,9 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 		s.Require().Equal(channeltypes.OPEN.String(), simdChannel.State)
 
 		// Check contract's channel state
-		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
+    contractChannelState := &icacontroller.State{}
+    err = s.Contract.Query(ctx, icacontroller.GetChannelRequest, contractChannelState)
 		s.Require().NoError(err)
-
-		s.T().Logf("contract's channel store after handshake: %s", toJSONString(contractChannelState))
 
 		s.Require().Equal(wasmdChannel.State, string(contractChannelState.ChannelStatus))
 		s.Require().Equal(wasmdChannel.Version, contractChannelState.Channel.Version)
@@ -318,10 +319,8 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 		s.Require().Equal(wasmdChannel.Ordering, string(contractChannelState.Channel.Order))
 
 		// Check contract state
-		contractState, err := types.QueryAnyMsg[icacontroller.State_2](
-			ctx, &s.Contract.Contract,
-			icacontroller.GetContractStateRequest,
-		)
+    contractState := &icacontroller.State_2{}
+    err = s.Contract.Query(ctx, icacontroller.GetContractStateRequest, contractState)
 		s.Require().NoError(err)
 
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelId)
@@ -346,7 +345,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering icacon
 	wasmdUser, simdUser := s.UserA, s.UserB
 
 	// Fund the ICA address:
-	s.FundAddressChainB(ctx, s.Contract.IcaAddress)
+	s.FundAddressChainB(ctx, s.IcaContractToAddrMap[s.Contract.Address])
 
 	s.Run("TestStargateMsgSuccess", func() {
 		// Send custom ICA messages through the contract:
@@ -363,25 +362,26 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering icacon
 		proposalMsg, err := govv1.NewMsgSubmitProposal(
 			[]sdk.Msg{testProposal},
 			sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10_000_000))),
-			s.Contract.IcaAddress, "e2e", "e2e", "e2e", false,
+			s.IcaContractToAddrMap[s.Contract.Address], "e2e", "e2e", "e2e", false,
 		)
 		s.Require().NoError(err)
 
-		intialBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
+		intialBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 
 		// Execute the contract:
 		stargateExecMsg := icacontroller.NewExecuteMsg_SendCosmosMsgs_FromProto(
 			[]proto.Message{proposalMsg}, nil, nil,
 		)
-		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), stargateExecMsg)
+		_, err = s.Contract.Execute(ctx, wasmdUser.KeyName(), stargateExecMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
+    callbackCounter := &callbackcounter.CallbackCounter{}
+    err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)
@@ -394,13 +394,13 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering icacon
 		s.Require().NoError(err)
 		s.Require().Equal("e2e", proposalResp.Proposal.Title)
 
-		postBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
+		postBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(intialBalance.Sub(sdkmath.NewInt(10_000_000)), postBalance)
 	})
 
 	s.Run("TestSendCosmosMsgsSuccess", func() {
-		intialBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
+		intialBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 
 		validator, err := simd.Validators[0].KeyBech32(ctx, "validator", "val")
@@ -434,25 +434,26 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering icacon
 				Messages: []icacontroller.CosmosMsg_for_Empty{stakeCosmosMsg, voteCosmosMsg},
 			},
 		}
-		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCosmosMsgsExecMsg)
+		_, err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCosmosMsgsExecMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
-		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
+    callbackCounter := &callbackcounter.CallbackCounter{}
+    err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(2), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 
 		// Check if the delegation was successful:
-		postBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
+		postBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(intialBalance.Sub(sdkmath.NewInt(10_000_000)), postBalance)
 
 		delRequest := stakingtypes.QueryDelegationRequest{
-			DelegatorAddr: s.Contract.IcaAddress,
+			DelegatorAddr: s.IcaContractToAddrMap[s.Contract.Address],
 			ValidatorAddr: validator,
 		}
 		delResp, err := mysuite.GRPCQuery[stakingtypes.QueryDelegationResponse](ctx, simd, &delRequest)
@@ -462,7 +463,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering icacon
 		// Check if the vote was successful:
 		voteRequest := govv1.QueryVoteRequest{
 			ProposalId: 1,
-			Voter:      s.Contract.IcaAddress,
+			Voter:      s.IcaContractToAddrMap[s.Contract.Address],
 		}
 		voteResp, err := mysuite.GRPCQuery[govv1.QueryVoteResponse](ctx, simd, &voteRequest)
 		s.Require().NoError(err)
@@ -494,14 +495,15 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering icacon
 				Messages: []icacontroller.CosmosMsg_for_Empty{badSendMsg},
 			},
 		}
-		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), badMsg)
+		_, err := s.Contract.Execute(ctx, wasmdUser.KeyName(), badMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
+    callbackCounter := &callbackcounter.CallbackCounter{}
+    err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 		s.Require().Equal(uint64(2), callbackCounter.Success)
 		s.Require().Equal(uint64(1), callbackCounter.Error)
@@ -536,7 +538,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering icacontrolle
 	simdUser := s.UserB
 
 	// Fund the ICA address:
-	s.FundAddressChainB(ctx, s.Contract.IcaAddress)
+	s.FundAddressChainB(ctx, s.IcaContractToAddrMap[s.Contract.Address])
 
 	s.Run("TestStargate", func() {
 		// Send custom ICA messages through the contract:
@@ -553,25 +555,26 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering icacontrolle
 		proposalMsg, err := govv1.NewMsgSubmitProposal(
 			[]sdk.Msg{&testProposal},
 			sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(10_000_000))),
-			s.Contract.IcaAddress, "e2e", "e2e", "e2e", false,
+			s.IcaContractToAddrMap[s.Contract.Address], "e2e", "e2e", "e2e", false,
 		)
 		s.Require().NoError(err)
 
-		initialBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
+		initialBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 
 		// Execute the contract:
 		sendStargateMsg := icacontroller.NewExecuteMsg_SendCosmosMsgs_FromProto(
 			[]proto.Message{proposalMsg}, nil, nil,
 		)
-		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendStargateMsg)
+		_, err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendStargateMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
+    callbackCounter := &callbackcounter.CallbackCounter{}
+    err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)
@@ -584,13 +587,13 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering icacontrolle
 		s.Require().NoError(err)
 		s.Require().Equal("e2e", proposalResp.Proposal.Title)
 
-		postBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
+		postBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(initialBalance.Sub(sdkmath.NewInt(10_000_000)), postBalance)
 	})
 
 	s.Run("TestDelegateAndVoteWeightedAndCommunityPool", func() {
-		intialBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
+		intialBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 
 		validator, err := simd.Validators[0].KeyBech32(ctx, "validator", "val")
@@ -645,25 +648,26 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering icacontrolle
 				Messages: []icacontroller.CosmosMsg_for_Empty{stakeCosmosMsg, voteCosmosMsg, fundPoolCosmosMsg},
 			},
 		}
-		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCosmosMsgsExecMsg)
+		_, err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCosmosMsgsExecMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
-		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
+    callbackCounter := &callbackcounter.CallbackCounter{}
+    err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(2), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 
 		// Check if the delegation was successful:
-		postBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
+		postBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(intialBalance.Sub(sdkmath.NewInt(20_000_000)), postBalance)
 
 		delRequest := stakingtypes.QueryDelegationRequest{
-			DelegatorAddr: s.Contract.IcaAddress,
+			DelegatorAddr: s.IcaContractToAddrMap[s.Contract.Address],
 			ValidatorAddr: validator,
 		}
 		delResp, err := mysuite.GRPCQuery[stakingtypes.QueryDelegationResponse](ctx, simd, &delRequest)
@@ -673,7 +677,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering icacontrolle
 		// Check if the vote was successful:
 		voteRequest := govv1.QueryVoteRequest{
 			ProposalId: 1,
-			Voter:      s.Contract.IcaAddress,
+			Voter:      s.IcaContractToAddrMap[s.Contract.Address],
 		}
 		voteResp, err := mysuite.GRPCQuery[govv1.QueryVoteResponse](ctx, simd, &voteRequest)
 		s.Require().NoError(err)
@@ -693,7 +697,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering icacontrolle
 	})
 
 	s.Run("TestSendAndSetWithdrawAddress", func() {
-		initialBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
+		initialBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 
 		// Send some tokens to the simdUser from the ICA address
@@ -726,19 +730,20 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering icacontrolle
 				Messages: []icacontroller.CosmosMsg_for_Empty{sendMsg, setWithdrawAddressMsg},
 			},
 		}
-		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCosmosMsgsExecMsg)
+		_, err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCosmosMsgsExecMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
-		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
+    callbackCounter := &callbackcounter.CallbackCounter{}
+    err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 		s.Require().Equal(uint64(3), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 
 		// Check if the send was successful:
-		postBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
+		postBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(sdkmath.NewInt(1_000_000), initialBalance.Sub(postBalance))
 	})
@@ -754,12 +759,10 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 	wasmdUser, _ := s.UserA, s.UserB
 
 	// Fund the ICA address:
-	s.FundAddressChainB(ctx, s.Contract.IcaAddress)
+	s.FundAddressChainB(ctx, s.IcaContractToAddrMap[s.Contract.Address])
 
-	contractState, err := types.QueryAnyMsg[icacontroller.State_2](
-		ctx, &s.Contract.Contract,
-		icacontroller.GetContractStateRequest,
-	)
+  contractState := &icacontroller.State_2{}
+  err := s.Contract.Query(ctx, icacontroller.GetContractStateRequest, contractState)
 	s.Require().NoError(err)
 
 	var simdChannelsLen int
@@ -779,7 +782,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 		stargateExecMsg := icacontroller.NewExecuteMsg_SendCosmosMsgs_FromProto(
 			[]proto.Message{}, nil, &timeout,
 		)
-		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), stargateExecMsg)
+		_, err = s.Contract.Execute(ctx, wasmdUser.KeyName(), stargateExecMsg)
 		s.Require().NoError(err)
 
 		// Wait until timeout:
@@ -814,14 +817,16 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 		s.Require().Equal(channeltypes.CLOSED.String(), simdChannels[0].State)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
+    callbackCounter := &callbackcounter.CallbackCounter{}
+    err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 		s.Require().Equal(uint64(0), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 		s.Require().Equal(uint64(1), callbackCounter.Timeout)
 
 		// Check if contract channel state was updated:
-		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
+    contractChannelState := &icacontroller.State{}
+    err = s.Contract.Query(ctx, icacontroller.GetChannelRequest, contractChannelState)
 		s.Require().NoError(err)
 		s.Require().Equal(icacontroller.Status_StateClosed, contractChannelState.ChannelStatus)
 	})
@@ -834,7 +839,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 			},
 		}
 
-		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), createChannelMsg, "--gas", "500000")
+		_, err := s.Contract.Execute(ctx, wasmdUser.KeyName(), createChannelMsg, "--gas", "500000")
 		s.Require().NoError(err)
 
 		// Wait for the channel to get set up
@@ -857,7 +862,8 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 		s.Require().Equal(channeltypes.OPEN.String(), wasmdChannel.State)
 
 		// Check if contract channel state was updated:
-		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
+    contractChannelState := &icacontroller.State{}
+    err = s.Contract.Query(ctx, icacontroller.GetChannelRequest, contractChannelState)
 		s.Require().NoError(err)
 		s.Require().Equal(icacontroller.Status_StateOpen, contractChannelState.ChannelStatus)
 		s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionId)
@@ -867,15 +873,14 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 		s.Require().Equal(wasmdChannel.Counterparty.PortID, contractChannelState.Channel.CounterpartyEndpoint.PortId)
 		s.Require().Equal(wasmdChannel.Ordering, string(contractChannelState.Channel.Order))
 
-		contractState, err := types.QueryAnyMsg[icacontroller.State_2](
-			ctx, &s.Contract.Contract,
-			icacontroller.GetContractStateRequest,
-		)
+    contractState := &icacontroller.State_2{}
+    err = s.Contract.Query(ctx, icacontroller.GetContractStateRequest, contractState)
 		s.Require().NoError(err)
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelId)
-		s.Require().Equal(s.Contract.IcaAddress, contractState.IcaInfo.IcaAddress)
+		s.Require().Equal(s.IcaContractToAddrMap[s.Contract.Address], contractState.IcaInfo.IcaAddress)
 
-		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
+    callbackCounter := &callbackcounter.CallbackCounter{}
+    err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(0), callbackCounter.Success)
@@ -886,7 +891,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 	s.Run("TestSendCustomIcaMessagesAfterReopen", func() {
 		// Send custom ICA message through the contract:
 		sendMsg := &banktypes.MsgSend{
-			FromAddress: s.Contract.IcaAddress,
+			FromAddress: s.IcaContractToAddrMap[s.Contract.Address],
 			ToAddress:   s.UserB.FormattedAddress(),
 			Amount:      sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(100))),
 		}
@@ -895,18 +900,19 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCosmosMsgs_FromProto(
 			[]proto.Message{sendMsg}, nil, nil,
 		)
-		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
+		_, err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 10, wasmd, simd)
 		s.Require().NoError(err)
 
-		icaBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
+		icaBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(sdkmath.NewInt(1000000000-100), icaBalance)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
+    callbackCounter := &callbackcounter.CallbackCounter{}
+    err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)
@@ -925,12 +931,10 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Unordered_Protobuf() {
 	wasmdUser, _ := s.UserA, s.UserB
 
 	// Fund the ICA address:
-	s.FundAddressChainB(ctx, s.Contract.IcaAddress)
+	s.FundAddressChainB(ctx, s.IcaContractToAddrMap[s.Contract.Address])
 
-	contractState, err := types.QueryAnyMsg[icacontroller.State_2](
-		ctx, &s.Contract.Contract,
-		icacontroller.GetContractStateRequest,
-	)
+  contractState := &icacontroller.State_2{}
+  err := s.Contract.Query(ctx, icacontroller.GetContractStateRequest, contractState)
 	s.Require().NoError(err)
 
 	var simdChannelsLen int
@@ -950,7 +954,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Unordered_Protobuf() {
 		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCosmosMsgs_FromProto(
 			[]proto.Message{}, nil, &timeout,
 		)
-		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
+		_, err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 		s.Require().NoError(err)
 
 		// Wait until timeout:
@@ -985,14 +989,16 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Unordered_Protobuf() {
 		s.Require().Equal(channeltypes.OPEN.String(), simdChannels[0].State)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
+    callbackCounter := &callbackcounter.CallbackCounter{}
+    err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 		s.Require().Equal(uint64(0), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 		s.Require().Equal(uint64(1), callbackCounter.Timeout)
 
 		// Check if contract channel state is still open:
-		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
+    contractChannelState := &icacontroller.State{}
+    err = s.Contract.Query(ctx, icacontroller.GetChannelRequest, contractChannelState)
 		s.Require().NoError(err)
 		s.Require().Equal(icacontroller.Status_StateOpen, contractChannelState.ChannelStatus)
 	})
@@ -1000,7 +1006,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Unordered_Protobuf() {
 	s.Run("TestSendCustomIcaMessagesAfterTimeout", func() {
 		// Send custom ICA message through the contract:
 		sendMsg := &banktypes.MsgSend{
-			FromAddress: s.Contract.IcaAddress,
+			FromAddress: s.IcaContractToAddrMap[s.Contract.Address],
 			ToAddress:   s.UserB.FormattedAddress(),
 			Amount:      sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(100))),
 		}
@@ -1009,18 +1015,19 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Unordered_Protobuf() {
 		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCosmosMsgs_FromProto(
 			[]proto.Message{sendMsg}, nil, nil,
 		)
-		err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
+		_, err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
 		s.Require().NoError(err)
 
-		icaBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
+		icaBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(sdkmath.NewInt(1000000000-100), icaBalance)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
+    callbackCounter := &callbackcounter.CallbackCounter{}
+    err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)
@@ -1039,7 +1046,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 	wasmdUser, _ := s.UserA, s.UserB
 
 	// Fund the ICA address:
-	s.FundAddressChainB(ctx, s.Contract.IcaAddress)
+	s.FundAddressChainB(ctx, s.IcaContractToAddrMap[s.Contract.Address])
 
 	var simdChannelsLen int
 	s.Run("TestCloseChannel", func() {
@@ -1047,7 +1054,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		closeChannelMsg := icacontroller.ExecuteMsg{
 			CloseChannel: &icacontroller.ExecuteMsg_CloseChannel{},
 		}
-		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), closeChannelMsg)
+		_, err := s.Contract.Execute(ctx, wasmdUser.KeyName(), closeChannelMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
@@ -1067,14 +1074,16 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		s.Require().Equal(channeltypes.CLOSED.String(), simdChannels[0].State)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
+    callbackCounter := &callbackcounter.CallbackCounter{}
+    err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 		s.Require().Equal(uint64(0), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 		s.Require().Equal(uint64(0), callbackCounter.Timeout)
 
 		// Check if contract channel state was updated:
-		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
+    contractChannelState := &icacontroller.State{}
+    err = s.Contract.Query(ctx, icacontroller.GetChannelRequest, contractChannelState)
 		s.Require().NoError(err)
 		s.Require().Equal(icacontroller.Status_StateClosed, contractChannelState.ChannelStatus)
 	})
@@ -1094,7 +1103,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 			},
 		}
 
-		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), createChannelMsg, "--gas", "500000")
+    _, err := s.Contract.Execute(ctx, wasmdUser.KeyName(), createChannelMsg, "--gas", "500000")
 		s.Require().NoError(err)
 
 		// Wait for the channel to get set up
@@ -1119,7 +1128,8 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		s.Require().Equal(channeltypes.UNORDERED.String(), wasmdChannel.Ordering)
 
 		// Check if contract channel state was updated:
-		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
+    contractChannelState := &icacontroller.State{}
+    err = s.Contract.Query(ctx, icacontroller.GetChannelRequest, contractChannelState)
 		s.Require().NoError(err)
 		s.Require().Equal(icacontroller.Status_StateOpen, contractChannelState.ChannelStatus)
 		s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionId)
@@ -1129,15 +1139,14 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		s.Require().Equal(wasmdChannel.Counterparty.PortID, contractChannelState.Channel.CounterpartyEndpoint.PortId)
 		s.Require().Equal(wasmdChannel.Ordering, string(contractChannelState.Channel.Order))
 
-		contractState, err := types.QueryAnyMsg[icacontroller.State_2](
-			ctx, &s.Contract.Contract,
-			icacontroller.GetContractStateRequest,
-		)
+    contractState := &icacontroller.State_2{}
+    err = s.Contract.Query(ctx, icacontroller.GetContractStateRequest, contractState)
 		s.Require().NoError(err)
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelId)
-		s.Require().Equal(s.Contract.IcaAddress, contractState.IcaInfo.IcaAddress)
+		s.Require().Equal(s.IcaContractToAddrMap[s.Contract.Address], contractState.IcaInfo.IcaAddress)
 
-		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
+    callbackCounter := &callbackcounter.CallbackCounter{}
+    err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(0), callbackCounter.Success)
@@ -1148,7 +1157,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 	s.Run("TestSendCustomIcaMessagesAfterReopen", func() {
 		// Send custom ICA message through the contract:
 		sendMsg := &banktypes.MsgSend{
-			FromAddress: s.Contract.IcaAddress,
+			FromAddress: s.IcaContractToAddrMap[s.Contract.Address],
 			ToAddress:   s.UserB.FormattedAddress(),
 			Amount:      sdk.NewCoins(sdk.NewCoin(simd.Config().Denom, sdkmath.NewInt(100))),
 		}
@@ -1157,18 +1166,19 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		sendCustomIcaMsg := icacontroller.NewExecuteMsg_SendCosmosMsgs_FromProto(
 			[]proto.Message{sendMsg}, nil, nil,
 		)
-		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
+		_, err := s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCustomIcaMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 7, wasmd, simd)
 		s.Require().NoError(err)
 
-		icaBalance, err := simd.GetBalance(ctx, s.Contract.IcaAddress, simd.Config().Denom)
+		icaBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(sdkmath.NewInt(1000000000-100), icaBalance)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
+    callbackCounter := &callbackcounter.CallbackCounter{}
+    err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 
 		s.Require().Equal(uint64(1), callbackCounter.Success)
@@ -1187,14 +1197,14 @@ func (s *ContractTestSuite) TestCloseChannel_Protobuf_Unordered() {
 	wasmdUser, _ := s.UserA, s.UserB
 
 	// Fund the ICA address:
-	s.FundAddressChainB(ctx, s.Contract.IcaAddress)
+	s.FundAddressChainB(ctx, s.IcaContractToAddrMap[s.Contract.Address])
 
 	s.Run("TestCloseChannel", func() {
 		// Close the channel:
 		closeChannelMsg := icacontroller.ExecuteMsg{
 			CloseChannel: &icacontroller.ExecuteMsg_CloseChannel{},
 		}
-		err := s.Contract.Execute(ctx, wasmdUser.KeyName(), closeChannelMsg)
+		_, err := s.Contract.Execute(ctx, wasmdUser.KeyName(), closeChannelMsg)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
@@ -1214,14 +1224,16 @@ func (s *ContractTestSuite) TestCloseChannel_Protobuf_Unordered() {
 		s.Require().Equal(channeltypes.CLOSED.String(), simdChannels[0].State)
 
 		// Check if contract callbacks were executed:
-		callbackCounter, err := types.QueryAnyMsg[callbackcounter.CallbackCounter](ctx, s.CallbackCounterContract, callbackcounter.GetCallbackCounterRequest)
+    callbackCounter := &callbackcounter.CallbackCounter{}
+    err = s.CallbackCounterContract.Query(ctx, callbackcounter.GetCallbackCounterRequest, callbackCounter)
 		s.Require().NoError(err)
 		s.Require().Equal(uint64(0), callbackCounter.Success)
 		s.Require().Equal(uint64(0), callbackCounter.Error)
 		s.Require().Equal(uint64(0), callbackCounter.Timeout)
 
 		// Check if contract channel state was updated:
-		contractChannelState, err := types.QueryAnyMsg[icacontroller.State](ctx, &s.Contract.Contract, icacontroller.GetChannelRequest)
+    contractChannelState := &icacontroller.State{}
+    err = s.Contract.Query(ctx, icacontroller.GetChannelRequest, contractChannelState)
 		s.Require().NoError(err)
 		s.Require().Equal(icacontroller.Status_StateClosed, contractChannelState.ChannelStatus)
 	})
