@@ -36,10 +36,11 @@ import (
 type ContractTestSuite struct {
 	mysuite.TestSuite
 
+	// Contract is the representation of the ICA controller contract
 	Contract *types.Contract[
 		icacontroller.InstantiateMsg, icacontroller.ExecuteMsg, icacontroller.QueryMsg,
 	]
-	// CallbackCounterContract is the address of the callback counter contract
+	// CallbackCounterContract is the representation of the callback counter contract
 	CallbackCounterContract *types.Contract[
 		callbackcounter.InstantiateMsg, callbackcounter.ExecuteMsg, callbackcounter.QueryMsg,
 	]
