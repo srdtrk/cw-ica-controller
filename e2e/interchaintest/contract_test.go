@@ -189,7 +189,6 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 	wasmd := s.ChainA
 	wasmdUser := s.UserA
 
-	var err error
 	// Upload and Instantiate the contract on wasmd:
 	codeId, err := wasmd.StoreContract(ctx, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
