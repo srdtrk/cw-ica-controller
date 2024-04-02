@@ -7,7 +7,9 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	pb "google.golang.org/protobuf/proto"
 
+	msgv1 "cosmossdk.io/api/cosmos/msg/v1"
 	reflectionv1 "cosmossdk.io/api/cosmos/reflection/v1"
 
 	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
@@ -23,9 +25,14 @@ func populateQueryReqToPath(ctx context.Context, chain *cosmos.CosmosChain) erro
 
 	for _, fileDescriptor := range resp.Files {
 		for _, service := range fileDescriptor.GetService() {
+			// Skip services that are annotated with the "cosmos.msg.v1.service" option.
+			if ext := pb.GetExtension(service.ProtoReflect().Descriptor().Options(), msgv1.E_Service); ext != nil && ext.(bool) {
+				continue
+			}
 			fmt.Println("Service Uninterpreted Options: ", service.GetOptions().GetUninterpretedOption())
 			for _, method := range service.GetMethod() {
-				queryReqToPath[method.GetInputType()] = service.GetName() + "/" + method.GetName()
+				// trim the first character from input which is a dot
+				queryReqToPath[method.GetInputType()[1:]] = string(service.ProtoReflect().Descriptor().FullName()) + "/" + method.GetName()
 			}
 		}
 	}
