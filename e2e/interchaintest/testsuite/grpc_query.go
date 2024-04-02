@@ -26,7 +26,7 @@ func populateQueryReqToPath(ctx context.Context, chain *cosmos.CosmosChain) erro
 	for _, fileDescriptor := range resp.Files {
 		for _, service := range fileDescriptor.GetService() {
 			// Skip services that are annotated with the "cosmos.msg.v1.service" option.
-			if ext := pb.GetExtension(service.ProtoReflect().Descriptor().Options(), msgv1.E_Service); ext != nil && ext.(bool) {
+			if ext := pb.GetExtension(service.GetOptions(), msgv1.E_Service); ext != nil && ext.(bool) {
 				continue
 			}
 			fmt.Println("Service Uninterpreted Options: ", service.GetOptions().GetUninterpretedOption())
