@@ -31,6 +31,6 @@ func TestTypes(t *testing.T) {
 		Amount:     sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(10000000))),
 	}
 
-	_, err := icatypes.SerializeCosmosTx(mysuite.SDKEncodingConfig().Codec, []proto.Message{depositMsg}, icatypes.EncodingProto3JSON)
+	_, err := icatypes.SerializeCosmosTx(mysuite.EncodingConfig().Codec, []proto.Message{depositMsg}, icatypes.EncodingProto3JSON)
 	require.NoError(t, err)
 }

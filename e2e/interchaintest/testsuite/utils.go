@@ -10,13 +10,19 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdktestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
+	txtypes "github.com/cosmos/cosmos-sdk/types/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	consensustypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	grouptypes "github.com/cosmos/cosmos-sdk/x/group"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	proposaltypes "github.com/cosmos/cosmos-sdk/x/params/types/proposal"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	icacontrollertypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/types"
 	icahosttypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/types"
@@ -30,6 +36,8 @@ import (
 	ibctmtypes "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
 	localhost "github.com/cosmos/ibc-go/v8/modules/light-clients/09-localhost"
 	simappparams "github.com/cosmos/ibc-go/v8/testing/simapp/params"
+
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 
 	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
 	"github.com/strangelove-ventures/interchaintest/v8/ibc"
@@ -82,8 +90,9 @@ func (s *TestSuite) fundAddress(ctx context.Context, chain *cosmos.CosmosChain, 
 	s.Require().NoError(err)
 }
 
-// SDKEncodingConfig returns the global E2E encoding config.
-func SDKEncodingConfig() *sdktestutil.TestEncodingConfig {
+// EncodingConfig returns the global E2E encoding config.
+// It includes CosmosSDK, IBC, and Wasm messages
+func EncodingConfig() *sdktestutil.TestEncodingConfig {
 	_, cfg := codecAndEncodingConfig()
 	return &sdktestutil.TestEncodingConfig{
 		InterfaceRegistry: cfg.InterfaceRegistry,
@@ -109,7 +118,7 @@ func codecAndEncodingConfig() (*codec.ProtoCodec, simappparams.EncodingConfig) {
 	ibctmtypes.RegisterInterfaces(cfg.InterfaceRegistry)
 	localhost.RegisterInterfaces(cfg.InterfaceRegistry)
 
-	// all other types
+	// sdk types
 	upgradetypes.RegisterInterfaces(cfg.InterfaceRegistry)
 	banktypes.RegisterInterfaces(cfg.InterfaceRegistry)
 	govv1beta1.RegisterInterfaces(cfg.InterfaceRegistry)
@@ -119,6 +128,15 @@ func codecAndEncodingConfig() (*codec.ProtoCodec, simappparams.EncodingConfig) {
 	grouptypes.RegisterInterfaces(cfg.InterfaceRegistry)
 	proposaltypes.RegisterInterfaces(cfg.InterfaceRegistry)
 	authz.RegisterInterfaces(cfg.InterfaceRegistry)
+	txtypes.RegisterInterfaces(cfg.InterfaceRegistry)
+	stakingtypes.RegisterInterfaces(cfg.InterfaceRegistry)
+	minttypes.RegisterInterfaces(cfg.InterfaceRegistry)
+	distrtypes.RegisterInterfaces(cfg.InterfaceRegistry)
+	slashingtypes.RegisterInterfaces(cfg.InterfaceRegistry)
+	consensustypes.RegisterInterfaces(cfg.InterfaceRegistry)
+
+	// custom module types
+	wasmtypes.RegisterInterfaces(cfg.InterfaceRegistry)
 
 	cdc := codec.NewProtoCodec(cfg.InterfaceRegistry)
 	return cdc, cfg

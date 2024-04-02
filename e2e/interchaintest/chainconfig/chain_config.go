@@ -2,7 +2,6 @@ package chainconfig
 
 import (
 	interchaintest "github.com/strangelove-ventures/interchaintest/v8"
-	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos/wasm"
 	"github.com/strangelove-ventures/interchaintest/v8/ibc"
 
 	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
@@ -28,7 +27,7 @@ var DefaultChainSpecs = []*interchaintest.ChainSpec{
 			GasPrices:     "0.00stake",
 			GasAdjustment: 1.3,
 			// cannot run wasmd commands without wasm encoding
-			EncodingConfig: wasm.WasmEncoding(),
+			EncodingConfig: mysuite.EncodingConfig(),
 			TrustingPeriod: "508h",
 			NoHostMount:    false,
 		},
@@ -51,7 +50,7 @@ var DefaultChainSpecs = []*interchaintest.ChainSpec{
 			Denom:          "stake",
 			GasPrices:      "0.00stake",
 			GasAdjustment:  1.3,
-			EncodingConfig: mysuite.SDKEncodingConfig(),
+			EncodingConfig: mysuite.EncodingConfig(),
 			TrustingPeriod: "508h",
 			NoHostMount:    false,
 		},
