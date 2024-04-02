@@ -1,4 +1,4 @@
-package testsuite
+package e2esuite
 
 const (
 	// hermesRelayerImage  = "ghcr.io/informalsystems/hermes"

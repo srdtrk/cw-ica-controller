@@ -27,14 +27,14 @@ import (
 	"github.com/strangelove-ventures/interchaintest/v8/testutil"
 
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/chainconfig"
-	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/e2esuite"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
 	callbackcounter "github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/callback-counter"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
 )
 
 type ContractTestSuite struct {
-	mysuite.TestSuite
+	e2esuite.TestSuite
 
 	// Contract is the representation of the ICA controller contract
 	Contract *types.Contract[
@@ -388,7 +388,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering icacon
 		s.Require().Equal(int(0), callbackCounter.Error)
 
 		// Check if the proposal was created:
-		proposalResp, err := mysuite.GRPCQuery[govv1.QueryProposalResponse](ctx, simd, &govv1.QueryProposalRequest{
+		proposalResp, err := e2esuite.GRPCQuery[govv1.QueryProposalResponse](ctx, simd, &govv1.QueryProposalRequest{
 			ProposalId: 1,
 		})
 		s.Require().NoError(err)
@@ -456,7 +456,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering icacon
 			DelegatorAddr: s.IcaContractToAddrMap[s.Contract.Address],
 			ValidatorAddr: validator,
 		}
-		delResp, err := mysuite.GRPCQuery[stakingtypes.QueryDelegationResponse](ctx, simd, &delRequest)
+		delResp, err := e2esuite.GRPCQuery[stakingtypes.QueryDelegationResponse](ctx, simd, &delRequest)
 		s.Require().NoError(err)
 		s.Require().Equal(sdkmath.NewInt(10_000_000), delResp.DelegationResponse.Balance.Amount)
 
@@ -465,7 +465,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering icacon
 			ProposalId: 1,
 			Voter:      s.IcaContractToAddrMap[s.Contract.Address],
 		}
-		voteResp, err := mysuite.GRPCQuery[govv1.QueryVoteResponse](ctx, simd, &voteRequest)
+		voteResp, err := e2esuite.GRPCQuery[govv1.QueryVoteResponse](ctx, simd, &voteRequest)
 		s.Require().NoError(err)
 		s.Require().Len(voteResp.Vote.Options, 1)
 		s.Require().Equal(govv1.OptionYes, voteResp.Vote.Options[0].Option)
@@ -581,7 +581,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering icacontrolle
 		s.Require().Equal(int(0), callbackCounter.Error)
 
 		// Check if the proposal was created:
-		proposalResp, err := mysuite.GRPCQuery[govv1.QueryProposalResponse](ctx, simd, &govv1.QueryProposalRequest{
+		proposalResp, err := e2esuite.GRPCQuery[govv1.QueryProposalResponse](ctx, simd, &govv1.QueryProposalRequest{
 			ProposalId: 1,
 		})
 		s.Require().NoError(err)
@@ -670,7 +670,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering icacontrolle
 			DelegatorAddr: s.IcaContractToAddrMap[s.Contract.Address],
 			ValidatorAddr: validator,
 		}
-		delResp, err := mysuite.GRPCQuery[stakingtypes.QueryDelegationResponse](ctx, simd, &delRequest)
+		delResp, err := e2esuite.GRPCQuery[stakingtypes.QueryDelegationResponse](ctx, simd, &delRequest)
 		s.Require().NoError(err)
 		s.Require().Equal(sdkmath.NewInt(10_000_000), delResp.DelegationResponse.Balance.Amount)
 
@@ -679,7 +679,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering icacontrolle
 			ProposalId: 1,
 			Voter:      s.IcaContractToAddrMap[s.Contract.Address],
 		}
-		voteResp, err := mysuite.GRPCQuery[govv1.QueryVoteResponse](ctx, simd, &voteRequest)
+		voteResp, err := e2esuite.GRPCQuery[govv1.QueryVoteResponse](ctx, simd, &voteRequest)
 		s.Require().NoError(err)
 		s.Require().Len(voteResp.Vote.Options, 2)
 

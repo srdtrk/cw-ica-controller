@@ -4,7 +4,7 @@ import (
 	interchaintest "github.com/strangelove-ventures/interchaintest/v8"
 	"github.com/strangelove-ventures/interchaintest/v8/ibc"
 
-	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/e2esuite"
 )
 
 var DefaultChainSpecs = []*interchaintest.ChainSpec{
@@ -26,8 +26,7 @@ var DefaultChainSpecs = []*interchaintest.ChainSpec{
 			Denom:         "stake",
 			GasPrices:     "0.00stake",
 			GasAdjustment: 1.3,
-			// cannot run wasmd commands without wasm encoding
-			EncodingConfig: mysuite.EncodingConfig(),
+			EncodingConfig: e2esuite.EncodingConfig(),
 			TrustingPeriod: "508h",
 			NoHostMount:    false,
 		},
@@ -50,7 +49,7 @@ var DefaultChainSpecs = []*interchaintest.ChainSpec{
 			Denom:          "stake",
 			GasPrices:      "0.00stake",
 			GasAdjustment:  1.3,
-			EncodingConfig: mysuite.EncodingConfig(),
+			EncodingConfig: e2esuite.EncodingConfig(),
 			TrustingPeriod: "508h",
 			NoHostMount:    false,
 		},

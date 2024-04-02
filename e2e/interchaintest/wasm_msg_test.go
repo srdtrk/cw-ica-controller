@@ -13,7 +13,7 @@ import (
 	"github.com/strangelove-ventures/interchaintest/v8/testutil"
 
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/chainconfig"
-	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/e2esuite"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
 	callbackcounter "github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/callback-counter"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
@@ -156,7 +156,7 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		contractByCodeRequest := wasmtypes.QueryContractsByCodeRequest{
 			CodeId: uint64(counterCodeID),
 		}
-		contractByCodeResp, err := mysuite.GRPCQuery[wasmtypes.QueryContractsByCodeResponse](ctx, wasmd2, &contractByCodeRequest)
+		contractByCodeResp, err := e2esuite.GRPCQuery[wasmtypes.QueryContractsByCodeResponse](ctx, wasmd2, &contractByCodeRequest)
 		s.Require().NoError(err)
 		s.Require().Len(contractByCodeResp.Contracts, 1)
 
@@ -240,7 +240,7 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		contractInfoRequest := wasmtypes.QueryContractInfoRequest{
 			Address: counterContract.Address,
 		}
-		contractInfoResp, err := mysuite.GRPCQuery[wasmtypes.QueryContractInfoResponse](ctx, wasmd2, &contractInfoRequest)
+		contractInfoResp, err := e2esuite.GRPCQuery[wasmtypes.QueryContractInfoResponse](ctx, wasmd2, &contractInfoRequest)
 		s.Require().NoError(err)
 
 		s.Require().Equal("", contractInfoResp.ContractInfo.Admin)
@@ -248,7 +248,7 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		contractByCodeRequest := wasmtypes.QueryContractsByCodeRequest{
 			CodeId: uint64(counterCodeID),
 		}
-		contractByCodeResp, err := mysuite.GRPCQuery[wasmtypes.QueryContractsByCodeResponse](ctx, wasmd2, &contractByCodeRequest)
+		contractByCodeResp, err := e2esuite.GRPCQuery[wasmtypes.QueryContractsByCodeResponse](ctx, wasmd2, &contractByCodeRequest)
 		s.Require().NoError(err)
 		s.Require().Len(contractByCodeResp.Contracts, 2)
 
@@ -309,7 +309,7 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		contractInfoRequest := wasmtypes.QueryContractInfoRequest{
 			Address: counterContract2.Address,
 		}
-		contractInfoResp, err := mysuite.GRPCQuery[wasmtypes.QueryContractInfoResponse](ctx, wasmd2, &contractInfoRequest)
+		contractInfoResp, err := e2esuite.GRPCQuery[wasmtypes.QueryContractInfoResponse](ctx, wasmd2, &contractInfoRequest)
 		s.Require().NoError(err)
 
 		s.Require().Equal(counterCodeID+1, int(contractInfoResp.ContractInfo.CodeID))

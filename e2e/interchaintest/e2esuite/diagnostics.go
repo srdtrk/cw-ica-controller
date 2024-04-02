@@ -1,4 +1,4 @@
-package testsuite
+package e2esuite
 
 import (
 	"archive/tar"

@@ -15,14 +15,14 @@ import (
 	"github.com/strangelove-ventures/interchaintest/v8/testutil"
 
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/chainconfig"
-	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/e2esuite"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/icacontroller"
 	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/types/owner"
 )
 
 type OwnerTestSuite struct {
-	mysuite.TestSuite
+	e2esuite.TestSuite
 
 	IcaContractCodeId int64
 	OwnerContract     *types.Contract[

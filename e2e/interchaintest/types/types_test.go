@@ -13,7 +13,7 @@ import (
 
 	icatypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/types"
 
-	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/e2esuite"
 )
 
 // This is some boilerplate test code to insert some tests for the types package.
@@ -31,6 +31,6 @@ func TestTypes(t *testing.T) {
 		Amount:     sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(10000000))),
 	}
 
-	_, err := icatypes.SerializeCosmosTx(mysuite.EncodingConfig().Codec, []proto.Message{depositMsg}, icatypes.EncodingProto3JSON)
+	_, err := icatypes.SerializeCosmosTx(e2esuite.EncodingConfig().Codec, []proto.Message{depositMsg}, icatypes.EncodingProto3JSON)
 	require.NoError(t, err)
 }
