@@ -29,10 +29,10 @@ func populateQueryReqToPath(ctx context.Context, chain *cosmos.CosmosChain) erro
 			if ext := pb.GetExtension(service.GetOptions(), msgv1.E_Service); ext != nil && ext.(bool) {
 				continue
 			}
-			fmt.Println("Service Uninterpreted Options: ", service.GetOptions().GetUninterpretedOption())
+
 			for _, method := range service.GetMethod() {
 				// trim the first character from input which is a dot
-				queryReqToPath[method.GetInputType()[1:]] = string(service.ProtoReflect().Descriptor().FullName()) + "/" + method.GetName()
+				queryReqToPath[method.GetInputType()[1:]] = fileDescriptor.GetPackage() + "." + service.GetName() + "/" + method.GetName()
 			}
 		}
 	}
