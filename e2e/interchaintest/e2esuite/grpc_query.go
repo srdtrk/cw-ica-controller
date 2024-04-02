@@ -37,8 +37,6 @@ func populateQueryReqToPath(ctx context.Context, chain *cosmos.CosmosChain) erro
 		}
 	}
 
-	fmt.Println("queryReqToPath: ", queryReqToPath)
-
 	return nil
 }
 
