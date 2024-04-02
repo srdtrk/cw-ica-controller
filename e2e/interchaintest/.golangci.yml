@@ -61,6 +61,7 @@ linters-settings:
       - prefix(github.com/cosmos/cosmos-sdk)
       - prefix(github.com/cometbft/cometbft)
       - prefix(github.com/cosmos/ibc-go)
+      - prefix(github.com/CosmWasm/wasmd)
       - prefix(github.com/strangelove-ventures/interchaintest)
       - prefix(github.com/srdtrk/cw-ica-controller/interchaintest)
 

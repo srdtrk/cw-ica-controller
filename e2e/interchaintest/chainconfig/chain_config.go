@@ -1,14 +1,13 @@
-package main
+package chainconfig
 
 import (
 	interchaintest "github.com/strangelove-ventures/interchaintest/v8"
-	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos/wasm"
 	"github.com/strangelove-ventures/interchaintest/v8/ibc"
 
-	mysuite "github.com/srdtrk/cw-ica-controller/interchaintest/v2/testsuite"
+	"github.com/srdtrk/cw-ica-controller/interchaintest/v2/e2esuite"
 )
 
-var chainSpecs = []*interchaintest.ChainSpec{
+var DefaultChainSpecs = []*interchaintest.ChainSpec{
 	// -- WASMD --
 	{
 		ChainConfig: ibc.ChainConfig{
@@ -22,13 +21,12 @@ var chainSpecs = []*interchaintest.ChainSpec{
 					UidGid:     "1025:1025",
 				},
 			},
-			Bin:           "wasmd",
-			Bech32Prefix:  "wasm",
-			Denom:         "stake",
-			GasPrices:     "0.00stake",
-			GasAdjustment: 1.3,
-			// cannot run wasmd commands without wasm encoding
-			EncodingConfig: wasm.WasmEncoding(),
+			Bin:            "wasmd",
+			Bech32Prefix:   "wasm",
+			Denom:          "stake",
+			GasPrices:      "0.00stake",
+			GasAdjustment:  1.3,
+			EncodingConfig: e2esuite.EncodingConfig(),
 			TrustingPeriod: "508h",
 			NoHostMount:    false,
 		},
@@ -51,7 +49,7 @@ var chainSpecs = []*interchaintest.ChainSpec{
 			Denom:          "stake",
 			GasPrices:      "0.00stake",
 			GasAdjustment:  1.3,
-			EncodingConfig: mysuite.SDKEncodingConfig(),
+			EncodingConfig: e2esuite.EncodingConfig(),
 			TrustingPeriod: "508h",
 			NoHostMount:    false,
 		},

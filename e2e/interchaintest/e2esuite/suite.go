@@ -1,4 +1,4 @@
-package testsuite
+package e2esuite
 
 import (
 	"context"
@@ -16,6 +16,7 @@ import (
 	"github.com/strangelove-ventures/interchaintest/v8/testutil"
 )
 
+// TestSuite is a suite of tests that require two chains and a relayer
 type TestSuite struct {
 	suite.Suite
 
@@ -81,6 +82,9 @@ func (s *TestSuite) SetupSuite(ctx context.Context, chainSpecs []*interchaintest
 		NetworkID:        s.network,
 		SkipPathCreation: true,
 	}))
+
+	s.Require().NoError(populateQueryReqToPath(ctx, s.ChainA))
+	s.Require().NoError(populateQueryReqToPath(ctx, s.ChainB))
 
 	// Fund a user account on ChainA and ChainB
 	const userFunds = int64(10_000_000_000)
