@@ -69,7 +69,7 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context) int {
 		SendCallbacksTo: &s.CallbackCounterContract.Address,
 	}
 
-	s.Contract, err = types.Instantiate[icacontroller.InstantiateMsg, icacontroller.ExecuteMsg, icacontroller.QueryMsg](ctx, s.UserA.KeyName(), codeId, s.ChainA, instantiateMsg)
+	s.Contract, err = types.Instantiate[icacontroller.InstantiateMsg, icacontroller.ExecuteMsg, icacontroller.QueryMsg](ctx, s.UserA.KeyName(), codeId, s.ChainA, instantiateMsg, "--gas", "500000")
 	s.Require().NoError(err)
 
 	// Wait for the channel to get set up
