@@ -304,7 +304,7 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		err = counterContract2.Query(ctx, simplecounter.GetCountRequest, counterState)
 		s.Require().NoError(err)
 
-		s.Require().Equal(int64(0), counterState.Count)
+		s.Require().Equal(int(0), counterState.Count)
 
 		contractInfoRequest := wasmtypes.QueryContractInfoRequest{
 			Address: counterContract2.Address,
