@@ -31,21 +31,21 @@ jobs:
       fail-fast: false
       matrix:
         test:
-          - TestIcaContractChannelHandshake_Ordered_Protobuf
-          - TestIcaContractChannelHandshake_Unordered_Protobuf
-          - TestIcaRelayerInstantiatedChannelHandshake
-          - TestRecoveredIcaContractInstantiatedChannelHandshake
-          - TestIcaContractExecution_Ordered_Protobuf
-          - TestIcaContractExecution_Unordered_Protobuf
-          - TestIcaContractTimeoutPacket_Ordered_Protobuf
-          - TestIcaContractTimeoutPacket_Unordered_Protobuf
-          - TestOwnerCreateIcaContract
-          - TestOwnerPredefinedAction
-          - TestSendCosmosMsgs_Ordered_Protobuf
-          - TestSendCosmosMsgs_Unordered_Protobuf
-          - TestSendWasmMsgsProtobufEncoding
-          - TestMigrateOrderedToUnordered
-          - TestCloseChannel_Protobuf_Unordered
+          - TestWithContractTestSuite/TestIcaContractChannelHandshake_Ordered_Protobuf
+          - TestWithContractTestSuite/TestIcaContractChannelHandshake_Unordered_Protobuf
+          - TestWithContractTestSuite/TestIcaRelayerInstantiatedChannelHandshake
+          - TestWithContractTestSuite/TestRecoveredIcaContractInstantiatedChannelHandshake
+          - TestWithContractTestSuite/TestIcaContractExecution_Ordered_Protobuf
+          - TestWithContractTestSuite/TestIcaContractExecution_Unordered_Protobuf
+          - TestWithContractTestSuite/TestIcaContractTimeoutPacket_Ordered_Protobuf
+          - TestWithContractTestSuite/TestIcaContractTimeoutPacket_Unordered_Protobuf
+          - TestWithOwnerTestSuite/TestOwnerCreateIcaContract
+          - TestWithOwnerTestSuite/TestOwnerPredefinedAction
+          - TestWithContractTestSuite/TestSendCosmosMsgs_Ordered_Protobuf
+          - TestWithContractTestSuite/TestSendCosmosMsgs_Unordered_Protobuf
+          - TestWithContractTestSuite/TestSendWasmMsgsProtobufEncoding
+          - TestWithContractTestSuite/TestMigrateOrderedToUnordered
+          - TestWithContractTestSuite/TestCloseChannel_Protobuf_Unordered
     name: ${{ matrix.test }}
     runs-on: ubuntu-latest
     steps:
@@ -83,11 +83,7 @@ jobs:
       - name: TestContract
         run: |
           cd e2e/interchaintest
-          if [[ ${{ matrix.test }} == TestOwner* ]]; then
-            go test -v . -run TestWithOwnerTestSuite -testify.m ${{ matrix.test }}
-          else
-            go test -v . -run TestWithContractTestSuite -testify.m ${{ matrix.test }}
-          fi
+          go test -v . -run=${{ matrix.test }}
       - name: Upload Diagnostics on Failure
         uses: actions/upload-artifact@v4
         if: ${{ failure() }}

@@ -14,27 +14,27 @@ These tests are designed to test the ICA contract itself and its interaction wit
 
 All contract tests are located in `interchaintest/contract_test.go` file. Currently, there are four tests in this file:
 
-- `TestIcaContractChannelHandshake_Ordered_Protobuf`
-- `TestIcaContractChannelHandshake_Unordered_Protobuf`
-- `TestIcaRelayerInstantiatedChannelHandshake`
-- `TestRecoveredIcaContractInstantiatedChannelHandshake`
-- `TestIcaContractExecution_Ordered_Protobuf`
-- `TestIcaContractExecution_Unordered_Protobuf`
-- `TestIcaContractTimeoutPacket_Ordered_Protobuf`
-- `TestIcaContractTimeoutPacket_Unordered_Protobuf`
-- `TestSendCosmosMsgs_Ordered_Protobuf`
-- `TestSendCosmosMsgs_Unordered_Protobuf`
-- `TestSendWasmMsgsProtobufEncoding`
-- `TestMigrateOrderedToUnordered`
-- `TestCloseChannel_Protobuf_Unordered`
-
-(These three tests used to be one monolithic test, but they were split into three in order to run them in parallel in the CI.)
+- TestWithContractTestSuite/TestIcaContractChannelHandshake_Ordered_Protobuf
+- TestWithContractTestSuite/TestIcaContractChannelHandshake_Unordered_Protobuf
+- TestWithContractTestSuite/TestIcaRelayerInstantiatedChannelHandshake
+- TestWithContractTestSuite/TestRecoveredIcaContractInstantiatedChannelHandshake
+- TestWithContractTestSuite/TestIcaContractExecution_Ordered_Protobuf
+- TestWithContractTestSuite/TestIcaContractExecution_Unordered_Protobuf
+- TestWithContractTestSuite/TestIcaContractTimeoutPacket_Ordered_Protobuf
+- TestWithContractTestSuite/TestIcaContractTimeoutPacket_Unordered_Protobuf
+- TestWithOwnerTestSuite/TestOwnerCreateIcaContract
+- TestWithOwnerTestSuite/TestOwnerPredefinedAction
+- TestWithContractTestSuite/TestSendCosmosMsgs_Ordered_Protobuf
+- TestWithContractTestSuite/TestSendCosmosMsgs_Unordered_Protobuf
+- TestWithContractTestSuite/TestSendWasmMsgsProtobufEncoding
+- TestWithContractTestSuite/TestMigrateOrderedToUnordered
+- TestWithContractTestSuite/TestCloseChannel_Protobuf_Unordered
 
 To run the tests locally, run the following commands from this directory:
 
 ```text
 cd interchaintest/
-go test -v . -run TestWithContractTestSuite -testify.m $TEST_NAME
+go test -v . -run=$TEST_NAME
 ```
 
 where `$TEST_NAME` is one of the four tests listed above.
