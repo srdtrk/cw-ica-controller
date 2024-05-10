@@ -50,29 +50,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
-      - name: Build Owner Contract with Docker
-        run: |
-          docker run --rm -v "$(pwd)":/code \
-            --mount type=volume,source="devcontract_cache_burner",target=/code/contracts/burner/target \
-            --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-            cosmwasm/optimizer:0.15.0 ./testing/contracts/cw-ica-owner
-      - name: Build Callback Contract with Docker
-        run: |
-          docker run --rm -v "$(pwd)":/code \
-            --mount type=volume,source="devcontract_cache_burner",target=/code/contracts/burner/target \
-            --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-            cosmwasm/optimizer:0.15.0 ./testing/contracts/callback-counter
-      - name: Install cargo-run-script
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: cargo-run-script
+        uses: actions/checkout@v4
+      - name: Install just
+        uses: extractions/setup-just@v2
+      - name: Build Test Contracts with Docker
+        run: just build-test-contracts
       - name: Build Optimized Contract
-        uses: actions-rs/cargo@v1
-        with:
-          command: run-script
-          args: optimize
+        run: just build-optimize
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
