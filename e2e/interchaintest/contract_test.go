@@ -70,7 +70,7 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, ordering
 	s.Require().NoError(err)
 
 	ccQueryClient, err := callbackcounter.NewQueryClient(
-		s.CallbackCounterContract.Chain.GetHostRPCAddress(), s.CallbackCounterContract.Address,
+		s.CallbackCounterContract.Chain.GetHostGRPCAddress(), s.CallbackCounterContract.Address,
 	)
 	s.Require().NoError(err)
 	s.CallbackCounterContract.SetQueryClient(ccQueryClient)
@@ -94,7 +94,7 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, ordering
 	s.Require().NoError(err)
 
 	contractQueryClient, err := icacontroller.NewQueryClient(
-		s.Contract.Chain.GetHostRPCAddress(), s.Contract.Address,
+		s.Contract.Chain.GetHostGRPCAddress(), s.Contract.Address,
 	)
 	s.Require().NoError(err)
 	s.Contract.SetQueryClient(contractQueryClient)
@@ -265,7 +265,7 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 		s.Require().NoError(err)
 
 		queryClient, err := icacontroller.NewQueryClient(
-			s.Contract.Chain.GetHostRPCAddress(), s.Contract.Address,
+			s.Contract.Chain.GetHostGRPCAddress(), s.Contract.Address,
 		)
 		s.Require().NoError(err)
 		s.Contract.SetQueryClient(queryClient)
