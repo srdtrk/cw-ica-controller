@@ -13,15 +13,18 @@ import (
 // I is the instantiate message type
 // E is the execute message type
 // Q is the query message type
-type Contract[I, E, Q any] struct {
+// QC is the query client type
+type Contract[I, E, Q, QC any] struct {
 	Address string
 	CodeID  string
 	Chain   *cosmos.CosmosChain
+	qc      QC
+	qcSet   bool
 }
 
 // newContract creates a new Contract instance
-func newContract[I, E, Q any](address string, codeId string, chain *cosmos.CosmosChain) *Contract[I, E, Q] {
-	return &Contract[I, E, Q]{
+func newContract[I, E, Q, QC any](address, codeId string, chain *cosmos.CosmosChain) *Contract[I, E, Q, QC] {
+	return &Contract[I, E, Q, QC]{
 		Address: address,
 		CodeID:  codeId,
 		Chain:   chain,
@@ -32,45 +35,41 @@ func newContract[I, E, Q any](address string, codeId string, chain *cosmos.Cosmo
 // I is the instantiate message type
 // E is the execute message type
 // Q is the query message type
-func Instantiate[I, E, Q any](ctx context.Context, callerKeyName string, codeId string, chain *cosmos.CosmosChain, msg I, extraExecTxArgs ...string) (*Contract[I, E, Q], error) {
+func Instantiate[I, E, Q, QC any](ctx context.Context, callerKeyName, codeId string, chain *cosmos.CosmosChain, msg I, extraExecTxArgs ...string) (*Contract[I, E, Q, QC], error) {
 	contractAddr, err := chain.InstantiateContract(ctx, callerKeyName, codeId, toString(msg), true, extraExecTxArgs...)
 	if err != nil {
 		return nil, err
 	}
 
-	return newContract[I, E, Q](contractAddr, codeId, chain), nil
+	return newContract[I, E, Q, QC](contractAddr, codeId, chain), nil
 }
 
-func (c *Contract[I, E, Q]) Port() string {
+func (c *Contract[I, E, Q, QC]) Port() string {
 	return "wasm." + c.Address
 }
 
-// Execute executes the contract with the given execute message and returns the transaction response
-func (c *Contract[I, E, Q]) Execute(ctx context.Context, callerKeyName string, msg E, extraExecTxArgs ...string) (*sdk.TxResponse, error) {
-	return c.Chain.ExecuteContract(ctx, callerKeyName, c.Address, toString(msg), extraExecTxArgs...)
+// QueryClient returns the query client for the contract
+func (c *Contract[I, E, Q, QC]) QueryClient() QC {
+	if !c.qcSet {
+		panic("QueryClient not set")
+	}
+
+	return c.qc
 }
 
-// Query queries the contract with the given query message
-// and unmarshals the response into the given response object
-func (c *Contract[I, E, Q]) Query(ctx context.Context, queryMsg Q, resp any) error {
-	// queryResponse is used to represent the response of a query.
-	// It may contain different types of data, so we need to unmarshal it
-	type queryResponse struct {
-		Response json.RawMessage `json:"data"`
+// SetQueryClient sets the query client for the contract
+func (c *Contract[I, E, Q, QC]) SetQueryClient(qc QC) {
+	if c.qcSet {
+		panic("QueryClient already set")
 	}
 
-	queryResp := queryResponse{}
-	err := c.Chain.QueryContract(ctx, c.Address, queryMsg, &queryResp)
-	if err != nil {
-		return err
-	}
+	c.qc = qc
+	c.qcSet = true
+}
 
-	err = json.Unmarshal(queryResp.Response, resp)
-	if err != nil {
-		return err
-	}
-
-	return nil
+// Execute executes the contract with the given execute message and returns the transaction response
+func (c *Contract[I, E, Q, QC]) Execute(ctx context.Context, callerKeyName string, msg E, extraExecTxArgs ...string) (*sdk.TxResponse, error) {
+	return c.Chain.ExecuteContract(ctx, callerKeyName, c.Address, toString(msg), extraExecTxArgs...)
 }
 
 // toString converts the message to a string using json
