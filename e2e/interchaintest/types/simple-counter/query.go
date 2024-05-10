@@ -60,8 +60,9 @@ func (q *queryClient) queryContract(ctx context.Context, rawQueryData []byte, op
 	}
 	return out.Data, nil
 }
+
 func (q *queryClient) GetCount(ctx context.Context, req *QueryMsg_GetCount, opts ...grpc.CallOption) (*GetCountResponse, error) {
-	rawQueryData, err := json.Marshal(req)
+	rawQueryData, err := json.Marshal(&QueryMsg{GetCount: req})
 	if err != nil {
 		return nil, err
 	}
