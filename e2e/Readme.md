@@ -30,43 +30,25 @@ All contract tests are located in `interchaintest/contract_test.go` file. Curren
 - TestWithContractTestSuite/TestMigrateOrderedToUnordered
 - TestWithContractTestSuite/TestCloseChannel_Protobuf_Unordered
 
-To run the tests locally, run the following commands from this directory:
+To run the tests locally, run the following command in the root of the repository:
 
-```text
-cd interchaintest/
-go test -v . -run=$TEST_NAME
+```sh
+just e2e-test $TEST_NAME
 ```
 
-where `$TEST_NAME` is one of the four tests listed above.
+where `$TEST_NAME` is one of the tests listed above.
 
-Before running the tests, you must have built the optimized contract in the `/artifacts` directory. To do this, run the following command from the root of the repository:
+Before running the tests, you must have built the optimized contract in the `/artifacts` directory. To do this, run the following commands from the root of the repository:
 
-```text
-cargo run-script optimize
+```sh
+just build-optimized
+just build-test-contracts
 ```
-
-### Owner Contract Tests
-
-These tests are designed to test the ICA contract's interaction with external contracts such as callbacks. For this, a mock owner contract is used.
-
-All owner contract tests are located in `interchaintest/owner_test.go` file. Currently, there are two tests in this file:
-
-- `TestOwnerCreateIcaContract`
-- `TestOwnerPredefinedAction`
-
-```text
-cd interchaintest/
-go test -v . -run TestWithOwnerTestSuite -testify.m $TEST_NAME
-```
-
-where `$TEST_NAME` is one of the two tests listed above.
 
 ## In the CI
 
-The tests are run in the github CI after every push to the `main` branch. See the [github actions workflow](https://github.com/srdtrk/cw-ica-controller/blob/main/.github/workflows/e2e.yml) for more details.
-
-For some unknown reason, the timeout test sometimes fails in the CI (I'd say about 20-25% of the time). In this case, feel free to rerun the CI job.
+The tests are run in the github CI after every push to the `main` branch and in every PR. See the [github actions workflow](https://github.com/srdtrk/cw-ica-controller/blob/main/.github/workflows/e2e.yml) for more details.
 
 ## About the tests
 
-The tests are currently run on wasmd `v0.41.0` and ibc-go `v7.3.0`'s simd which implements json encoding feature for the interchain accounts module.
+The tests are currently run on wasmd `v0.50.0` and ibc-go `v8.1.0`.
