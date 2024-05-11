@@ -95,7 +95,7 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context) int {
 	counterCodeId, err := s.ChainB.StoreContract(ctx, s.UserB.KeyName(), "./testdata/simplecounter.wasm")
 	s.Require().NoError(err)
 
-	_, err = s.ChainB.StoreContract(ctx, s.UserB.KeyName(), "./test_data/migrate_counter.wasm")
+	_, err = s.ChainB.StoreContract(ctx, s.UserB.KeyName(), "./testdata/migratecounter.wasm")
 	s.Require().NoError(err)
 
 	counterCodeID, err := strconv.ParseUint(counterCodeId, 10, 64)
