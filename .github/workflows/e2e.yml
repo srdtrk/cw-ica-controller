@@ -25,7 +25,7 @@ jobs:
         with:
           version: v1.54
           args: --timeout 5m
-          working-directory: e2e/interchaintest
+          working-directory: e2e/interchaintestv8
   build:
     strategy:
       fail-fast: false
@@ -65,9 +65,7 @@ jobs:
           cache-dependency-path: |
              e2e/interchaintest/go.sum
       - name: TestContract
-        run: |
-          cd e2e/interchaintest
-          go test -v . -run=${{ matrix.test }}
+        run: just e2e-test ${{ matrix.test }}
       - name: Upload Diagnostics on Failure
         uses: actions/upload-artifact@v4
         if: ${{ failure() }}

@@ -34,4 +34,4 @@ unit-tests:
 # Run the e2e tests
 e2e-test testname:
   echo "Running {{testname}} test..."
-  cd e2e/interchaintest && go test -v -run={{testname}}
+  cd e2e/interchaintestv8 && go test -v -run={{testname}}
