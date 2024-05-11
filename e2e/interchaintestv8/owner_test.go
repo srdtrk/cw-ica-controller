@@ -11,22 +11,17 @@ import (
 
 	icatypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/types"
 	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	ibctesting "github.com/cosmos/ibc-go/v8/testing"
 
 	"github.com/strangelove-ventures/interchaintest/v8/testutil"
 
 	"github.com/srdtrk/go-codegen/e2esuite/v8/e2esuite"
-	"github.com/srdtrk/go-codegen/e2esuite/v8/types"
 	"github.com/srdtrk/go-codegen/e2esuite/v8/types/cwicacontroller"
 	"github.com/srdtrk/go-codegen/e2esuite/v8/types/cwicaowner"
 )
 
 type OwnerTestSuite struct {
 	e2esuite.TestSuite
-
-	// ChainAConnID is the connection id of chain A
-	ChainAConnID string
-	// ChainBConnID is the connection id of chain B
-	ChainBConnID string
 
 	IcaContractCodeId int64
 	OwnerContract     *cwicaowner.Contract
@@ -53,15 +48,14 @@ func (s *OwnerTestSuite) SetupOwnerTestSuite(ctx context.Context) {
 	s.Require().NoError(err)
 
 	s.NumOfIcaContracts = 0
-	s.ChainAConnID, s.ChainBConnID = "connection-0", "connection-0"
 
 	// Create the ICA Contract
 	createMsg := cwicaowner.ExecuteMsg{
 		CreateIcaContract: &cwicaowner.ExecuteMsg_CreateIcaContract{
 			Salt: nil,
 			ChannelOpenInitOptions: cwicaowner.ChannelOpenInitOptions{
-				ConnectionId:             s.ChainAConnID,
-				CounterpartyConnectionId: s.ChainBConnID,
+				ConnectionId:             ibctesting.FirstConnectionID,
+				CounterpartyConnectionId: ibctesting.FirstConnectionID,
 			},
 		},
 	}
@@ -92,15 +86,8 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 	s.Require().NoError(err)
 	s.Require().NotNil(icaState.IcaState)
 
-	icaContract := types.Contract[cwicacontroller.InstantiateMsg, cwicacontroller.ExecuteMsg, cwicacontroller.QueryMsg, cwicacontroller.QueryClient]{
-		Address: string(icaState.ContractAddr),
-		CodeID:  strconv.FormatInt(s.IcaContractCodeId, 10),
-		Chain:   wasmd,
-	}
-
-	icaQc, err := cwicacontroller.NewQueryClient(wasmd.GetHostGRPCAddress(), icaContract.Address)
+	icaContract, err := cwicacontroller.NewContract(string(icaState.ContractAddr), strconv.FormatInt(s.IcaContractCodeId, 10), wasmd)
 	s.Require().NoError(err)
-	icaContract.SetQueryClient(icaQc)
 
 	s.Run("TestChannelHandshakeSuccess", func() {
 		// Test if the handshake was successful
@@ -168,15 +155,8 @@ func (s *OwnerTestSuite) TestOwnerPredefinedAction() {
 	icaState, err := s.OwnerContract.QueryClient().GetIcaContractState(ctx, &cwicaowner.QueryMsg_GetIcaContractState{IcaId: 0})
 	s.Require().NoError(err)
 
-	icaContract := types.Contract[cwicacontroller.InstantiateMsg, cwicacontroller.ExecuteMsg, cwicacontroller.QueryMsg, cwicacontroller.QueryClient]{
-		Address: string(icaState.ContractAddr),
-		CodeID:  strconv.FormatInt(s.IcaContractCodeId, 10),
-		Chain:   wasmd,
-	}
-
-	icaQc, err := cwicacontroller.NewQueryClient(wasmd.GetHostGRPCAddress(), icaContract.Address)
+	icaContract, err := cwicacontroller.NewContract(string(icaState.ContractAddr), strconv.FormatInt(s.IcaContractCodeId, 10), wasmd)
 	s.Require().NoError(err)
-	icaContract.SetQueryClient(icaQc)
 
 	// Check contract state
 	contractState, err := icaContract.QueryClient().GetContractState(ctx, &cwicacontroller.QueryMsg_GetContractState{})
