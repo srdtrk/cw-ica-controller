@@ -45,7 +45,7 @@ func (s *OwnerTestSuite) SetupOwnerTestSuite(ctx context.Context) {
 	s.IcaContractCodeId, err = strconv.ParseInt(codeId, 10, 64)
 	s.Require().NoError(err)
 
-	codeId, err = s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_cwicaowner.wasm")
+	codeId, err = s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/cw_ica_owner.wasm")
 	s.Require().NoError(err)
 
 	instantiateMsg := cwicaowner.InstantiateMsg{IcaControllerCodeId: int(s.IcaContractCodeId)}

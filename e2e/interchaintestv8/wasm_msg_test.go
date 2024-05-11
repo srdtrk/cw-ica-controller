@@ -90,7 +90,7 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context) int {
 	s.Require().Nil(ownershipResponse.PendingOwner)
 	s.Require().Nil(ownershipResponse.PendingExpiry)
 
-	counterCodeId, err := s.ChainB.StoreContract(ctx, s.UserB.KeyName(), "./test_data/simple_counter.wasm")
+	counterCodeId, err := s.ChainB.StoreContract(ctx, s.UserB.KeyName(), "./testdata/simplecounter.wasm")
 	s.Require().NoError(err)
 
 	_, err = s.ChainB.StoreContract(ctx, s.UserB.KeyName(), "./test_data/migrate_counter.wasm")
