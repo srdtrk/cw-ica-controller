@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"strconv"
 
+	ibctesting "github.com/cosmos/ibc-go/v8/testing"
+
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 
 	interchaintest "github.com/strangelove-ventures/interchaintest/v8"
@@ -63,8 +65,8 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context) int {
 	instantiateMsg := cwicacontroller.InstantiateMsg{
 		Owner: nil,
 		ChannelOpenInitOptions: cwicacontroller.ChannelOpenInitOptions{
-			ConnectionId:             s.ChainAConnID,
-			CounterpartyConnectionId: s.ChainBConnID,
+			ConnectionId:             ibctesting.FirstConnectionID,
+			CounterpartyConnectionId: ibctesting.FirstConnectionID,
 			CounterpartyPortId:       nil,
 		},
 		SendCallbacksTo: &s.CallbackCounterContract.Address,

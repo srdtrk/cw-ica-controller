@@ -53,6 +53,7 @@ func (s *OwnerTestSuite) SetupOwnerTestSuite(ctx context.Context) {
 	s.Require().NoError(err)
 
 	s.NumOfIcaContracts = 0
+	s.ChainAConnID, s.ChainBConnID = "connection-0", "connection-0"
 
 	// Create the ICA Contract
 	createMsg := cwicaowner.ExecuteMsg{

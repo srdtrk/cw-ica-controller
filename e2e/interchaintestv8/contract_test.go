@@ -21,6 +21,7 @@ import (
 	controllertypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/types"
 	icatypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/types"
 	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	ibctesting "github.com/cosmos/ibc-go/v8/testing"
 
 	"github.com/strangelove-ventures/interchaintest/v8/ibc"
 	"github.com/strangelove-ventures/interchaintest/v8/testutil"
@@ -32,11 +33,6 @@ import (
 
 type ContractTestSuite struct {
 	e2esuite.TestSuite
-
-	// ChainAConnID is the connection id of chain A
-	ChainAConnID string
-	// ChainBConnID is the connection id of chain B
-	ChainBConnID string
 
 	// Contract is the representation of the ICA controller contract
 	Contract *cwicacontroller.Contract
@@ -52,9 +48,6 @@ func (s *ContractTestSuite) SetupSuite(ctx context.Context) {
 	s.TestSuite.SetupSuite(ctx)
 
 	s.IcaContractToAddrMap = make(map[string]string)
-
-	s.ChainAConnID = "connection-0"
-	s.ChainBConnID = "connection-0"
 }
 
 // SetupContractTestSuite starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
@@ -75,8 +68,8 @@ func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, ordering
 	instantiateMsg := cwicacontroller.InstantiateMsg{
 		Owner: nil,
 		ChannelOpenInitOptions: cwicacontroller.ChannelOpenInitOptions{
-			ConnectionId:             s.ChainAConnID,
-			CounterpartyConnectionId: s.ChainBConnID,
+			ConnectionId:             ibctesting.FirstConnectionID,
+			CounterpartyConnectionId: ibctesting.FirstConnectionID,
 			CounterpartyPortId:       nil,
 			ChannelOrdering:          &ordering,
 		},
@@ -191,7 +184,7 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 	instantiateMsg := cwicacontroller.InstantiateMsg{
 		Owner: nil,
 		ChannelOpenInitOptions: cwicacontroller.ChannelOpenInitOptions{
-			ConnectionId:             s.ChainAConnID,
+			ConnectionId:             ibctesting.FirstConnectionID,
 			CounterpartyConnectionId: "connection-123",
 			CounterpartyPortId:       nil,
 		},
@@ -201,7 +194,7 @@ func (s *ContractTestSuite) TestIcaRelayerInstantiatedChannelHandshake() {
 	s.Contract, err = cwicacontroller.Instantiate(ctx, wasmdUser.KeyName(), codeId, "", wasmd, instantiateMsg, "--gas", "500000")
 	s.Require().NoError(err)
 
-	version := fmt.Sprintf(`{"version":"%s","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"%s","tx_type":"%s"}`, icatypes.Version, s.ChainAConnID, s.ChainBConnID, icatypes.EncodingProtobuf, icatypes.TxTypeSDKMultiMsg)
+	version := fmt.Sprintf(`{"version":"%s","controller_connection_id":"%s","host_connection_id":"%s","address":"","encoding":"%s","tx_type":"%s"}`, icatypes.Version, ibctesting.FirstConnectionID, ibctesting.FirstConnectionID, icatypes.EncodingProtobuf, icatypes.TxTypeSDKMultiMsg)
 	err = s.Relayer.CreateChannel(ctx, s.ExecRep, s.PathName, ibc.CreateChannelOptions{
 		SourcePortName: s.Contract.Port(),
 		DestPortName:   icatypes.HostPortID,
@@ -228,7 +221,7 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 			Owner: nil,
 			ChannelOpenInitOptions: cwicacontroller.ChannelOpenInitOptions{
 				ConnectionId:             "invalid",
-				CounterpartyConnectionId: s.ChainBConnID,
+				CounterpartyConnectionId: ibctesting.FirstConnectionID,
 				CounterpartyPortId:       nil,
 			},
 			SendCallbacksTo: nil,
@@ -243,7 +236,7 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 		instantiateMsg := cwicacontroller.InstantiateMsg{
 			Owner: nil,
 			ChannelOpenInitOptions: cwicacontroller.ChannelOpenInitOptions{
-				ConnectionId:             s.ChainAConnID,
+				ConnectionId:             ibctesting.FirstConnectionID,
 				CounterpartyConnectionId: "connection-123",
 				CounterpartyPortId:       nil,
 			},
@@ -258,8 +251,8 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 		createChannelMsg := cwicacontroller.ExecuteMsg{
 			CreateChannel: &cwicacontroller.ExecuteMsg_CreateChannel{
 				ChannelOpenInitOptions: &cwicacontroller.ChannelOpenInitOptions{
-					ConnectionId:             s.ChainAConnID,
-					CounterpartyConnectionId: s.ChainBConnID,
+					ConnectionId:             ibctesting.FirstConnectionID,
+					CounterpartyConnectionId: ibctesting.FirstConnectionID,
 					CounterpartyPortId:       nil,
 				},
 			},
@@ -1056,8 +1049,8 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		createChannelMsg := cwicacontroller.ExecuteMsg{
 			CreateChannel: &cwicacontroller.ExecuteMsg_CreateChannel{
 				ChannelOpenInitOptions: &cwicacontroller.ChannelOpenInitOptions{
-					ConnectionId:             s.ChainAConnID,
-					CounterpartyConnectionId: s.ChainBConnID,
+					ConnectionId:             ibctesting.FirstConnectionID,
+					CounterpartyConnectionId: ibctesting.FirstConnectionID,
 					CounterpartyPortId:       nil,
 					ChannelOrdering:          &ordering,
 				},
