@@ -65,9 +65,7 @@ jobs:
           cache-dependency-path: |
              e2e/interchaintest/go.sum
       - name: TestContract
-        run: |
-          cd e2e/interchaintest
-          go test -v . -run=${{ matrix.test }}
+        run: just e2e-test ${{ matrix.test }}
       - name: Upload Diagnostics on Failure
         uses: actions/upload-artifact@v4
         if: ${{ failure() }}
