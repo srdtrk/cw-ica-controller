@@ -16,7 +16,6 @@ import (
 
 	"github.com/srdtrk/go-codegen/e2esuite/v8/chainconfig"
 	"github.com/srdtrk/go-codegen/e2esuite/v8/e2esuite"
-	"github.com/srdtrk/go-codegen/e2esuite/v8/types"
 	"github.com/srdtrk/go-codegen/e2esuite/v8/types/callbackcounter"
 	"github.com/srdtrk/go-codegen/e2esuite/v8/types/cwicacontroller"
 	"github.com/srdtrk/go-codegen/e2esuite/v8/types/simplecounter"
@@ -116,7 +115,7 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, s.IcaContractToAddrMap[s.Contract.Address])
 
-	var counterContract *types.Contract[simplecounter.InstantiateMsg, simplecounter.ExecuteMsg, simplecounter.QueryMsg, simplecounter.QueryClient]
+	var counterContract *simplecounter.Contract
 	s.Run("TestInstantiate", func() {
 		icaAddress := s.IcaContractToAddrMap[s.Contract.Address]
 
@@ -158,11 +157,8 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		s.Require().NoError(err)
 		s.Require().Len(contractByCodeResp.Contracts, 1)
 
-		counterContract = &types.Contract[simplecounter.InstantiateMsg, simplecounter.ExecuteMsg, simplecounter.QueryMsg, simplecounter.QueryClient]{
-			Address: contractByCodeResp.Contracts[0],
-			CodeID:  strconv.FormatUint(uint64(counterCodeID), 10),
-			Chain:   wasmd2,
-		}
+		counterContract, err = simplecounter.NewContract(contractByCodeResp.Contracts[0], strconv.FormatUint(uint64(counterCodeID), 10), wasmd2)
+		s.Require().NoError(err)
 
 		// Query the simple counter state:
 		counterState, err := counterContract.QueryClient().GetCount(ctx, &simplecounter.QueryMsg_GetCount{})
@@ -170,7 +166,7 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		s.Require().Equal(int(0), counterState.Count)
 	})
 
-	var counterContract2 *types.Contract[simplecounter.InstantiateMsg, simplecounter.ExecuteMsg, simplecounter.QueryMsg, simplecounter.QueryClient]
+	var counterContract2 *simplecounter.Contract
 	s.Run("TestExecuteAndInstantiate2AndClearAdminMsg", func() {
 		icaAddress := s.IcaContractToAddrMap[s.Contract.Address]
 
@@ -244,11 +240,8 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		s.Require().NoError(err)
 		s.Require().Len(contractByCodeResp.Contracts, 2)
 
-		counterContract2 = &types.Contract[simplecounter.InstantiateMsg, simplecounter.ExecuteMsg, simplecounter.QueryMsg, simplecounter.QueryClient]{
-			Address: contractByCodeResp.Contracts[1],
-			CodeID:  strconv.FormatUint(uint64(counterCodeID), 10),
-			Chain:   wasmd2,
-		}
+		counterContract2, err = simplecounter.NewContract(contractByCodeResp.Contracts[1], strconv.FormatUint(uint64(counterCodeID), 10), wasmd2)
+		s.Require().NoError(err)
 	})
 
 	s.Run("TestMigrateAndUpdateAdmin", func() {
