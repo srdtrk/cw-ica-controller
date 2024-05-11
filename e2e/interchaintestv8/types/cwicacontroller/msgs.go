@@ -39,6 +39,217 @@ type QueryMsg struct {
 	Ownership *QueryMsg_Ownership `json:"ownership,omitempty"`
 }
 
+type ExecuteMsg_UpdateCallbackAddress struct {
+	// The new callback address. If not specified, then no callbacks are sent.
+	CallbackAddress *string `json:"callback_address,omitempty"`
+}
+
+// Expiration represents a point in time when some event happens. It can compare with a BlockInfo and will return is_expired() == true once the condition is hit (and for every block in the future)
+type Expiration struct {
+	// AtHeight will expire when `env.block.height` >= height
+	AtHeight *Expiration_AtHeight `json:"at_height,omitempty"`
+	// AtTime will expire when `env.block.time` >= time
+	AtTime *Expiration_AtTime `json:"at_time,omitempty"`
+	// Never will never expire. Used to express the empty variant
+	Never *Expiration_Never `json:"never,omitempty"`
+}
+
+/*
+A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0
+
+The greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)
+*/
+type Decimal string
+
+/*
+A thin wrapper around u128 that is using strings for JSON encoding/decoding, such that the full u128 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.
+
+# Examples
+
+Use `from` to create instances of this and `u128` to get the value out:
+
+``` # use cosmwasm_std::Uint128; let a = Uint128::from(123u128); assert_eq!(a.u128(), 123);
+
+let b = Uint128::from(42u64); assert_eq!(b.u128(), 42);
+
+let c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```
+*/
+type Uint128 string
+
+// IbcChannel defines all information on a channel. This is generally used in the hand-shake process, but can be queried directly.
+type IbcChannel struct {
+	// The connection upon which this channel was created. If this is a multi-hop channel, we only expose the first hop.
+	ConnectionId string `json:"connection_id"`
+	CounterpartyEndpoint IbcEndpoint `json:"counterparty_endpoint"`
+	Endpoint IbcEndpoint `json:"endpoint"`
+	Order IbcOrder `json:"order"`
+	// Note: in ibcv3 this may be "", in the IbcOpenChannel handshake messages
+	Version string `json:"version"`
+}
+
+// The contract's ownership info
+type Ownership_for_String struct {
+	// The contract's current owner. `None` if the ownership has been renounced.
+	Owner *string `json:"owner,omitempty"`
+	// The deadline for the pending owner to accept the ownership. `None` if there isn't a pending ownership transfer, or if a transfer exists and it doesn't have a deadline.
+	PendingExpiry *Expiration `json:"pending_expiry,omitempty"`
+	// The account who has been proposed to take over the ownership. `None` if there isn't a pending ownership transfer.
+	PendingOwner *string `json:"pending_owner,omitempty"`
+}
+
+type ExecuteMsg_SendCosmosMsgs struct {
+	// The stargate messages to convert and send to the ICA host.
+	Messages []CosmosMsg_for_Empty `json:"messages"`
+	// Optional memo to include in the ibc packet.
+	PacketMemo *string `json:"packet_memo,omitempty"`
+	// Optional timeout in seconds to include with the ibc packet. If not specified, the [default timeout](crate::ibc::types::packet::DEFAULT_TIMEOUT_SECONDS) is used.
+	TimeoutSeconds *int `json:"timeout_seconds,omitempty"`
+}
+
+/*
+This message type allows the contract interact with the [x/gov] module in order to cast votes.
+
+## Examples
+
+Cast a simple vote:
+
+``` # use cosmwasm_std::{ #     HexBinary, #     Storage, Api, Querier, DepsMut, Deps, entry_point, Env, StdError, MessageInfo, #     Response, QueryResponse, # }; # type ExecuteMsg = (); use cosmwasm_std::{GovMsg, VoteOption};
+
+#[entry_point] pub fn execute( deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg, ) -> Result<Response, StdError> { // ... Ok(Response::new().add_message(GovMsg::Vote { proposal_id: 4, vote: VoteOption::Yes, })) } ```
+
+Cast a weighted vote:
+
+``` # use cosmwasm_std::{ #     HexBinary, #     Storage, Api, Querier, DepsMut, Deps, entry_point, Env, StdError, MessageInfo, #     Response, QueryResponse, # }; # type ExecuteMsg = (); # #[cfg(feature = "cosmwasm_1_2")] use cosmwasm_std::{Decimal, GovMsg, VoteOption, WeightedVoteOption};
+
+# #[cfg(feature = "cosmwasm_1_2")] #[entry_point] pub fn execute( deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg, ) -> Result<Response, StdError> { // ... Ok(Response::new().add_message(GovMsg::VoteWeighted { proposal_id: 4, options: vec![ WeightedVoteOption { option: VoteOption::Yes, weight: Decimal::percent(65), }, WeightedVoteOption { option: VoteOption::Abstain, weight: Decimal::percent(35), }, ], })) } ```
+
+[x/gov]: https://github.com/cosmos/cosmos-sdk/tree/v0.45.12/x/gov
+*/
+type GovMsg struct {
+	// This maps directly to [MsgVote](https://github.com/cosmos/cosmos-sdk/blob/v0.42.5/proto/cosmos/gov/v1beta1/tx.proto#L46-L56) in the Cosmos SDK with voter set to the contract address.
+	Vote *GovMsg_Vote `json:"vote,omitempty"`
+	// This maps directly to [MsgVoteWeighted](https://github.com/cosmos/cosmos-sdk/blob/v0.45.8/proto/cosmos/gov/v1beta1/tx.proto#L66-L78) in the Cosmos SDK with voter set to the contract address.
+	VoteWeighted *GovMsg_VoteWeighted `json:"vote_weighted,omitempty"`
+}
+
+type QueryMsg_GetContractState struct{}
+
+// Status is the status of an IBC channel.
+type Status string
+
+const (
+	// Uninitialized is the default state of the channel.
+	Status_StateUninitializedUnspecified Status = "STATE_UNINITIALIZED_UNSPECIFIED"
+	// Init is the state of the channel when it is created.
+	Status_StateInit Status = "STATE_INIT"
+	// TryOpen is the state of the channel when it is trying to open.
+	Status_StateTryopen Status = "STATE_TRYOPEN"
+	// Open is the state of the channel when it is open.
+	Status_StateOpen Status = "STATE_OPEN"
+	// Closed is the state of the channel when it is closed.
+	Status_StateClosed Status = "STATE_CLOSED"
+	// The channel has just accepted the upgrade handshake attempt and is flushing in-flight packets. Added in `ibc-go` v8.1.0.
+	Status_StateFlushing Status = "STATE_FLUSHING"
+	// The channel has just completed flushing any in-flight packets. Added in `ibc-go` v8.1.0.
+	Status_StateFlushcomplete Status = "STATE_FLUSHCOMPLETE"
+)
+
+// The options needed to initialize the IBC channel.
+type ChannelOpenInitOptions struct {
+	// The order of the channel. If not specified, [`IbcOrder::Ordered`] is used. [`IbcOrder::Unordered`] is only supported if the counterparty chain is using `ibc-go` v8.1.0 or later.
+	ChannelOrdering *IbcOrder `json:"channel_ordering,omitempty"`
+	// The connection id on this chain.
+	ConnectionId string `json:"connection_id"`
+	// The counterparty connection id on the counterparty chain.
+	CounterpartyConnectionId string `json:"counterparty_connection_id"`
+	// The counterparty port id. If not specified, [`crate::ibc::types::keys::HOST_PORT_ID`] is used. Currently, this contract only supports the host port.
+	CounterpartyPortId *string `json:"counterparty_port_id,omitempty"`
+}
+
+// In IBC each package must set at least one type of timeout: the timestamp or the block height. Using this rather complex enum instead of two timeout fields we ensure that at least one timeout is set.
+type IbcTimeout struct {
+	Block *IbcTimeoutBlock `json:"block,omitempty"`
+	Timestamp *Timestamp `json:"timestamp,omitempty"`
+}
+
+/*
+A point in time in nanosecond precision.
+
+This type can represent times from 1970-01-01T00:00:00Z to 2554-07-21T23:34:33Z.
+
+## Examples
+
+``` # use cosmwasm_std::Timestamp; let ts = Timestamp::from_nanos(1_000_000_202); assert_eq!(ts.nanos(), 1_000_000_202); assert_eq!(ts.seconds(), 1); assert_eq!(ts.subsec_nanos(), 202);
+
+let ts = ts.plus_seconds(2); assert_eq!(ts.nanos(), 3_000_000_202); assert_eq!(ts.seconds(), 3); assert_eq!(ts.subsec_nanos(), 202); ```
+*/
+type Timestamp Uint64
+
+/*
+A thin wrapper around u64 that is using strings for JSON encoding/decoding, such that the full u64 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.
+
+# Examples
+
+Use `from` to create instances of this and `u64` to get the value out:
+
+``` # use cosmwasm_std::Uint64; let a = Uint64::from(42u64); assert_eq!(a.u64(), 42);
+
+let b = Uint64::from(70u32); assert_eq!(b.u64(), 70); ```
+*/
+type Uint64 string
+
+/*
+Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.
+
+This is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.
+*/
+type Binary string
+
+/*
+A human readable address.
+
+In Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.
+
+This type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.
+
+This type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.
+*/
+type Addr string
+
+// State is the state of the contract.
+type State_2 struct {
+	// The address of the callback contract.
+	CallbackAddress *Addr `json:"callback_address,omitempty"`
+	// The Interchain Account (ICA) info needed to send packets. This is set during the handshake.
+	IcaInfo *IcaInfo `json:"ica_info,omitempty"`
+}
+
+type ExecuteMsg_CloseChannel struct{}
+
+// These are messages in the IBC lifecycle. Only usable by IBC-enabled contracts (contracts that directly speak the IBC protocol via 6 entry points)
+type IbcMsg struct {
+	// Sends bank tokens owned by the contract to the given address on another chain. The channel must already be established between the ibctransfer module on this chain and a matching module on the remote chain. We cannot select the port_id, this is whatever the local chain has bound the ibctransfer module to.
+	Transfer *IbcMsg_Transfer `json:"transfer,omitempty"`
+	// Sends an IBC packet with given data over the existing channel. Data should be encoded in a format defined by the channel version, and the module on the other side should know how to parse this.
+	SendPacket *IbcMsg_SendPacket `json:"send_packet,omitempty"`
+	// This will close an existing channel that is owned by this contract. Port is auto-assigned to the contract's IBC port
+	CloseChannel *IbcMsg_CloseChannel `json:"close_channel,omitempty"`
+}
+
+type QueryMsg_GetChannel struct{}
+
+type CosmosMsg_for_Empty struct {
+	Bank *CosmosMsg_for_Empty_Bank `json:"bank,omitempty"`
+	Custom *CosmosMsg_for_Empty_Custom `json:"custom,omitempty"`
+	Staking *CosmosMsg_for_Empty_Staking `json:"staking,omitempty"`
+	Distribution *CosmosMsg_for_Empty_Distribution `json:"distribution,omitempty"`
+	// A Stargate message encoded the same way as a protobuf [Any](https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/any.proto). This is the same structure as messages in `TxBody` from [ADR-020](https://github.com/cosmos/cosmos-sdk/blob/master/docs/architecture/adr-020-protobuf-transaction-encoding.md)
+	Stargate *CosmosMsg_for_Empty_Stargate `json:"stargate,omitempty"`
+	Ibc *CosmosMsg_for_Empty_Ibc `json:"ibc,omitempty"`
+	Wasm *CosmosMsg_for_Empty_Wasm `json:"wasm,omitempty"`
+	Gov *CosmosMsg_for_Empty_Gov `json:"gov,omitempty"`
+}
+
 /*
 The message types of the wasm module.
 
@@ -79,28 +290,6 @@ type WasmMsg struct {
 	ClearAdmin *WasmMsg_ClearAdmin `json:"clear_admin,omitempty"`
 }
 
-type WeightedVoteOption struct {
-	Option VoteOption `json:"option"`
-	Weight Decimal `json:"weight"`
-}
-
-type QueryMsg_GetChannel struct{}
-
-type IbcEndpoint struct {
-	ChannelId string `json:"channel_id"`
-	PortId string `json:"port_id"`
-}
-
-// State is the state of the contract.
-type State_2 struct {
-	// The Interchain Account (ICA) info needed to send packets. This is set during the handshake.
-	IcaInfo *IcaInfo `json:"ica_info,omitempty"`
-	// The address of the callback contract.
-	CallbackAddress *Addr `json:"callback_address,omitempty"`
-}
-
-type ExecuteMsg_CloseChannel struct{}
-
 /*
 An empty struct that serves as a placeholder in different places, such as contracts that don't set a custom message.
 
@@ -108,119 +297,43 @@ It is designed to be expressable in correct JSON and JSON Schema but contains no
 */
 type Empty struct{}
 
-/*
-A point in time in nanosecond precision.
-
-This type can represent times from 1970-01-01T00:00:00Z to 2554-07-21T23:34:33Z.
-
-## Examples
-
-``` # use cosmwasm_std::Timestamp; let ts = Timestamp::from_nanos(1_000_000_202); assert_eq!(ts.nanos(), 1_000_000_202); assert_eq!(ts.seconds(), 1); assert_eq!(ts.subsec_nanos(), 202);
-
-let ts = ts.plus_seconds(2); assert_eq!(ts.nanos(), 3_000_000_202); assert_eq!(ts.seconds(), 3); assert_eq!(ts.subsec_nanos(), 202); ```
-*/
-type Timestamp Uint64
-
-/*
-A thin wrapper around u128 that is using strings for JSON encoding/decoding, such that the full u128 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.
-
-# Examples
-
-Use `from` to create instances of this and `u128` to get the value out:
-
-``` # use cosmwasm_std::Uint128; let a = Uint128::from(123u128); assert_eq!(a.u128(), 123);
-
-let b = Uint128::from(42u64); assert_eq!(b.u128(), 42);
-
-let c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```
-*/
-type Uint128 string
-
-// IbcChannel defines all information on a channel. This is generally used in the hand-shake process, but can be queried directly.
-type IbcChannel struct {
-	// The connection upon which this channel was created. If this is a multi-hop channel, we only expose the first hop.
-	ConnectionId string `json:"connection_id"`
-	CounterpartyEndpoint IbcEndpoint `json:"counterparty_endpoint"`
-	Endpoint IbcEndpoint `json:"endpoint"`
-	Order IbcOrder `json:"order"`
-	// Note: in ibcv3 this may be "", in the IbcOpenChannel handshake messages
-	Version string `json:"version"`
+// IcaInfo is the ICA address and channel ID.
+type IcaInfo struct {
+	ChannelId string `json:"channel_id"`
+	Encoding TxEncoding `json:"encoding"`
+	IcaAddress string `json:"ica_address"`
 }
-
-// `TxEncoding` is the encoding of the transactions sent to the ICA host.
-type TxEncoding string
-
-const (
-	// `Protobuf` is the protobuf serialization of the CosmosSDK's Any.
-	TxEncoding_Proto3 TxEncoding = "proto3"
-	// `Proto3Json` is the json serialization of the CosmosSDK's Any.
-	TxEncoding_Proto3Json TxEncoding = "proto3json"
-)
-
-type ExecuteMsg_SendCosmosMsgs struct {
-	// The stargate messages to convert and send to the ICA host.
-	Messages []CosmosMsg_for_Empty `json:"messages"`
-	// Optional memo to include in the ibc packet.
-	PacketMemo *string `json:"packet_memo,omitempty"`
-	// Optional timeout in seconds to include with the ibc packet. If not specified, the [default timeout](crate::ibc::types::packet::DEFAULT_TIMEOUT_SECONDS) is used.
-	TimeoutSeconds *int `json:"timeout_seconds,omitempty"`
-}
-
-// These are messages in the IBC lifecycle. Only usable by IBC-enabled contracts (contracts that directly speak the IBC protocol via 6 entry points)
-type IbcMsg struct {
-	// Sends bank tokens owned by the contract to the given address on another chain. The channel must already be established between the ibctransfer module on this chain and a matching module on the remote chain. We cannot select the port_id, this is whatever the local chain has bound the ibctransfer module to.
-	Transfer *IbcMsg_Transfer `json:"transfer,omitempty"`
-	// Sends an IBC packet with given data over the existing channel. Data should be encoded in a format defined by the channel version, and the module on the other side should know how to parse this.
-	SendPacket *IbcMsg_SendPacket `json:"send_packet,omitempty"`
-	// This will close an existing channel that is owned by this contract. Port is auto-assigned to the contract's IBC port
-	CloseChannel *IbcMsg_CloseChannel `json:"close_channel,omitempty"`
-}
-
-// IBCTimeoutHeight Height is a monotonically increasing data type that can be compared against another Height for the purposes of updating and freezing clients. Ordering is (revision_number, timeout_height)
-type IbcTimeoutBlock struct {
-	// block height after which the packet times out. the height within the given revision
-	Height int `json:"height"`
-	// the version that the client is currently on (e.g. after resetting the chain this could increment 1 as height drops to 0)
-	Revision int `json:"revision"`
-}
-
-/*
-The message types of the staking module.
-
-See https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/cosmos/staking/v1beta1/tx.proto
-*/
-type StakingMsg struct {
-	// This is translated to a [MsgDelegate](https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/cosmos/staking/v1beta1/tx.proto#L81-L90). `delegator_address` is automatically filled with the current contract's address.
-	Delegate *StakingMsg_Delegate `json:"delegate,omitempty"`
-	// This is translated to a [MsgUndelegate](https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/cosmos/staking/v1beta1/tx.proto#L112-L121). `delegator_address` is automatically filled with the current contract's address.
-	Undelegate *StakingMsg_Undelegate `json:"undelegate,omitempty"`
-	// This is translated to a [MsgBeginRedelegate](https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/cosmos/staking/v1beta1/tx.proto#L95-L105). `delegator_address` is automatically filled with the current contract's address.
-	Redelegate *StakingMsg_Redelegate `json:"redelegate,omitempty"`
-}
-
-// Status is the status of an IBC channel.
-type Status string
-
-const (
-	// Uninitialized is the default state of the channel.
-	Status_StateUninitializedUnspecified Status = "STATE_UNINITIALIZED_UNSPECIFIED"
-	// Init is the state of the channel when it is created.
-	Status_StateInit Status = "STATE_INIT"
-	// TryOpen is the state of the channel when it is trying to open.
-	Status_StateTryopen Status = "STATE_TRYOPEN"
-	// Open is the state of the channel when it is open.
-	Status_StateOpen Status = "STATE_OPEN"
-	// Closed is the state of the channel when it is closed.
-	Status_StateClosed Status = "STATE_CLOSED"
-	// The channel has just accepted the upgrade handshake attempt and is flushing in-flight packets. Added in `ibc-go` v8.1.0.
-	Status_StateFlushing Status = "STATE_FLUSHING"
-	// The channel has just completed flushing any in-flight packets. Added in `ibc-go` v8.1.0.
-	Status_StateFlushcomplete Status = "STATE_FLUSHCOMPLETE"
-)
 
 type ExecuteMsg_CreateChannel struct {
 	// The options to initialize the IBC channel. If not specified, the options specified in the last channel creation are used. Must be `None` if the sender is not the owner.
 	ChannelOpenInitOptions *ChannelOpenInitOptions `json:"channel_open_init_options,omitempty"`
+}
+
+type Coin struct {
+	Amount Uint128 `json:"amount"`
+	Denom string `json:"denom"`
+}
+
+type VoteOption string
+
+const (
+	VoteOption_Yes        VoteOption = "yes"
+	VoteOption_No         VoteOption = "no"
+	VoteOption_Abstain    VoteOption = "abstain"
+	VoteOption_NoWithVeto VoteOption = "no_with_veto"
+)
+
+type IbcEndpoint struct {
+	ChannelId string `json:"channel_id"`
+	PortId string `json:"port_id"`
+}
+
+// State is the state of the IBC application's channel. This application only supports one channel.
+type State struct {
+	// The IBC channel, as defined by cosmwasm.
+	Channel IbcChannel `json:"channel"`
+	// The status of the channel.
+	ChannelStatus Status `json:"channel_status"`
 }
 
 // Actions that can be taken to alter the contract's ownership
@@ -265,23 +378,6 @@ const Action_RenounceOwnership_Value Action_RenounceOwnership = "renounce_owners
 
 func (*Action_RenounceOwnership) Implements_Action() {}
 
-type Coin struct {
-	Amount Uint128 `json:"amount"`
-	Denom string `json:"denom"`
-}
-
-type CosmosMsg_for_Empty struct {
-	Bank *CosmosMsg_for_Empty_Bank `json:"bank,omitempty"`
-	Custom *CosmosMsg_for_Empty_Custom `json:"custom,omitempty"`
-	Staking *CosmosMsg_for_Empty_Staking `json:"staking,omitempty"`
-	Distribution *CosmosMsg_for_Empty_Distribution `json:"distribution,omitempty"`
-	// A Stargate message encoded the same way as a protobuf [Any](https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/any.proto). This is the same structure as messages in `TxBody` from [ADR-020](https://github.com/cosmos/cosmos-sdk/blob/master/docs/architecture/adr-020-protobuf-transaction-encoding.md)
-	Stargate *CosmosMsg_for_Empty_Stargate `json:"stargate,omitempty"`
-	Ibc *CosmosMsg_for_Empty_Ibc `json:"ibc,omitempty"`
-	Wasm *CosmosMsg_for_Empty_Wasm `json:"wasm,omitempty"`
-	Gov *CosmosMsg_for_Empty_Gov `json:"gov,omitempty"`
-}
-
 /*
 The message types of the bank module.
 
@@ -298,43 +394,6 @@ type BankMsg struct {
 	Burn *BankMsg_Burn `json:"burn,omitempty"`
 }
 
-type QueryMsg_Ownership struct{}
-
-// The contract's ownership info
-type Ownership_for_String struct {
-	// The contract's current owner. `None` if the ownership has been renounced.
-	Owner *string `json:"owner,omitempty"`
-	// The deadline for the pending owner to accept the ownership. `None` if there isn't a pending ownership transfer, or if a transfer exists and it doesn't have a deadline.
-	PendingExpiry *Expiration `json:"pending_expiry,omitempty"`
-	// The account who has been proposed to take over the ownership. `None` if there isn't a pending ownership transfer.
-	PendingOwner *string `json:"pending_owner,omitempty"`
-}
-
-// The options needed to initialize the IBC channel.
-type ChannelOpenInitOptions struct {
-	// The order of the channel. If not specified, [`IbcOrder::Ordered`] is used. [`IbcOrder::Unordered`] is only supported if the counterparty chain is using `ibc-go` v8.1.0 or later.
-	ChannelOrdering *IbcOrder `json:"channel_ordering,omitempty"`
-	// The connection id on this chain.
-	ConnectionId string `json:"connection_id"`
-	// The counterparty connection id on the counterparty chain.
-	CounterpartyConnectionId string `json:"counterparty_connection_id"`
-	// The counterparty port id. If not specified, [`crate::ibc::types::keys::HOST_PORT_ID`] is used. Currently, this contract only supports the host port.
-	CounterpartyPortId *string `json:"counterparty_port_id,omitempty"`
-}
-
-// In IBC each package must set at least one type of timeout: the timestamp or the block height. Using this rather complex enum instead of two timeout fields we ensure that at least one timeout is set.
-type IbcTimeout struct {
-	Block *IbcTimeoutBlock `json:"block,omitempty"`
-	Timestamp *Timestamp `json:"timestamp,omitempty"`
-}
-
-/*
-A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0
-
-The greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)
-*/
-type Decimal string
-
 // IbcOrder defines if a channel is ORDERED or UNORDERED Values come from https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/ibc/core/channel/v1/channel.proto#L69-L80 Naming comes from the protobuf files and go translations.
 type IbcOrder string
 
@@ -343,69 +402,29 @@ const (
 	IbcOrder_OrderOrdered   IbcOrder = "ORDER_ORDERED"
 )
 
-/*
-This message type allows the contract interact with the [x/gov] module in order to cast votes.
-
-## Examples
-
-Cast a simple vote:
-
-``` # use cosmwasm_std::{ #     HexBinary, #     Storage, Api, Querier, DepsMut, Deps, entry_point, Env, StdError, MessageInfo, #     Response, QueryResponse, # }; # type ExecuteMsg = (); use cosmwasm_std::{GovMsg, VoteOption};
-
-#[entry_point] pub fn execute( deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg, ) -> Result<Response, StdError> { // ... Ok(Response::new().add_message(GovMsg::Vote { proposal_id: 4, vote: VoteOption::Yes, })) } ```
-
-Cast a weighted vote:
-
-``` # use cosmwasm_std::{ #     HexBinary, #     Storage, Api, Querier, DepsMut, Deps, entry_point, Env, StdError, MessageInfo, #     Response, QueryResponse, # }; # type ExecuteMsg = (); # #[cfg(feature = "cosmwasm_1_2")] use cosmwasm_std::{Decimal, GovMsg, VoteOption, WeightedVoteOption};
-
-# #[cfg(feature = "cosmwasm_1_2")] #[entry_point] pub fn execute( deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg, ) -> Result<Response, StdError> { // ... Ok(Response::new().add_message(GovMsg::VoteWeighted { proposal_id: 4, options: vec![ WeightedVoteOption { option: VoteOption::Yes, weight: Decimal::percent(65), }, WeightedVoteOption { option: VoteOption::Abstain, weight: Decimal::percent(35), }, ], })) } ```
-
-[x/gov]: https://github.com/cosmos/cosmos-sdk/tree/v0.45.12/x/gov
-*/
-type GovMsg struct {
-	// This maps directly to [MsgVote](https://github.com/cosmos/cosmos-sdk/blob/v0.42.5/proto/cosmos/gov/v1beta1/tx.proto#L46-L56) in the Cosmos SDK with voter set to the contract address.
-	Vote *GovMsg_Vote `json:"vote,omitempty"`
-	// This maps directly to [MsgVoteWeighted](https://github.com/cosmos/cosmos-sdk/blob/v0.45.8/proto/cosmos/gov/v1beta1/tx.proto#L66-L78) in the Cosmos SDK with voter set to the contract address.
-	VoteWeighted *GovMsg_VoteWeighted `json:"vote_weighted,omitempty"`
-}
-
-/*
-A thin wrapper around u64 that is using strings for JSON encoding/decoding, such that the full u64 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.
-
-# Examples
-
-Use `from` to create instances of this and `u64` to get the value out:
-
-``` # use cosmwasm_std::Uint64; let a = Uint64::from(42u64); assert_eq!(a.u64(), 42);
-
-let b = Uint64::from(70u32); assert_eq!(b.u64(), 70); ```
-*/
-type Uint64 string
-
-type VoteOption string
-
-const (
-	VoteOption_Yes        VoteOption = "yes"
-	VoteOption_No         VoteOption = "no"
-	VoteOption_Abstain    VoteOption = "abstain"
-	VoteOption_NoWithVeto VoteOption = "no_with_veto"
-)
-
-type QueryMsg_GetContractState struct{}
-
-// State is the state of the IBC application's channel. This application only supports one channel.
-type State struct {
-	// The IBC channel, as defined by cosmwasm.
-	Channel IbcChannel `json:"channel"`
-	// The status of the channel.
-	ChannelStatus Status `json:"channel_status"`
-}
-
-type ExecuteMsg_UpdateCallbackAddress struct {
-	// The new callback address. If not specified, then no callbacks are sent.
-	CallbackAddress *string `json:"callback_address,omitempty"`
-}
 type ExecuteMsg_UpdateOwnership Action
+
+// IBCTimeoutHeight Height is a monotonically increasing data type that can be compared against another Height for the purposes of updating and freezing clients. Ordering is (revision_number, timeout_height)
+type IbcTimeoutBlock struct {
+	// block height after which the packet times out. the height within the given revision
+	Height int `json:"height"`
+	// the version that the client is currently on (e.g. after resetting the chain this could increment 1 as height drops to 0)
+	Revision int `json:"revision"`
+}
+
+/*
+The message types of the staking module.
+
+See https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/cosmos/staking/v1beta1/tx.proto
+*/
+type StakingMsg struct {
+	// This is translated to a [MsgDelegate](https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/cosmos/staking/v1beta1/tx.proto#L81-L90). `delegator_address` is automatically filled with the current contract's address.
+	Delegate *StakingMsg_Delegate `json:"delegate,omitempty"`
+	// This is translated to a [MsgUndelegate](https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/cosmos/staking/v1beta1/tx.proto#L112-L121). `delegator_address` is automatically filled with the current contract's address.
+	Undelegate *StakingMsg_Undelegate `json:"undelegate,omitempty"`
+	// This is translated to a [MsgBeginRedelegate](https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/cosmos/staking/v1beta1/tx.proto#L95-L105). `delegator_address` is automatically filled with the current contract's address.
+	Redelegate *StakingMsg_Redelegate `json:"redelegate,omitempty"`
+}
 
 /*
 The message types of the distribution module.
@@ -421,132 +440,81 @@ type DistributionMsg struct {
 	FundCommunityPool *DistributionMsg_FundCommunityPool `json:"fund_community_pool,omitempty"`
 }
 
-// IcaInfo is the ICA address and channel ID.
-type IcaInfo struct {
+type WeightedVoteOption struct {
+	Weight Decimal `json:"weight"`
+	Option VoteOption `json:"option"`
+}
+
+type QueryMsg_Ownership struct{}
+
+// `TxEncoding` is the encoding of the transactions sent to the ICA host.
+type TxEncoding string
+
+const (
+	// `Protobuf` is the protobuf serialization of the CosmosSDK's Any.
+	TxEncoding_Proto3 TxEncoding = "proto3"
+	// `Proto3Json` is the json serialization of the CosmosSDK's Any.
+	TxEncoding_Proto3Json TxEncoding = "proto3json"
+)
+
+type GovMsg_VoteWeighted struct {
+	Options []WeightedVoteOption `json:"options"`
+	ProposalId int `json:"proposal_id"`
+}
+type CosmosMsg_for_Empty_Wasm WasmMsg
+
+type IbcMsg_SendPacket struct {
+	// when packet times out, measured on remote chain
+	Timeout IbcTimeout `json:"timeout"`
 	ChannelId string `json:"channel_id"`
-	Encoding TxEncoding `json:"encoding"`
-	IcaAddress string `json:"ica_address"`
-}
-
-// Expiration represents a point in time when some event happens. It can compare with a BlockInfo and will return is_expired() == true once the condition is hit (and for every block in the future)
-type Expiration struct {
-	// AtHeight will expire when `env.block.height` >= height
-	AtHeight *Expiration_AtHeight `json:"at_height,omitempty"`
-	// AtTime will expire when `env.block.time` >= time
-	AtTime *Expiration_AtTime `json:"at_time,omitempty"`
-	// Never will never expire. Used to express the empty variant
-	Never *Expiration_Never `json:"never,omitempty"`
-}
-
-/*
-Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.
-
-This is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.
-*/
-type Binary string
-
-/*
-A human readable address.
-
-In Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.
-
-This type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.
-
-This type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.
-*/
-type Addr string
-
-type Expiration_AtHeight int
-
-type WasmMsg_UpdateAdmin struct {
-	Admin string `json:"admin"`
-	ContractAddr string `json:"contract_addr"`
-}
-
-type StakingMsg_Delegate struct {
-	Amount Coin `json:"amount"`
-	Validator string `json:"validator"`
-}
-type CosmosMsg_for_Empty_Distribution DistributionMsg
-
-type CosmosMsg_for_Empty_Stargate struct {
-	TypeUrl string `json:"type_url"`
-	Value Binary `json:"value"`
-}
-
-type BankMsg_Burn struct {
-	Amount []Coin `json:"amount"`
+	Data Binary `json:"data"`
 }
 
 type IbcMsg_Transfer struct {
+	// address on the remote chain to receive these tokens
+	ToAddress string `json:"to_address"`
 	// packet data only supports one coin https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/ibc/applications/transfer/v1/transfer.proto#L11-L20
 	Amount Coin `json:"amount"`
 	// existing channel to send the tokens over
 	ChannelId string `json:"channel_id"`
 	// when packet times out, measured on remote chain
 	Timeout IbcTimeout `json:"timeout"`
-	// address on the remote chain to receive these tokens
-	ToAddress string `json:"to_address"`
 }
-type CosmosMsg_for_Empty_Gov GovMsg
 
-type WasmMsg_Execute struct {
+type BankMsg_Burn struct {
+	Amount []Coin `json:"amount"`
+}
+
+type WasmMsg_Migrate struct {
 	ContractAddr string `json:"contract_addr"`
-	Funds []Coin `json:"funds"`
-	// msg is the json-encoded ExecuteMsg struct (as raw Binary)
+	// msg is the json-encoded MigrateMsg struct that will be passed to the new code
 	Msg Binary `json:"msg"`
+	// the code_id of the new logic to place in the given contract
+	NewCodeId int `json:"new_code_id"`
 }
 
-type BankMsg_Send struct {
-	Amount []Coin `json:"amount"`
-	ToAddress string `json:"to_address"`
+type CosmosMsg_for_Empty_Stargate struct {
+	TypeUrl string `json:"type_url"`
+	Value Binary `json:"value"`
 }
 
-type WasmMsg_Instantiate struct {
-	Admin *string `json:"admin,omitempty"`
-	CodeId int `json:"code_id"`
-	Funds []Coin `json:"funds"`
-	/*
-	   A human-readable label for the contract.
+type Expiration_AtHeight int
+type CosmosMsg_for_Empty_Distribution DistributionMsg
 
-	   Valid values should: - not be empty - not be bigger than 128 bytes (or some chain-specific limit) - not start / end with whitespace
-	*/
-	Label string `json:"label"`
-	// msg is the JSON-encoded InstantiateMsg struct (as raw Binary)
-	Msg Binary `json:"msg"`
-}
-
-type DistributionMsg_FundCommunityPool struct {
-	// The amount to spend
-	Amount []Coin `json:"amount"`
-}
-
-type GovMsg_Vote struct {
-	ProposalId int `json:"proposal_id"`
-	/*
-	   The vote option.
-
-	   This should be called "option" for consistency with Cosmos SDK. Sorry for that. See <https://github.com/CosmWasm/cosmwasm/issues/1571>.
-	*/
-	Vote VoteOption `json:"vote"`
+type IbcMsg_CloseChannel struct {
+	ChannelId string `json:"channel_id"`
 }
 type CosmosMsg_for_Empty_Ibc IbcMsg
-
-type StakingMsg_Redelegate struct {
-	Amount Coin `json:"amount"`
-	DstValidator string `json:"dst_validator"`
-	SrcValidator string `json:"src_validator"`
-}
-type Expiration_AtTime Timestamp
-
-type Expiration_Never struct{}
-
-type WasmMsg_ClearAdmin struct {
-	ContractAddr string `json:"contract_addr"`
-}
+type CosmosMsg_for_Empty_Staking StakingMsg
 type CosmosMsg_for_Empty_Custom Empty
 
+type WasmMsg_UpdateAdmin struct {
+	Admin string `json:"admin"`
+	ContractAddr string `json:"contract_addr"`
+}
+
 type WasmMsg_Instantiate2 struct {
+	Admin *string `json:"admin,omitempty"`
 	CodeId int `json:"code_id"`
 	Funds []Coin `json:"funds"`
 	/*
@@ -558,7 +526,6 @@ type WasmMsg_Instantiate2 struct {
 	// msg is the JSON-encoded InstantiateMsg struct (as raw Binary)
 	Msg Binary `json:"msg"`
 	Salt Binary `json:"salt"`
-	Admin *string `json:"admin,omitempty"`
 }
 
 type StakingMsg_Undelegate struct {
@@ -566,39 +533,73 @@ type StakingMsg_Undelegate struct {
 	Validator string `json:"validator"`
 }
 
-type IbcMsg_CloseChannel struct {
-	ChannelId string `json:"channel_id"`
+type StakingMsg_Delegate struct {
+	Amount Coin `json:"amount"`
+	Validator string `json:"validator"`
 }
-type CosmosMsg_for_Empty_Wasm WasmMsg
 
-type GovMsg_VoteWeighted struct {
-	Options []WeightedVoteOption `json:"options"`
-	ProposalId int `json:"proposal_id"`
+type DistributionMsg_SetWithdrawAddress struct {
+	// The `withdraw_address`
+	Address string `json:"address"`
 }
 type CosmosMsg_for_Empty_Bank BankMsg
+
+type WasmMsg_Execute struct {
+	ContractAddr string `json:"contract_addr"`
+	Funds []Coin `json:"funds"`
+	// msg is the json-encoded ExecuteMsg struct (as raw Binary)
+	Msg Binary `json:"msg"`
+}
+
+type WasmMsg_ClearAdmin struct {
+	ContractAddr string `json:"contract_addr"`
+}
 
 type DistributionMsg_WithdrawDelegatorReward struct {
 	// The `validator_address`
 	Validator string `json:"validator"`
 }
+type CosmosMsg_for_Empty_Gov GovMsg
 
-type IbcMsg_SendPacket struct {
-	ChannelId string `json:"channel_id"`
-	Data Binary `json:"data"`
-	// when packet times out, measured on remote chain
-	Timeout IbcTimeout `json:"timeout"`
+type GovMsg_Vote struct {
+	/*
+	   The vote option.
+
+	   This should be called "option" for consistency with Cosmos SDK. Sorry for that. See <https://github.com/CosmWasm/cosmwasm/issues/1571>.
+	*/
+	Vote VoteOption `json:"vote"`
+	ProposalId int `json:"proposal_id"`
 }
 
-type WasmMsg_Migrate struct {
-	ContractAddr string `json:"contract_addr"`
-	// msg is the json-encoded MigrateMsg struct that will be passed to the new code
+type BankMsg_Send struct {
+	Amount []Coin `json:"amount"`
+	ToAddress string `json:"to_address"`
+}
+type Expiration_AtTime Timestamp
+
+type WasmMsg_Instantiate struct {
+	// msg is the JSON-encoded InstantiateMsg struct (as raw Binary)
 	Msg Binary `json:"msg"`
-	// the code_id of the new logic to place in the given contract
-	NewCodeId int `json:"new_code_id"`
-}
-type CosmosMsg_for_Empty_Staking StakingMsg
+	Admin *string `json:"admin,omitempty"`
+	CodeId int `json:"code_id"`
+	Funds []Coin `json:"funds"`
+	/*
+	   A human-readable label for the contract.
 
-type DistributionMsg_SetWithdrawAddress struct {
-	// The `withdraw_address`
-	Address string `json:"address"`
+	   Valid values should: - not be empty - not be bigger than 128 bytes (or some chain-specific limit) - not start / end with whitespace
+	*/
+	Label string `json:"label"`
+}
+
+type StakingMsg_Redelegate struct {
+	Amount Coin `json:"amount"`
+	DstValidator string `json:"dst_validator"`
+	SrcValidator string `json:"src_validator"`
+}
+
+type Expiration_Never struct{}
+
+type DistributionMsg_FundCommunityPool struct {
+	// The amount to spend
+	Amount []Coin `json:"amount"`
 }

@@ -41,6 +41,8 @@ type ContractTestSuite struct {
 
 	// IcaContractToAddrMap is a map of ICA contract address to the address of ICA
 	IcaContractToAddrMap map[string]string
+
+	// this line is used by go-codegen # suite/contract
 }
 
 // SetupSuite calls the underlying TestSuite's SetupSuite method

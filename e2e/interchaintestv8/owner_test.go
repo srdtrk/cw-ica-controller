@@ -98,6 +98,10 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 		Chain:   wasmd,
 	}
 
+	icaQc, err := cwicacontroller.NewQueryClient(wasmd.GetHostGRPCAddress(), icaContract.Address)
+	s.Require().NoError(err)
+	icaContract.SetQueryClient(icaQc)
+
 	s.Run("TestChannelHandshakeSuccess", func() {
 		// Test if the handshake was successful
 		wasmdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, wasmd.Config().ChainID)
@@ -169,6 +173,10 @@ func (s *OwnerTestSuite) TestOwnerPredefinedAction() {
 		CodeID:  strconv.FormatInt(s.IcaContractCodeId, 10),
 		Chain:   wasmd,
 	}
+
+	icaQc, err := cwicacontroller.NewQueryClient(wasmd.GetHostGRPCAddress(), icaContract.Address)
+	s.Require().NoError(err)
+	icaContract.SetQueryClient(icaQc)
 
 	// Check contract state
 	contractState, err := icaContract.QueryClient().GetContractState(ctx, &cwicacontroller.QueryMsg_GetContractState{})
