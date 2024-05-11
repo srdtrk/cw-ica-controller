@@ -48,6 +48,11 @@ func WasmEncodingConfig() *sdktestutil.TestEncodingConfig {
 	return encodingConfig("wasm")
 }
 
+// CosmosEncodingConfig returns the global E2E encoding config for simd.
+func CosmosEncodingConfig() *sdktestutil.TestEncodingConfig {
+	return encodingConfig("cosmos")
+}
+
 // EncodingConfig returns the global E2E encoding config.
 // It includes CosmosSDK, IBC, and Wasm messages
 func encodingConfig(bech32Prefix string) *sdktestutil.TestEncodingConfig {

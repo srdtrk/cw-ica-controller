@@ -60,7 +60,7 @@ func (s *ContractTestSuite) SetupSuite(ctx context.Context) {
 // SetupContractTestSuite starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
 // sets up the contract and does the channel handshake for the contract test suite.
 func (s *ContractTestSuite) SetupContractTestSuite(ctx context.Context, ordering cwicacontroller.IbcOrder) {
-	// s.SetupSuite(ctx)
+	s.SetupSuite(ctx)
 
 	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/callback_counter.wasm")
 	s.Require().NoError(err)
