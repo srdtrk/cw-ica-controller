@@ -23,8 +23,7 @@ This is a CosmWasm smart contract that communicates with the golang `ica/host` m
       - [Using `InstantiateMsg`](#using-instantiatemsg)
       - [Using `ExecuteMsg::CreateChannel`](#using-executemsgcreatechannel)
     - [Execute an interchain account transaction](#execute-an-interchain-account-transaction)
-      - [`SendCosmosMsgs` (recommended)](#sendcosmosmsgs-recommended)
-      - [`SendCustomIcaMessages`](#sendcustomicamessages)
+      - [`SendCosmosMsgs`](#sendcosmosmsgs)
     - [Execute a callback](#execute-a-callback)
     - [Channel Closing and Reopening](#channel-closing-and-reopening)
       - [Channel Closing](#channel-closing)
@@ -236,13 +235,31 @@ Buying and selling and NFT from Xion on Injective using Nomos SDK and ICA contro
   </div>
 
 
+## Building
+
+We use [cosmwasm/optimizer](https://github.com/CosmWasm/optimizer) docker image to build the contract. This project uses `just` as the task runner. To install `just`, run the following command:
+
+```sh
+cargo install just
+```
+
+To build the contract, run the following command:
+
+```sh
+just build-optimize
+```
+
 ## Testing
 
 There are two kinds of tests in this repository: unit tests and end to end tests. The unit tests are located inside the rust files in the `src` directory. The end to end tests are located in the `e2e` directory.
 
 ### Unit tests
 
-In general, the unit tests are for testing the verification functions for the handshake, and for testing that the serializers and deserializers are working correctly. To run the unit tests, run `cargo test`.
+In general, the unit tests are for testing the verification functions for the handshake, and for testing that the serializers and deserializers are working correctly. To run the unit tests, run:
+
+```sh
+just unit-tests
+```
 
 ### End to end tests
 
