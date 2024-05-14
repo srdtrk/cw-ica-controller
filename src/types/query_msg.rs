@@ -101,16 +101,16 @@ mod response {
     }
 }
 
-/// Converts a [`QueryRequest`] to a gRPC method path and protobuf bytes.
+/// Converts a [`QueryRequest`] to a gRPC method path, protobuf bytes, and a flag indicating if the query is stargate.
 ///
 /// # Panics
 ///
 /// Panics if the query type is not supported.
 #[must_use]
-pub fn query_to_protobuf(query: QueryRequest<Empty>) -> (String, Vec<u8>) {
+pub fn query_to_protobuf(query: QueryRequest<Empty>) -> (String, Vec<u8>, bool) {
     match query {
         QueryRequest::Bank(bank_query) => convert_to_protobuf::bank(bank_query),
-        QueryRequest::Stargate { path, data } => (path, data.0),
+        QueryRequest::Stargate { path, data } => (path, data.0, true),
         QueryRequest::Wasm(_) => panic!("wasmd queries are not marked module safe (yet)"),
         QueryRequest::Ibc(_) => panic!("ibc-go queries are not marked module safe (yet)"),
         QueryRequest::Custom(_) => panic!("custom queries are not supported"),
@@ -135,11 +135,12 @@ mod convert_to_protobuf {
     };
     use cosmwasm_std::BankQuery;
 
-    pub fn bank(bank_query: BankQuery) -> (String, Vec<u8>) {
+    pub fn bank(bank_query: BankQuery) -> (String, Vec<u8>, bool) {
         match bank_query {
             BankQuery::Balance { address, denom } => (
                 "/cosmos.bank.v1beta1.Query/Balance".to_string(),
                 QueryBalanceRequest { address, denom }.encode_to_vec(),
+                false,
             ),
             BankQuery::AllBalances { address } => (
                 "/cosmos.bank.v1beta1.Query/AllBalances".to_string(),
@@ -148,10 +149,12 @@ mod convert_to_protobuf {
                     pagination: None,
                 }
                 .encode_to_vec(),
+                false,
             ),
             BankQuery::DenomMetadata { denom } => (
                 "/cosmos.bank.v1beta1.Query/DenomMetadata".to_string(),
                 QueryDenomMetadataRequest { denom }.encode_to_vec(),
+                false,
             ),
             BankQuery::AllDenomMetadata { pagination } => {
                 let pagination = pagination.map(|pagination| PageRequest {
@@ -165,18 +168,20 @@ mod convert_to_protobuf {
                 (
                     "/cosmos.bank.v1beta1.Query/DenomsMetadata".to_string(),
                     QueryDenomsMetadataRequest { pagination }.encode_to_vec(),
+                    false,
                 )
             }
             BankQuery::Supply { denom } => (
                 "/cosmos.bank.v1beta1.Query/SupplyOf".to_string(),
                 QuerySupplyOfRequest { denom }.encode_to_vec(),
+                false,
             ),
             _ => panic!("Unsupported BankQuery"),
         }
     }
 
     #[cfg(feature = "staking")]
-    pub fn staking(staking_query: cosmwasm_std::StakingQuery) -> (String, Vec<u8>) {
+    pub fn staking(staking_query: cosmwasm_std::StakingQuery) -> (String, Vec<u8>, bool) {
         use cosmos_sdk_proto::cosmos::staking::v1beta1::{
             QueryDelegationRequest, QueryDelegatorDelegationsRequest, QueryParamsRequest,
             QueryValidatorRequest, QueryValidatorsRequest,
@@ -189,6 +194,7 @@ mod convert_to_protobuf {
                     validator_addr: address,
                 }
                 .encode_to_vec(),
+                false,
             ),
             cosmwasm_std::StakingQuery::AllValidators {} => (
                 "/cosmos.staking.v1beta1.Query/Validators".to_string(),
@@ -197,6 +203,7 @@ mod convert_to_protobuf {
                     pagination: None,
                 }
                 .encode_to_vec(),
+                false,
             ),
             cosmwasm_std::StakingQuery::Delegation {
                 delegator,
@@ -208,6 +215,7 @@ mod convert_to_protobuf {
                     validator_addr: validator,
                 }
                 .encode_to_vec(),
+                false,
             ),
             cosmwasm_std::StakingQuery::AllDelegations { delegator } => (
                 "/cosmos.staking.v1beta1.Query/DelegatorDelegations".to_string(),
@@ -216,17 +224,19 @@ mod convert_to_protobuf {
                     pagination: None,
                 }
                 .encode_to_vec(),
+                false,
             ),
             cosmwasm_std::StakingQuery::BondedDenom {} => (
                 "/cosmos.staking.v1beta1.Query/Params".to_string(),
                 QueryParamsRequest::default().encode_to_vec(),
+                false,
             ),
             _ => panic!("Unsupported StakingQuery"),
         }
     }
 }
 
-/// TODO
+/// Converts the response bytes to a [`IcaQueryResponse`] using the query path.
 pub mod from_protobuf {
     use std::str::FromStr;
 
@@ -470,6 +480,7 @@ pub mod from_protobuf {
 
 /// This module defines the protobuf messages for the query module.
 /// This module can be removed once these types are included in `cosmos_sdk_proto` crate.
+// TODO: Remove this module once the types are included in `cosmos_sdk_proto` crate.
 pub mod proto {
     /// `MsgModuleQuerySafe` defines the query request tx added in ibc-go v8.2
     #[derive(::prost::Message)]

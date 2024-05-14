@@ -2,7 +2,7 @@
 
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, IbcChannel};
-use cw_storage_plus::Item;
+use cw_storage_plus::{Item, Map};
 
 use super::{msg::options::ChannelOpenInitOptions, ContractError};
 
@@ -28,6 +28,10 @@ pub const ALLOW_CHANNEL_OPEN_INIT: Item<bool> = Item::new("allow_channel_open_in
 /// The item used to store whether or not channel close init is allowed.
 /// Used to prevent relayers from closing channels. This right is reserved to the contract.
 pub const ALLOW_CHANNEL_CLOSE_INIT: Item<bool> = Item::new("allow_channel_close_init");
+
+/// PENDING_QUERIES is the map of pending queries.
+/// It maps channelID, and sequence to the query path.
+pub const PENDING_QUERIES: Map<(&str, &str), &str> = Map::new("pending_queries");
 
 mod contract {
     use crate::ibc::types::metadata::TxEncoding;
