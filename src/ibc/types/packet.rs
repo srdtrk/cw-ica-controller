@@ -83,15 +83,13 @@ impl IcaPacketData {
     ) -> StdResult<Self> {
         match encoding {
             TxEncoding::Protobuf => {
-                let proto_anys = messages.into_iter().try_fold(
-                    vec![],
-                    |mut acc, msg| -> StdResult<Vec<cosmos_sdk_proto::Any>> {
-                        let proto_any = convert_to_proto_any(msg, ica_address.to_string())
-                            .map_err(|e| StdError::generic_err(e.to_string()))?;
-                        acc.push(proto_any);
-                        Ok(acc)
-                    },
-                )?;
+                let proto_anys = messages
+                    .into_iter()
+                    .map(|msg| -> StdResult<cosmos_sdk_proto::Any> {
+                        convert_to_proto_any(msg, ica_address.to_string())
+                            .map_err(|e| StdError::generic_err(e.to_string()))
+                    })
+                    .collect::<StdResult<Vec<cosmos_sdk_proto::Any>>>()?;
                 Ok(Self::from_proto_anys(proto_anys, memo))
             }
             TxEncoding::Proto3Json => StdResult::Err(StdError::generic_err(
