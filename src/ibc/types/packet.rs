@@ -3,9 +3,7 @@
 //! This module contains the ICS-27 packet data and acknowledgement types.
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{
-    to_json_binary, CosmosMsg, Empty, Env, IbcMsg, IbcTimeout, QueryRequest, StdError, StdResult,
-};
+use cosmwasm_std::{to_json_binary, CosmosMsg, Env, IbcMsg, IbcTimeout, StdError, StdResult};
 
 pub use cosmos_sdk_proto::ibc::applications::interchain_accounts::v1::CosmosTx;
 use cosmos_sdk_proto::traits::Message;
@@ -79,21 +77,61 @@ impl IcaPacketData {
     /// The supported [`CosmosMsg`]s for [`TxEncoding::Protobuf`] are listed in [`convert_to_proto_any`].
     pub fn from_cosmos_msgs(
         messages: Vec<CosmosMsg>,
-        #[cfg(feature = "query")] _queries: Option<Vec<QueryRequest<Empty>>>,
+        #[cfg(feature = "query")] queries: Option<
+            Vec<cosmwasm_std::QueryRequest<cosmwasm_std::Empty>>,
+        >,
         encoding: &TxEncoding,
         memo: Option<String>,
         ica_address: &str,
     ) -> StdResult<Self> {
         match encoding {
             TxEncoding::Protobuf => {
-                let proto_anys = messages
-                    .into_iter()
-                    .map(|msg| -> StdResult<cosmos_sdk_proto::Any> {
-                        convert_to_proto_any(msg, ica_address.to_string())
-                            .map_err(|e| StdError::generic_err(e.to_string()))
-                    })
-                    .collect::<StdResult<Vec<cosmos_sdk_proto::Any>>>()?;
-                Ok(Self::from_proto_anys(proto_anys, memo))
+                #[cfg(not(feature = "query"))]
+                {
+                    let proto_anys = messages
+                        .into_iter()
+                        .map(|msg| -> StdResult<cosmos_sdk_proto::Any> {
+                            convert_to_proto_any(msg, ica_address.to_string())
+                                .map_err(|e| StdError::generic_err(e.to_string()))
+                        })
+                        .collect::<StdResult<Vec<cosmos_sdk_proto::Any>>>()?;
+
+                    Ok(Self::from_proto_anys(proto_anys, memo))
+                }
+
+                #[cfg(feature = "query")]
+                {
+                    use crate::types::query_msg;
+
+                    let mut proto_anys = messages
+                        .into_iter()
+                        .map(|msg| -> StdResult<cosmos_sdk_proto::Any> {
+                            convert_to_proto_any(msg, ica_address.to_string())
+                                .map_err(|e| StdError::generic_err(e.to_string()))
+                        })
+                        .collect::<StdResult<Vec<cosmos_sdk_proto::Any>>>()?;
+
+                    if let Some(queries) = queries {
+                        let abci_queries: Vec<query_msg::proto::AbciQueryRequest> = queries
+                            .into_iter()
+                            .map(|msg| {
+                                let (path, data, _is_stargate) = query_msg::query_to_protobuf(msg);
+                                query_msg::proto::AbciQueryRequest { path, data }
+                            })
+                            .collect();
+
+                        let query_msg = query_msg::proto::MsgModuleQuerySafe {
+                            signer: ica_address.to_string(),
+                            requests: abci_queries,
+                        };
+
+                        proto_anys.push(cosmos_sdk_proto::Any::from_msg(&query_msg).map_err(
+                            |e| StdError::generic_err(format!("failed to convert query msg: {e}")),
+                        )?);
+                    }
+
+                    Ok(Self::from_proto_anys(proto_anys, memo))
+                }
             }
             TxEncoding::Proto3Json => StdResult::Err(StdError::generic_err(
                 "unsupported encoding: proto3json".to_string(),
