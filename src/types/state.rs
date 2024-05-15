@@ -2,7 +2,7 @@
 
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, IbcChannel};
-use cw_storage_plus::{Item, Map};
+use cw_storage_plus::Item;
 
 use super::{msg::options::ChannelOpenInitOptions, ContractError};
 
@@ -38,7 +38,8 @@ pub const QUERY: Item<String> = Item::new("pending_query");
 /// `PENDING_QUERIES` is the map of pending queries.
 /// It maps channelID, and sequence to the query path.
 #[cfg(feature = "query")]
-pub const PENDING_QUERIES: Map<(&str, &str), &str> = Map::new("pending_queries");
+pub const PENDING_QUERIES: cw_storage_plus::Map<(&str, &str), &str> =
+    cw_storage_plus::Map::new("pending_queries");
 
 mod contract {
     use crate::ibc::types::metadata::TxEncoding;
