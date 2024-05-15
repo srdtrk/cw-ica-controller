@@ -45,20 +45,11 @@ pub enum ExecuteMsg {
     SendCosmosMsgs {
         /// The stargate messages to convert and send to the ICA host.
         messages: Vec<CosmosMsg>,
-        /// Optional memo to include in the ibc packet.
+        /// The stargate queries to convert and send to the ICA host.
+        /// The queries are executed after the messages.
+        #[cfg(feature = "query")]
         #[serde(skip_serializing_if = "Option::is_none")]
-        packet_memo: Option<String>,
-        /// Optional timeout in seconds to include with the ibc packet.
-        /// If not specified, the [default timeout](crate::ibc::types::packet::DEFAULT_TIMEOUT_SECONDS) is used.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        timeout_seconds: Option<u64>,
-    },
-    /// `SendQueryMsgs` converts the provided array of [`QueryMsgs`] to an ICA tx and sends them to the ICA host.
-    /// Only supported if the [`TxEncoding`](crate::ibc::types::metadata::TxEncoding) is [`TxEncoding::Protobuf`](crate::ibc::types::metadata::TxEncoding).
-    #[cfg(feature = "query")]
-    SendQueryMsgs {
-        /// The stargate messages to convert and send to the ICA host.
-        queries: Vec<cosmwasm_std::QueryRequest<cosmwasm_std::Empty>>,
+        queries: Option<Vec<cosmwasm_std::QueryRequest<cosmwasm_std::Empty>>>,
         /// Optional memo to include in the ibc packet.
         #[serde(skip_serializing_if = "Option::is_none")]
         packet_memo: Option<String>,

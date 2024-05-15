@@ -3,7 +3,9 @@
 //! This module contains the ICS-27 packet data and acknowledgement types.
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{to_json_binary, CosmosMsg, Env, IbcMsg, IbcTimeout, StdError, StdResult};
+use cosmwasm_std::{
+    to_json_binary, CosmosMsg, Empty, Env, IbcMsg, IbcTimeout, QueryRequest, StdError, StdResult,
+};
 
 pub use cosmos_sdk_proto::ibc::applications::interchain_accounts::v1::CosmosTx;
 use cosmos_sdk_proto::traits::Message;
@@ -77,6 +79,7 @@ impl IcaPacketData {
     /// The supported [`CosmosMsg`]s for [`TxEncoding::Protobuf`] are listed in [`convert_to_proto_any`].
     pub fn from_cosmos_msgs(
         messages: Vec<CosmosMsg>,
+        #[cfg(feature = "query")] _queries: Option<Vec<QueryRequest<Empty>>>,
         encoding: &TxEncoding,
         memo: Option<String>,
         ica_address: &str,

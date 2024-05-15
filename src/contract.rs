@@ -66,16 +66,21 @@ pub fn execute(
         }
         ExecuteMsg::SendCosmosMsgs {
             messages,
-            packet_memo,
-            timeout_seconds,
-        } => execute::send_cosmos_msgs(deps, env, info, messages, packet_memo, timeout_seconds),
-        ExecuteMsg::UpdateOwnership(action) => execute::update_ownership(deps, env, info, action),
-        #[cfg(feature = "query")]
-        ExecuteMsg::SendQueryMsgs {
+            #[cfg(feature = "query")]
             queries,
             packet_memo,
             timeout_seconds,
-        } => execute::send_query_msgs(deps, env, info, queries, packet_memo, timeout_seconds),
+        } => execute::send_cosmos_msgs(
+            deps,
+            env,
+            info,
+            messages,
+            #[cfg(feature = "query")]
+            queries,
+            packet_memo,
+            timeout_seconds,
+        ),
+        ExecuteMsg::UpdateOwnership(action) => execute::update_ownership(deps, env, info, action),
     }
 }
 
@@ -181,6 +186,7 @@ mod execute {
         env: Env,
         info: MessageInfo,
         messages: Vec<CosmosMsg>,
+        #[cfg(feature = "query")] queries: Option<Vec<QueryRequest<Empty>>>,
         packet_memo: Option<String>,
         timeout_seconds: Option<u64>,
     ) -> Result<Response, ContractError> {
@@ -191,6 +197,8 @@ mod execute {
 
         let ica_packet = IcaPacketData::from_cosmos_msgs(
             messages,
+            #[cfg(feature = "query")]
+            queries,
             &ica_info.encoding,
             packet_memo,
             &ica_info.ica_address,
@@ -235,38 +243,6 @@ mod execute {
         state::STATE.save(deps.storage, &contract_state)?;
 
         Ok(Response::default())
-    }
-
-    /// Sends query messages to the ICA host.
-    #[cfg(feature = "query")]
-    #[allow(clippy::needless_pass_by_value)]
-    pub fn send_query_msgs(
-        deps: DepsMut,
-        _env: Env,
-        info: MessageInfo,
-        messages: Vec<QueryRequest<Empty>>,
-        _packet_memo: Option<String>,
-        _timeout_seconds: Option<u64>,
-    ) -> Result<Response, ContractError> {
-        use crate::types::query_msg;
-
-        cw_ownable::assert_owner(deps.storage, &info.sender)?;
-
-        let contract_state = state::STATE.load(deps.storage)?;
-        let _callback_address = contract_state
-            .callback_address
-            .ok_or(ContractError::NoCallbackAddress)?;
-
-        let mut req_paths: Vec<String> = vec![];
-        let mut requests: Vec<query_msg::proto::AbciQueryRequest> = vec![];
-        for query in messages {
-            let (path, data, is_stargate) = query_msg::query_to_protobuf(query);
-
-            req_paths.push(path.clone());
-            requests.push(query_msg::proto::AbciQueryRequest { path, data });
-        }
-
-        todo!()
     }
 }
 
