@@ -196,6 +196,8 @@ mod execute {
         let ica_info = contract_state.get_ica_info()?;
 
         let ica_packet = IcaPacketData::from_cosmos_msgs(
+            #[cfg(feature = "query")]
+            deps.storage,
             messages,
             #[cfg(feature = "query")]
             queries,

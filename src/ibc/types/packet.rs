@@ -76,6 +76,7 @@ impl IcaPacketData {
     ///
     /// The supported [`CosmosMsg`]s for [`TxEncoding::Protobuf`] are listed in [`convert_to_proto_any`].
     pub fn from_cosmos_msgs(
+        #[cfg(all(feature = "query", feature = "export"))] storage: &mut dyn cosmwasm_std::Storage,
         messages: Vec<CosmosMsg>,
         #[cfg(feature = "query")] queries: Option<
             Vec<cosmwasm_std::QueryRequest<cosmwasm_std::Empty>>,
@@ -112,13 +113,28 @@ impl IcaPacketData {
                         .collect::<StdResult<Vec<cosmos_sdk_proto::Any>>>()?;
 
                     if let Some(queries) = queries {
-                        let abci_queries: Vec<query_msg::proto::AbciQueryRequest> = queries
-                            .into_iter()
-                            .map(|msg| {
-                                let (path, data, _is_stargate) = query_msg::query_to_protobuf(msg);
-                                query_msg::proto::AbciQueryRequest { path, data }
-                            })
-                            .collect();
+                        let (abci_queries, _paths): (
+                            Vec<query_msg::proto::AbciQueryRequest>,
+                            Vec<String>,
+                        ) = queries.into_iter().fold((vec![], vec![]), |mut acc, msg| {
+                            let (path, data, is_stargate) = query_msg::query_to_protobuf(msg);
+
+                            let processed_path = if is_stargate {
+                                query_msg::constants::STARGATE_PLACEHOLDER.to_string()
+                            } else {
+                                path.clone()
+                            };
+
+                            acc.1.push(processed_path);
+                            acc.0
+                                .push(query_msg::proto::AbciQueryRequest { path, data });
+
+                            acc
+                        });
+
+                        #[cfg(feature = "export")]
+                        #[allow(clippy::used_underscore_binding)]
+                        crate::types::state::QUERY.save(storage, &_paths)?;
 
                         let query_msg = query_msg::proto::MsgModuleQuerySafe {
                             signer: ica_address.to_string(),
