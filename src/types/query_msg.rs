@@ -4,17 +4,17 @@ use cosmwasm_std::{Empty, QueryRequest};
 
 pub use response::*;
 
-/// The constants for the query_msg module.
+/// The constants for the `query_msg` module.
 pub mod constants {
     /// The placeholder for a stargate query path.
     pub const STARGATE_PLACEHOLDER: &str = "stargate";
     /// The query path for the Balance query.
     pub const BALANCE: &str = "/cosmos.bank.v1beta1.Query/Balance";
-    /// The query path for the AllBalances query.
+    /// The query path for the `AllBalances` query.
     pub const ALL_BALANCES: &str = "/cosmos.bank.v1beta1.Query/AllBalances";
-    /// The query path for the DenomMetadata query.
+    /// The query path for the `DenomMetadata` query.
     pub const DENOM_METADATA: &str = "/cosmos.bank.v1beta1.Query/DenomMetadata";
-    /// The query path for the AllDenomMetadata query.
+    /// The query path for the `AllDenomMetadata` query.
     pub const ALL_DENOM_METADATA: &str = "/cosmos.bank.v1beta1.Query/DenomsMetadata";
     /// The query path for the Supply query.
     pub const SUPPLY: &str = "/cosmos.bank.v1beta1.Query/SupplyOf";
@@ -22,16 +22,16 @@ pub mod constants {
     /// The query path for the Validator query.
     #[cfg(feature = "staking")]
     pub const VALIDATOR: &str = "/cosmos.staking.v1beta1.Query/Validator";
-    /// The query path for the AllValidators query.
+    /// The query path for the `AllValidators` query.
     #[cfg(feature = "staking")]
     pub const ALL_VALIDATORS: &str = "/cosmos.staking.v1beta1.Query/Validators";
     /// The query path for the Delegation query.
     #[cfg(feature = "staking")]
     pub const DELEGATION: &str = "/cosmos.staking.v1beta1.Query/Delegation";
-    /// The query path for the AllDelegations query.
+    /// The query path for the `AllDelegations` query.
     #[cfg(feature = "staking")]
     pub const ALL_DELEGATIONS: &str = "/cosmos.staking.v1beta1.Query/DelegatorDelegations";
-    /// The query path for the BondedDenom query.
+    /// The query path for the `BondedDenom` query.
     #[cfg(feature = "staking")]
     pub const STAKING_PARAMS: &str = "/cosmos.staking.v1beta1.Query/Params";
 }
@@ -551,5 +551,10 @@ pub mod proto {
         /// The responses are in the same order as the requests
         #[prost(bytes = "vec", repeated, tag = "2")]
         pub responses: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
+    }
+
+    impl ::prost::Name for MsgModuleQuerySafe {
+        const NAME: &'static str = "MsgModuleQuerySafe";
+        const PACKAGE: &'static str = "ibc.applications.interchain_accounts.host.v1";
     }
 }
