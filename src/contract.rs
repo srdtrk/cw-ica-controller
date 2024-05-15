@@ -244,16 +244,28 @@ mod execute {
         deps: DepsMut,
         _env: Env,
         info: MessageInfo,
-        _messages: Vec<QueryRequest<Empty>>,
+        messages: Vec<QueryRequest<Empty>>,
         _packet_memo: Option<String>,
         _timeout_seconds: Option<u64>,
     ) -> Result<Response, ContractError> {
+        use crate::types::query_msg;
+
         cw_ownable::assert_owner(deps.storage, &info.sender)?;
 
         let contract_state = state::STATE.load(deps.storage)?;
         let _callback_address = contract_state
             .callback_address
             .ok_or(ContractError::NoCallbackAddress)?;
+
+        let mut req_paths: Vec<String> = vec![];
+        let mut requests: Vec<query_msg::proto::AbciQueryRequest> = vec![];
+        for query in messages {
+            let (path, data, is_stargate) = query_msg::query_to_protobuf(query);
+
+            req_paths.push(path.clone());
+            requests.push(query_msg::proto::AbciQueryRequest { path, data });
+        }
+
         todo!()
     }
 }

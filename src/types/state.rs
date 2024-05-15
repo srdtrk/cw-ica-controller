@@ -29,8 +29,15 @@ pub const ALLOW_CHANNEL_OPEN_INIT: Item<bool> = Item::new("allow_channel_open_in
 /// Used to prevent relayers from closing channels. This right is reserved to the contract.
 pub const ALLOW_CHANNEL_CLOSE_INIT: Item<bool> = Item::new("allow_channel_close_init");
 
+/// QUERY is the item used to store the path of an IBC query until its SendPacket response is received.
+/// Once the response is received, it is moved to the PENDING_QUERIES map and deleted from this item.
+/// This is used to ensure that the correct sequence is recorded for the response.
+#[cfg(feature = "query")]
+pub const QUERY: Item<String> = Item::new("pending_query");
+
 /// PENDING_QUERIES is the map of pending queries.
 /// It maps channelID, and sequence to the query path.
+#[cfg(feature = "query")]
 pub const PENDING_QUERIES: Map<(&str, &str), &str> = Map::new("pending_queries");
 
 mod contract {

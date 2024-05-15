@@ -4,6 +4,38 @@ use cosmwasm_std::{Empty, QueryRequest};
 
 pub use response::*;
 
+/// The constants for the query_msg module.
+pub mod constants {
+    /// The placeholder for a stargate query path.
+    pub const STARGATE_PLACEHOLDER: &str = "stargate";
+    /// The query path for the Balance query.
+    pub const BALANCE: &str = "/cosmos.bank.v1beta1.Query/Balance";
+    /// The query path for the AllBalances query.
+    pub const ALL_BALANCES: &str = "/cosmos.bank.v1beta1.Query/AllBalances";
+    /// The query path for the DenomMetadata query.
+    pub const DENOM_METADATA: &str = "/cosmos.bank.v1beta1.Query/DenomMetadata";
+    /// The query path for the AllDenomMetadata query.
+    pub const ALL_DENOM_METADATA: &str = "/cosmos.bank.v1beta1.Query/DenomsMetadata";
+    /// The query path for the Supply query.
+    pub const SUPPLY: &str = "/cosmos.bank.v1beta1.Query/SupplyOf";
+
+    /// The query path for the Validator query.
+    #[cfg(feature = "staking")]
+    pub const VALIDATOR: &str = "/cosmos.staking.v1beta1.Query/Validator";
+    /// The query path for the AllValidators query.
+    #[cfg(feature = "staking")]
+    pub const ALL_VALIDATORS: &str = "/cosmos.staking.v1beta1.Query/Validators";
+    /// The query path for the Delegation query.
+    #[cfg(feature = "staking")]
+    pub const DELEGATION: &str = "/cosmos.staking.v1beta1.Query/Delegation";
+    /// The query path for the AllDelegations query.
+    #[cfg(feature = "staking")]
+    pub const ALL_DELEGATIONS: &str = "/cosmos.staking.v1beta1.Query/DelegatorDelegations";
+    /// The query path for the BondedDenom query.
+    #[cfg(feature = "staking")]
+    pub const STAKING_PARAMS: &str = "/cosmos.staking.v1beta1.Query/Params";
+}
+
 #[allow(clippy::module_name_repetitions)]
 mod response {
     use cosmwasm_schema::cw_serde;
@@ -133,17 +165,20 @@ mod convert_to_protobuf {
         cosmos::{bank::v1beta1::QuerySupplyOfRequest, base::query::v1beta1::PageRequest},
         prost::Message,
     };
+
     use cosmwasm_std::BankQuery;
+
+    use super::constants;
 
     pub fn bank(bank_query: BankQuery) -> (String, Vec<u8>, bool) {
         match bank_query {
             BankQuery::Balance { address, denom } => (
-                "/cosmos.bank.v1beta1.Query/Balance".to_string(),
+                constants::BALANCE.to_string(),
                 QueryBalanceRequest { address, denom }.encode_to_vec(),
                 false,
             ),
             BankQuery::AllBalances { address } => (
-                "/cosmos.bank.v1beta1.Query/AllBalances".to_string(),
+                constants::ALL_BALANCES.to_string(),
                 QueryAllBalancesRequest {
                     address,
                     pagination: None,
@@ -152,7 +187,7 @@ mod convert_to_protobuf {
                 false,
             ),
             BankQuery::DenomMetadata { denom } => (
-                "/cosmos.bank.v1beta1.Query/DenomMetadata".to_string(),
+                constants::DENOM_METADATA.to_string(),
                 QueryDenomMetadataRequest { denom }.encode_to_vec(),
                 false,
             ),
@@ -166,13 +201,13 @@ mod convert_to_protobuf {
                 });
 
                 (
-                    "/cosmos.bank.v1beta1.Query/DenomsMetadata".to_string(),
+                    constants::ALL_DENOM_METADATA.to_string(),
                     QueryDenomsMetadataRequest { pagination }.encode_to_vec(),
                     false,
                 )
             }
             BankQuery::Supply { denom } => (
-                "/cosmos.bank.v1beta1.Query/SupplyOf".to_string(),
+                constants::SUPPLY.to_string(),
                 QuerySupplyOfRequest { denom }.encode_to_vec(),
                 false,
             ),
@@ -189,7 +224,7 @@ mod convert_to_protobuf {
 
         match staking_query {
             cosmwasm_std::StakingQuery::Validator { address } => (
-                "/cosmos.staking.v1beta1.Query/Validator".to_string(),
+                constants::VALIDATOR.to_string(),
                 QueryValidatorRequest {
                     validator_addr: address,
                 }
@@ -197,7 +232,7 @@ mod convert_to_protobuf {
                 false,
             ),
             cosmwasm_std::StakingQuery::AllValidators {} => (
-                "/cosmos.staking.v1beta1.Query/Validators".to_string(),
+                constants::ALL_VALIDATORS.to_string(),
                 QueryValidatorsRequest {
                     status: String::default(),
                     pagination: None,
@@ -209,7 +244,7 @@ mod convert_to_protobuf {
                 delegator,
                 validator,
             } => (
-                "/cosmos.staking.v1beta1.Query/Delegation".to_string(),
+                constants::DELEGATION.to_string(),
                 QueryDelegationRequest {
                     delegator_addr: delegator,
                     validator_addr: validator,
@@ -218,7 +253,7 @@ mod convert_to_protobuf {
                 false,
             ),
             cosmwasm_std::StakingQuery::AllDelegations { delegator } => (
-                "/cosmos.staking.v1beta1.Query/DelegatorDelegations".to_string(),
+                constants::ALL_DELEGATIONS.to_string(),
                 QueryDelegatorDelegationsRequest {
                     delegator_addr: delegator,
                     pagination: None,
@@ -227,7 +262,7 @@ mod convert_to_protobuf {
                 false,
             ),
             cosmwasm_std::StakingQuery::BondedDenom {} => (
-                "/cosmos.staking.v1beta1.Query/Params".to_string(),
+                constants::STAKING_PARAMS.to_string(),
                 QueryParamsRequest::default().encode_to_vec(),
                 false,
             ),
@@ -240,7 +275,7 @@ mod convert_to_protobuf {
 pub mod from_protobuf {
     use std::str::FromStr;
 
-    use super::{BankQueryResponse, IcaQueryResponse};
+    use super::{constants, BankQueryResponse, IcaQueryResponse};
 
     use crate::types::ContractError;
 
@@ -335,7 +370,7 @@ pub mod from_protobuf {
 
     fn bank_response(path: &str, resp: &[u8]) -> Result<IcaQueryResponse, ContractError> {
         match path {
-            "/cosmos.bank.v1beta1.Query/Balance" => {
+            constants::BALANCE => {
                 let resp = QueryBalanceResponse::decode(resp)?;
                 Ok(IcaQueryResponse::Bank(BankQueryResponse::Balance(
                     BalanceResponse::new(
@@ -344,7 +379,7 @@ pub mod from_protobuf {
                     ),
                 )))
             }
-            "/cosmos.bank.v1beta1.Query/AllBalances" => {
+            constants::ALL_BALANCES => {
                 let resp = QueryAllBalancesResponse::decode(resp)?;
                 Ok(IcaQueryResponse::Bank(BankQueryResponse::AllBalances(
                     AllBalanceResponse::new(
@@ -355,7 +390,7 @@ pub mod from_protobuf {
                     ),
                 )))
             }
-            "/cosmos.bank.v1beta1.Query/DenomMetadata" => {
+            constants::DENOM_METADATA => {
                 let resp = QueryDenomMetadataResponse::decode(resp)?;
                 Ok(IcaQueryResponse::Bank(BankQueryResponse::DenomMetadata(
                     DenomMetadataResponse::new(
@@ -364,7 +399,7 @@ pub mod from_protobuf {
                     ),
                 )))
             }
-            "/cosmos.bank.v1beta1.Query/DenomsMetadata" => {
+            constants::ALL_DENOM_METADATA => {
                 let resp = QueryDenomsMetadataResponse::decode(resp)?;
                 Ok(IcaQueryResponse::Bank(BankQueryResponse::AllDenomMetadata(
                     AllDenomMetadataResponse::new(
@@ -377,7 +412,7 @@ pub mod from_protobuf {
                     ),
                 )))
             }
-            "/cosmos.bank.v1beta1.Query/SupplyOf" => {
+            constants::SUPPLY => {
                 let resp = QuerySupplyOfResponse::decode(resp)?;
                 Ok(IcaQueryResponse::Bank(BankQueryResponse::Supply(
                     SupplyResponse::new(
@@ -403,13 +438,13 @@ pub mod from_protobuf {
         use cosmwasm_std::{AllValidatorsResponse, BondedDenomResponse, ValidatorResponse};
 
         match path {
-            "/cosmos.staking.v1beta1.Query/Validator" => {
+            constants::VALIDATOR => {
                 let resp = QueryValidatorResponse::decode(resp)?;
                 Ok(IcaQueryResponse::Staking(StakingQueryResponse::Validator(
                     ValidatorResponse::new(resp.validator.map(convert_to_validator).transpose()?),
                 )))
             }
-            "/cosmos.staking.v1beta1.Query/Validators" => {
+            constants::ALL_VALIDATORS => {
                 let resp = QueryValidatorsResponse::decode(resp)?;
                 Ok(IcaQueryResponse::Staking(
                     StakingQueryResponse::AllValidators(AllValidatorsResponse::new(
@@ -420,7 +455,7 @@ pub mod from_protobuf {
                     )),
                 ))
             }
-            "/cosmos.staking.v1beta1.Query/Delegation" => {
+            constants::DELEGATION => {
                 let resp = QueryDelegationResponse::decode(resp)?;
                 Ok(IcaQueryResponse::Staking(StakingQueryResponse::Delegation(
                     IcaDelegationResponse {
@@ -441,7 +476,7 @@ pub mod from_protobuf {
                     },
                 )))
             }
-            "/cosmos.staking.v1beta1.Query/DelegatorDelegations" => {
+            constants::ALL_DELEGATIONS => {
                 let resp = QueryDelegatorDelegationsResponse::decode(resp)?;
                 Ok(IcaQueryResponse::Staking(
                     StakingQueryResponse::AllDelegations(IcaAllDelegationsResponse {
@@ -463,7 +498,7 @@ pub mod from_protobuf {
                     }),
                 ))
             }
-            "/cosmos.staking.v1beta1.Query/Params" => {
+            constants::STAKING_PARAMS => {
                 let resp = QueryParamsResponse::decode(resp)?;
                 Ok(IcaQueryResponse::Staking(
                     StakingQueryResponse::BondedDenom(BondedDenomResponse::new(
