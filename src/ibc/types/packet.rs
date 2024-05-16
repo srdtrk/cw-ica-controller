@@ -76,7 +76,7 @@ impl IcaPacketData {
     ///
     /// The supported [`CosmosMsg`]s for [`TxEncoding::Protobuf`] are listed in [`convert_to_proto_any`].
     pub fn from_cosmos_msgs(
-        #[cfg(all(feature = "query", feature = "export"))] storage: &mut dyn cosmwasm_std::Storage,
+        #[cfg(feature = "export")] storage: &mut dyn cosmwasm_std::Storage,
         messages: Vec<CosmosMsg>,
         #[cfg(feature = "query")] queries: Option<
             Vec<cosmwasm_std::QueryRequest<cosmwasm_std::Empty>>,

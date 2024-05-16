@@ -135,7 +135,6 @@ mod ibc_packet_ack {
                 ica_acknowledgement: AcknowledgementData::Error(err),
                 original_packet: packet,
                 relayer,
-                #[cfg(feature = "query")]
                 query_result: None,
             }
             .into_cosmos_msg(contract_addr)?;
