@@ -263,19 +263,29 @@ mod execute {
 mod reply {
     use cosmwasm_std::SubMsgResult;
 
-    use super::{ContractError, DepsMut, Env, Response};
+    use super::{state, ContractError, DepsMut, Env, Response};
 
     /// Handles the reply to the query packet.
     #[allow(clippy::needless_pass_by_value)]
     pub fn send_query_packet(
-        _deps: DepsMut,
+        deps: DepsMut,
         _env: Env,
         result: SubMsgResult,
     ) -> Result<Response, ContractError> {
         match result {
-            SubMsgResult::Ok(_data) => {
-                // Handle the response data
-                todo!()
+            SubMsgResult::Ok(resp) => {
+                let sequence = anybuf::Bufany::deserialize(&resp.data.unwrap_or_default())
+                    .map_err(|_| ContractError::BufanyError)?
+                    .uint64(1)
+                    .ok_or(ContractError::BufanyError)?;
+
+                let channel_id = state::STATE.load(deps.storage)?.get_ica_info()?.channel_id;
+                let query_paths = state::QUERY.load(deps.storage)?;
+                state::QUERY.remove(deps.storage);
+
+                state::PENDING_QUERIES.save(deps.storage, (channel_id, sequence), &query_paths)?;
+
+                Ok(Response::default())
             }
             SubMsgResult::Err(err) => unreachable!("query packet failed: {err}"),
         }

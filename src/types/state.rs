@@ -7,7 +7,7 @@ use cw_storage_plus::Item;
 use super::{msg::options::ChannelOpenInitOptions, ContractError};
 
 #[allow(clippy::module_name_repetitions)]
-pub use channel::{State as ChannelState, Status as ChannelStatus};
+pub use channel::{ChannelState, ChannelStatus};
 #[allow(clippy::module_name_repetitions)]
 pub use contract::State as ContractState;
 
@@ -38,7 +38,7 @@ pub const QUERY: Item<Vec<String>> = Item::new("pending_query");
 /// `PENDING_QUERIES` is the map of pending queries.
 /// It maps channelID, and sequence to the query path.
 #[cfg(feature = "query")]
-pub const PENDING_QUERIES: cw_storage_plus::Map<(&str, &str), &str> =
+pub const PENDING_QUERIES: cw_storage_plus::Map<(String, u64), Vec<String>> =
     cw_storage_plus::Map::new("pending_queries");
 
 mod contract {
@@ -123,6 +123,7 @@ mod contract {
     }
 }
 
+#[allow(clippy::module_name_repetitions)]
 mod channel {
     use cosmwasm_std::IbcOrder;
 
@@ -130,7 +131,7 @@ mod channel {
 
     /// Status is the status of an IBC channel.
     #[cw_serde]
-    pub enum Status {
+    pub enum ChannelStatus {
         /// Uninitialized is the default state of the channel.
         #[serde(rename = "STATE_UNINITIALIZED_UNSPECIFIED")]
         Uninitialized,
@@ -159,32 +160,32 @@ mod channel {
     /// State is the state of the IBC application's channel.
     /// This application only supports one channel.
     #[cw_serde]
-    pub struct State {
+    pub struct ChannelState {
         /// The IBC channel, as defined by cosmwasm.
         pub channel: IbcChannel,
         /// The status of the channel.
-        pub channel_status: Status,
+        pub channel_status: ChannelStatus,
     }
 
-    impl State {
+    impl ChannelState {
         /// Creates a new [`ChannelState`]
         #[must_use]
         pub const fn new_open_channel(channel: IbcChannel) -> Self {
             Self {
                 channel,
-                channel_status: Status::Open,
+                channel_status: ChannelStatus::Open,
             }
         }
 
         /// Checks if the channel is open
         #[must_use]
         pub const fn is_open(&self) -> bool {
-            matches!(self.channel_status, Status::Open)
+            matches!(self.channel_status, ChannelStatus::Open)
         }
 
         /// Closes the channel
         pub fn close(&mut self) {
-            self.channel_status = Status::Closed;
+            self.channel_status = ChannelStatus::Closed;
         }
 
         /// Checks if the channel is [`IbcOrder::Ordered`]
@@ -194,7 +195,7 @@ mod channel {
         }
     }
 
-    impl ToString for Status {
+    impl ToString for ChannelStatus {
         fn to_string(&self) -> String {
             match self {
                 Self::Uninitialized => "STATE_UNINITIALIZED_UNSPECIFIED".to_string(),

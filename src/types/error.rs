@@ -1,8 +1,5 @@
 //! This module defines [`ContractError`].
 
-use std::string::FromUtf8Error;
-
-use cosmwasm_std::StdError;
 use thiserror::Error;
 
 /// `ContractError` is the error type returned by contract's functions.
@@ -12,10 +9,10 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum ContractError {
     #[error("{0}")]
-    Std(#[from] StdError),
+    Std(#[from] cosmwasm_std::StdError),
 
     #[error("FromUtf8Error: {0}")]
-    JsonSerde(#[from] FromUtf8Error),
+    JsonSerde(#[from] std::string::FromUtf8Error),
 
     #[error("json_serde_wasm serialization error: {0}")]
     JsonWasmSerialize(#[from] serde_json_wasm::ser::Error),
@@ -103,4 +100,9 @@ pub enum ContractError {
 
     #[error("unknown reply id: {0}")]
     UnknownReplyId(u64),
+
+    // TODO: derive this error from the `anyhow` crate after
+    // https://github.com/noislabs/anybuf/issues/20 is resolved
+    #[error("anybuf decoding error")]
+    BufanyError,
 }
