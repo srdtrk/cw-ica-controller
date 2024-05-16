@@ -14,6 +14,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anybuf"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5c1a43b7dc14f396c5d1ac0eaea10f33cb40a2b46751d0869864d6d5abed20db"
+
+[[package]]
 name = "anyhow"
 version = "1.0.81"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -349,6 +355,7 @@ dependencies = [
 name = "cw-ica-controller"
 version = "0.6.0"
 dependencies = [
+ "anybuf",
  "base64 0.13.1",
  "cosmos-sdk-proto 0.21.1",
  "cosmwasm-schema",
