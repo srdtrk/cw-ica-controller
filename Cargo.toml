@@ -28,7 +28,7 @@ overflow-checks = true
 [features]
 # disable export feature to disable all instantiate/execute/query exports
 default = ["export", "staking", "query"]
-export = []
+export = ["query", "staking"]
 staking = ["cosmwasm-std/staking"]
 query = ["dep:prost"]
 
