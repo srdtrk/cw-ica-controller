@@ -1,6 +1,6 @@
 //! This module handles the execution logic of the contract.
 
-use cosmwasm_std::entry_point;
+use cosmwasm_std::{entry_point, Reply};
 use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
 use crate::ibc::types::stargate::channel::new_ica_channel_open_init_cosmos_msg;
@@ -66,7 +66,6 @@ pub fn execute(
         }
         ExecuteMsg::SendCosmosMsgs {
             messages,
-            #[cfg(feature = "query")]
             queries,
             packet_memo,
             timeout_seconds,
@@ -75,12 +74,21 @@ pub fn execute(
             env,
             info,
             messages,
-            #[cfg(feature = "query")]
             queries,
             packet_memo,
             timeout_seconds,
         ),
         ExecuteMsg::UpdateOwnership(action) => execute::update_ownership(deps, env, info, action),
+    }
+}
+
+/// Handles the replies to the submessages.
+#[entry_point]
+#[allow(clippy::pedantic)]
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
+    match msg.id {
+        keys::reply_ids::SEND_QUERY_PACKET => reply::send_query_packet(deps, env, msg.result),
+        _ => Err(ContractError::UnknownReplyId(msg.id)),
     }
 }
 
@@ -110,16 +118,15 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 }
 
 mod execute {
-    use cosmwasm_std::{CosmosMsg, IbcMsg};
+    use cosmwasm_std::{CosmosMsg, IbcMsg, SubMsg};
 
     use crate::{ibc::types::packet::IcaPacketData, types::msg::options::ChannelOpenInitOptions};
 
     use super::{
-        new_ica_channel_open_init_cosmos_msg, state, ContractError, DepsMut, Env, MessageInfo,
-        Response,
+        keys, new_ica_channel_open_init_cosmos_msg, state, ContractError, DepsMut, Env,
+        MessageInfo, Response,
     };
 
-    #[cfg(feature = "query")]
     use cosmwasm_std::{Empty, QueryRequest};
 
     /// Submits a stargate `MsgChannelOpenInit` to the chain.
@@ -186,7 +193,7 @@ mod execute {
         env: Env,
         info: MessageInfo,
         messages: Vec<CosmosMsg>,
-        #[cfg(feature = "query")] queries: Option<Vec<QueryRequest<Empty>>>,
+        queries: Option<Vec<QueryRequest<Empty>>>,
         packet_memo: Option<String>,
         timeout_seconds: Option<u64>,
     ) -> Result<Response, ContractError> {
@@ -194,12 +201,11 @@ mod execute {
 
         let contract_state = state::STATE.load(deps.storage)?;
         let ica_info = contract_state.get_ica_info()?;
+        let uses_query = queries.is_some();
 
         let ica_packet = IcaPacketData::from_cosmos_msgs(
-            #[cfg(feature = "query")]
             deps.storage,
             messages,
-            #[cfg(feature = "query")]
             queries,
             &ica_info.encoding,
             packet_memo,
@@ -207,7 +213,13 @@ mod execute {
         )?;
         let send_packet_msg = ica_packet.to_ibc_msg(&env, ica_info.channel_id, timeout_seconds)?;
 
-        Ok(Response::default().add_message(send_packet_msg))
+        let send_packet_submsg = if uses_query {
+            SubMsg::reply_on_success(send_packet_msg, keys::reply_ids::SEND_QUERY_PACKET)
+        } else {
+            SubMsg::new(send_packet_msg)
+        };
+
+        Ok(Response::default().add_submessage(send_packet_submsg))
     }
 
     /// Update the ownership of the contract.
@@ -245,6 +257,28 @@ mod execute {
         state::STATE.save(deps.storage, &contract_state)?;
 
         Ok(Response::default())
+    }
+}
+
+mod reply {
+    use cosmwasm_std::SubMsgResult;
+
+    use super::{ContractError, DepsMut, Env, Response};
+
+    /// Handles the reply to the query packet.
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn send_query_packet(
+        _deps: DepsMut,
+        _env: Env,
+        result: SubMsgResult,
+    ) -> Result<Response, ContractError> {
+        match result {
+            SubMsgResult::Ok(_data) => {
+                // Handle the response data
+                todo!()
+            }
+            SubMsgResult::Err(err) => unreachable!("query packet failed: {err}"),
+        }
     }
 }
 

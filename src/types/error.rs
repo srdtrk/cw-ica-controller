@@ -100,4 +100,7 @@ pub enum ContractError {
 
     #[error("empty response: {0}")]
     EmptyResponse(String),
+
+    #[error("unknown reply id: {0}")]
+    UnknownReplyId(u64),
 }
