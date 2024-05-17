@@ -31,10 +31,29 @@ pub fn query_to_protobuf(query: QueryRequest<Empty>) -> (String, Vec<u8>, bool) 
 #[cfg(feature = "export")]
 #[must_use]
 pub fn result_from_response(
-    _paths: &[(String, bool)],
-    _resp: &proto::MsgModuleQuerySafeResponse,
+    paths: Vec<(String, bool)>,
+    resp_msg: &proto::MsgModuleQuerySafeResponse,
 ) -> IcaQueryResult {
-    todo!()
+    if paths.len() != resp_msg.responses.len() {
+        return IcaQueryResult::Error(format!(
+            "expected {} responses, got {}",
+            paths.len(),
+            resp_msg.responses.len()
+        ));
+    }
+
+    paths
+        .into_iter()
+        .zip(resp_msg.responses.iter())
+        .map(|((path, is_stargate), resp)| from_protobuf::response(&path, resp, is_stargate))
+        .collect::<Result<_, _>>()
+        .map_or_else(
+            |e| IcaQueryResult::Error(e.to_string()),
+            |responses| IcaQueryResult::Success {
+                height: resp_msg.height,
+                responses,
+            },
+        )
 }
 
 /// The constants for the `query_msg` module.
@@ -356,22 +375,20 @@ pub mod from_protobuf {
     /// Returns an error if the response bytes cannot be decoded.
     pub fn response(
         path: &str,
-        resp: Vec<u8>,
+        resp: &[u8],
         is_stargate: bool,
     ) -> Result<IcaQueryResponse, ContractError> {
         if is_stargate {
             return Ok(IcaQueryResponse::Stargate {
-                data: Binary(resp),
+                data: Binary(resp.to_vec()),
                 path: path.to_string(),
             });
         }
 
         match path {
-            x if x.starts_with("/cosmos.bank.v1beta1.Query/") => bank_response(path, resp.as_ref()),
+            x if x.starts_with("/cosmos.bank.v1beta1.Query/") => bank_response(path, resp),
             #[cfg(feature = "staking")]
-            x if x.starts_with("/cosmos.staking.v1beta1.Query/") => {
-                staking_response(path, resp.as_ref())
-            }
+            x if x.starts_with("/cosmos.staking.v1beta1.Query/") => staking_response(path, resp),
             _ => Err(ContractError::UnknownDataType(path.to_string())),
         }
     }

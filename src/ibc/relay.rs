@@ -105,7 +105,7 @@ mod ibc_packet_ack {
                 |paths| -> Result<query_msg::IcaQueryResult, ContractError> {
                     let resp_msg =
                         ica_acknowledgement.decode_module_query_safe_resp_last_index()?;
-                    Ok(query_msg::result_from_response(&paths, &resp_msg))
+                    Ok(query_msg::result_from_response(paths, &resp_msg))
                 },
             )
             .transpose()?;
