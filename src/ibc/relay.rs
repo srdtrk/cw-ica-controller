@@ -97,18 +97,27 @@ mod ibc_packet_ack {
         relayer: Addr,
         res: Binary,
     ) -> Result<IbcBasicResponse, ContractError> {
-        let state = state::STATE.load(deps.storage)?;
         let success_event = events::packet_ack::success(&packet, &res);
         let ica_acknowledgement = AcknowledgementData::Result(res);
+        let query_result = state::PENDING_QUERIES
+            .may_load(deps.storage, (&packet.src.channel_id, packet.sequence))?
+            .map(
+                |paths| -> Result<query_msg::IcaQueryResult, ContractError> {
+                    let resp_msg =
+                        ica_acknowledgement.decode_module_query_safe_resp_last_index()?;
+                    Ok(query_msg::result_from_response(&paths, &resp_msg))
+                },
+            )
+            .transpose()?;
 
-        // TODO: Handle the query result.
+        state::PENDING_QUERIES.remove(deps.storage, (&packet.src.channel_id, packet.sequence));
 
-        if let Some(contract_addr) = state.callback_address {
+        if let Some(contract_addr) = state::STATE.load(deps.storage)?.callback_address {
             let callback_msg = IcaControllerCallbackMsg::OnAcknowledgementPacketCallback {
                 ica_acknowledgement,
                 original_packet: packet,
                 relayer,
-                query_result: None,
+                query_result,
             }
             .into_cosmos_msg(contract_addr)?;
 

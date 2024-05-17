@@ -217,18 +217,6 @@ pub mod acknowledgement {
     }
 
     impl Data {
-        /// Returns true if the acknowledgement is a result.
-        #[must_use]
-        pub const fn is_result(&self) -> bool {
-            matches!(self, Self::Result(_))
-        }
-
-        /// Returns true if the acknowledgement is an error.
-        #[must_use]
-        pub const fn is_error(&self) -> bool {
-            matches!(self, Self::Error(_))
-        }
-
         /// `to_tx_msg_data` converts the acknowledgement to a [`TxMsgData`].
         ///
         /// # Errors
@@ -251,6 +239,25 @@ pub mod acknowledgement {
         ) -> Result<query_msg::proto::MsgModuleQuerySafeResponse, ContractError> {
             let tx_msg_data = self.to_tx_msg_data()?;
             let msg_resp = tx_msg_data.msg_responses.get(index).ok_or_else(|| {
+                StdError::generic_err("no MsgData found at the given index".to_string())
+            })?;
+
+            Ok(query_msg::proto::MsgModuleQuerySafeResponse::decode(
+                msg_resp.value.as_slice(),
+            )?)
+        }
+
+        /// `decode_module_query_safe_resp` decodes the acknowledgement at the last index to a [`query_msg::proto::MsgModuleQuerySafeResponse`].
+        /// This is a convenience function since the contract only sends one query at the last index.
+        ///
+        /// # Errors
+        /// Returns an error if the acknowledgement is an error or if the data at the index cannot be decoded.
+        #[cfg(feature = "export")]
+        pub fn decode_module_query_safe_resp_last_index(
+            &self,
+        ) -> Result<query_msg::proto::MsgModuleQuerySafeResponse, ContractError> {
+            let tx_msg_data = self.to_tx_msg_data()?;
+            let msg_resp = tx_msg_data.msg_responses.last().ok_or_else(|| {
                 StdError::generic_err("no MsgData found at the given index".to_string())
             })?;
 

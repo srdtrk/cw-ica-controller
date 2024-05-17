@@ -27,6 +27,16 @@ pub fn query_to_protobuf(query: QueryRequest<Empty>) -> (String, Vec<u8>, bool) 
     }
 }
 
+/// Converts [`proto::MsgModuleQuerySafeResponse`] to [`IcaQueryResult`] using the storage.
+#[cfg(feature = "export")]
+#[must_use]
+pub fn result_from_response(
+    _paths: &[(String, bool)],
+    _resp: &proto::MsgModuleQuerySafeResponse,
+) -> IcaQueryResult {
+    todo!()
+}
+
 /// The constants for the `query_msg` module.
 pub mod constants {
     /// The query path for the Balance query.
