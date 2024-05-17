@@ -99,12 +99,13 @@ mod ibc_packet_ack {
 
         let success_event = events::packet_ack::success(&packet, &res);
 
+        // TODO: Handle the query result.
+
         if let Some(contract_addr) = state.callback_address {
             let callback_msg = IcaControllerCallbackMsg::OnAcknowledgementPacketCallback {
                 ica_acknowledgement: AcknowledgementData::Result(res),
                 original_packet: packet,
                 relayer,
-                #[cfg(feature = "query")]
                 query_result: None,
             }
             .into_cosmos_msg(contract_addr)?;
@@ -130,6 +131,8 @@ mod ibc_packet_ack {
 
         let error_event = events::packet_ack::error(&packet, &err);
 
+        // TODO: Handle the query result.
+
         if let Some(contract_addr) = state.callback_address {
             let callback_msg = IcaControllerCallbackMsg::OnAcknowledgementPacketCallback {
                 ica_acknowledgement: AcknowledgementData::Error(err),
@@ -151,7 +154,7 @@ mod ibc_packet_ack {
 mod ibc_packet_timeout {
     use cosmwasm_std::{Addr, IbcPacket};
 
-    use crate::types::{callbacks::IcaControllerCallbackMsg, state::STATE};
+    use crate::types::{callbacks::IcaControllerCallbackMsg, state};
 
     use super::{ContractError, DepsMut, IbcBasicResponse};
 
@@ -162,7 +165,9 @@ mod ibc_packet_timeout {
         packet: IbcPacket,
         relayer: Addr,
     ) -> Result<IbcBasicResponse, ContractError> {
-        let state = STATE.load(deps.storage)?;
+        let state = state::STATE.load(deps.storage)?;
+
+        state::PENDING_QUERIES.remove(deps.storage, (&packet.src.channel_id, packet.sequence));
 
         if let Some(contract_addr) = state.callback_address {
             let callback_msg = IcaControllerCallbackMsg::OnTimeoutPacketCallback {

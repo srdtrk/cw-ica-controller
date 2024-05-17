@@ -38,7 +38,7 @@ pub const QUERY: Item<Vec<String>> = Item::new("pending_query");
 /// `PENDING_QUERIES` is the map of pending queries.
 /// It maps channelID, and sequence to the query path.
 #[cfg(feature = "query")]
-pub const PENDING_QUERIES: cw_storage_plus::Map<(String, u64), Vec<String>> =
+pub const PENDING_QUERIES: cw_storage_plus::Map<(&str, u64), Vec<String>> =
     cw_storage_plus::Map::new("pending_queries");
 
 mod contract {

@@ -282,7 +282,7 @@ mod reply {
                 let query_paths = state::QUERY.load(deps.storage)?;
 
                 state::QUERY.remove(deps.storage);
-                state::PENDING_QUERIES.save(deps.storage, (channel_id, sequence), &query_paths)?;
+                state::PENDING_QUERIES.save(deps.storage, (&channel_id, sequence), &query_paths)?;
 
                 Ok(Response::default())
             }
