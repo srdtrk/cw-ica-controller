@@ -4,6 +4,29 @@ use cosmwasm_std::{Empty, QueryRequest};
 
 pub use response::*;
 
+/// Converts a [`QueryRequest`] to a gRPC method path, protobuf bytes, and a flag indicating if the query is stargate.
+///
+/// # Panics
+///
+/// Panics if the query type is not supported.
+#[must_use]
+pub fn query_to_protobuf(query: QueryRequest<Empty>) -> (String, Vec<u8>, bool) {
+    match query {
+        QueryRequest::Bank(bank_query) => convert_to_protobuf::bank(bank_query),
+        QueryRequest::Stargate { path, data } => (path, data.0, true),
+        QueryRequest::Wasm(_) => panic!("wasmd queries are not marked module safe (yet)"),
+        QueryRequest::Ibc(_) => panic!("ibc-go queries are not marked module safe (yet)"),
+        QueryRequest::Custom(_) => panic!("custom queries are not supported"),
+        #[cfg(feature = "staking")]
+        QueryRequest::Staking(staking_query) => convert_to_protobuf::staking(staking_query),
+        #[cfg(feature = "staking")]
+        QueryRequest::Distribution(_) => {
+            panic!("distribution queries are not marked module safe (yet)")
+        }
+        _ => panic!("Unsupported QueryRequest"),
+    }
+}
+
 /// The constants for the `query_msg` module.
 pub mod constants {
     /// The query path for the Balance query.
@@ -128,29 +151,6 @@ mod response {
         pub validator: String,
         /// Delegation amount.
         pub amount: cosmwasm_std::Coin,
-    }
-}
-
-/// Converts a [`QueryRequest`] to a gRPC method path, protobuf bytes, and a flag indicating if the query is stargate.
-///
-/// # Panics
-///
-/// Panics if the query type is not supported.
-#[must_use]
-pub fn query_to_protobuf(query: QueryRequest<Empty>) -> (String, Vec<u8>, bool) {
-    match query {
-        QueryRequest::Bank(bank_query) => convert_to_protobuf::bank(bank_query),
-        QueryRequest::Stargate { path, data } => (path, data.0, true),
-        QueryRequest::Wasm(_) => panic!("wasmd queries are not marked module safe (yet)"),
-        QueryRequest::Ibc(_) => panic!("ibc-go queries are not marked module safe (yet)"),
-        QueryRequest::Custom(_) => panic!("custom queries are not supported"),
-        #[cfg(feature = "staking")]
-        QueryRequest::Staking(staking_query) => convert_to_protobuf::staking(staking_query),
-        #[cfg(feature = "staking")]
-        QueryRequest::Distribution(_) => {
-            panic!("distribution queries are not marked module safe (yet)")
-        }
-        _ => panic!("Unsupported QueryRequest"),
     }
 }
 

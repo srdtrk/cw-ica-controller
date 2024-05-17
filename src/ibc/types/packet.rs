@@ -75,73 +75,93 @@ impl IcaPacketData {
     /// Panics if the [`CosmosMsg`] is not supported.
     ///
     /// The supported [`CosmosMsg`]s for [`TxEncoding::Protobuf`] are listed in [`convert_to_proto_any`].
+    #[cfg(feature = "query")]
     pub fn from_cosmos_msgs(
         #[cfg(feature = "export")] storage: &mut dyn cosmwasm_std::Storage,
         messages: Vec<CosmosMsg>,
-        #[cfg(feature = "query")] queries: Option<
-            Vec<cosmwasm_std::QueryRequest<cosmwasm_std::Empty>>,
-        >,
+        queries: Option<Vec<cosmwasm_std::QueryRequest<cosmwasm_std::Empty>>>,
         encoding: &TxEncoding,
         memo: Option<String>,
         ica_address: &str,
     ) -> StdResult<Self> {
         match encoding {
             TxEncoding::Protobuf => {
-                #[cfg(not(feature = "query"))]
-                {
-                    let proto_anys = messages
-                        .into_iter()
-                        .map(|msg| -> StdResult<cosmos_sdk_proto::Any> {
-                            convert_to_proto_any(msg, ica_address.to_string())
-                                .map_err(|e| StdError::generic_err(e.to_string()))
-                        })
-                        .collect::<StdResult<Vec<cosmos_sdk_proto::Any>>>()?;
+                use crate::types::query_msg;
 
-                    Ok(Self::from_proto_anys(proto_anys, memo))
+                let mut proto_anys = messages
+                    .into_iter()
+                    .map(|msg| -> StdResult<cosmos_sdk_proto::Any> {
+                        convert_to_proto_any(msg, ica_address.to_string())
+                            .map_err(|e| StdError::generic_err(e.to_string()))
+                    })
+                    .collect::<StdResult<Vec<cosmos_sdk_proto::Any>>>()?;
+
+                if let Some(queries) = queries {
+                    let (abci_queries, _paths): (
+                        Vec<query_msg::proto::AbciQueryRequest>,
+                        Vec<(String, bool)>,
+                    ) = queries.into_iter().fold((vec![], vec![]), |mut acc, msg| {
+                        let (path, data, is_stargate) = query_msg::query_to_protobuf(msg);
+
+                        acc.1.push((path.clone(), is_stargate));
+                        acc.0
+                            .push(query_msg::proto::AbciQueryRequest { path, data });
+
+                        acc
+                    });
+
+                    #[cfg(feature = "export")]
+                    #[allow(clippy::used_underscore_binding)]
+                    crate::types::state::QUERY.save(storage, &_paths)?;
+
+                    let query_msg = query_msg::proto::MsgModuleQuerySafe {
+                        signer: ica_address.to_string(),
+                        requests: abci_queries,
+                    };
+
+                    proto_anys.push(cosmos_sdk_proto::Any::from_msg(&query_msg).map_err(|e| {
+                        StdError::generic_err(format!("failed to convert query msg: {e}"))
+                    })?);
                 }
 
-                #[cfg(feature = "query")]
-                {
-                    use crate::types::query_msg;
+                Ok(Self::from_proto_anys(proto_anys, memo))
+            }
+            TxEncoding::Proto3Json => StdResult::Err(StdError::generic_err(
+                "unsupported encoding: proto3json".to_string(),
+            )),
+        }
+    }
 
-                    let mut proto_anys = messages
-                        .into_iter()
-                        .map(|msg| -> StdResult<cosmos_sdk_proto::Any> {
-                            convert_to_proto_any(msg, ica_address.to_string())
-                                .map_err(|e| StdError::generic_err(e.to_string()))
-                        })
-                        .collect::<StdResult<Vec<cosmos_sdk_proto::Any>>>()?;
+    /// Creates a new [`IcaPacketData`] from a list of [`CosmosMsg`] messages
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the [`CosmosMsg`] cannot be serialized to [`cosmos_sdk_proto::Any`]
+    /// when using the [`TxEncoding::Protobuf`] encoding.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the [`CosmosMsg`] is not supported.
+    ///
+    /// The supported [`CosmosMsg`]s for [`TxEncoding::Protobuf`] are listed in [`convert_to_proto_any`].
+    #[cfg(not(feature = "query"))]
+    pub fn from_cosmos_msgs(
+        messages: Vec<CosmosMsg>,
+        encoding: &TxEncoding,
+        memo: Option<String>,
+        ica_address: &str,
+    ) -> StdResult<Self> {
+        match encoding {
+            TxEncoding::Protobuf => {
+                let proto_anys = messages
+                    .into_iter()
+                    .map(|msg| -> StdResult<cosmos_sdk_proto::Any> {
+                        convert_to_proto_any(msg, ica_address.to_string())
+                            .map_err(|e| StdError::generic_err(e.to_string()))
+                    })
+                    .collect::<StdResult<Vec<cosmos_sdk_proto::Any>>>()?;
 
-                    if let Some(queries) = queries {
-                        let (abci_queries, _paths): (
-                            Vec<query_msg::proto::AbciQueryRequest>,
-                            Vec<(String, bool)>,
-                        ) = queries.into_iter().fold((vec![], vec![]), |mut acc, msg| {
-                            let (path, data, is_stargate) = query_msg::query_to_protobuf(msg);
-
-                            acc.1.push((path.clone(), is_stargate));
-                            acc.0
-                                .push(query_msg::proto::AbciQueryRequest { path, data });
-
-                            acc
-                        });
-
-                        #[cfg(feature = "export")]
-                        #[allow(clippy::used_underscore_binding)]
-                        crate::types::state::QUERY.save(storage, &_paths)?;
-
-                        let query_msg = query_msg::proto::MsgModuleQuerySafe {
-                            signer: ica_address.to_string(),
-                            requests: abci_queries,
-                        };
-
-                        proto_anys.push(cosmos_sdk_proto::Any::from_msg(&query_msg).map_err(
-                            |e| StdError::generic_err(format!("failed to convert query msg: {e}")),
-                        )?);
-                    }
-
-                    Ok(Self::from_proto_anys(proto_anys, memo))
-                }
+                Ok(Self::from_proto_anys(proto_anys, memo))
             }
             TxEncoding::Proto3Json => StdResult::Err(StdError::generic_err(
                 "unsupported encoding: proto3json".to_string(),
