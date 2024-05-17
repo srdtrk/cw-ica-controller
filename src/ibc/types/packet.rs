@@ -182,7 +182,15 @@ impl IcaPacketData {
 pub mod acknowledgement {
     use cosmwasm_std::Binary;
 
-    use super::cw_serde;
+    use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxMsgData;
+    use prost::Message;
+
+    use crate::types::ContractError;
+
+    #[cfg(feature = "query")]
+    use crate::types::query_msg;
+
+    use super::{cw_serde, StdError};
 
     /// `Data` is the response to an ibc packet. It either contains a result or an error.
     #[cw_serde]
@@ -192,6 +200,50 @@ pub mod acknowledgement {
         /// Error is the error message of a failed transaction.
         /// It is a string of the error message (not base64 encoded).
         Error(String),
+    }
+
+    impl Data {
+        /// Returns true if the acknowledgement is a result.
+        #[must_use]
+        pub const fn is_result(&self) -> bool {
+            matches!(self, Self::Result(_))
+        }
+
+        /// Returns true if the acknowledgement is an error.
+        #[must_use]
+        pub const fn is_error(&self) -> bool {
+            matches!(self, Self::Error(_))
+        }
+
+        /// `to_tx_msg_data` converts the acknowledgement to a [`TxMsgData`].
+        ///
+        /// # Errors
+        /// Returns an error if the acknowledgement is an error or if the data cannot be decoded.
+        pub fn to_tx_msg_data(&self) -> Result<TxMsgData, ContractError> {
+            match self {
+                Self::Result(data) => Ok(TxMsgData::decode(data.as_slice())?),
+                Self::Error(err) => Err(StdError::generic_err(err))?,
+            }
+        }
+
+        /// `decode_module_query_safe_resp` decodes the acknowledgement at the given index to a [`query_msg::proto::MsgModuleQuerySafeResponse`].
+        ///
+        /// # Errors
+        /// Returns an error if the acknowledgement is an error or if the data at the index cannot be decoded.
+        #[cfg(feature = "query")]
+        pub fn decode_module_query_safe_resp(
+            &self,
+            index: usize,
+        ) -> Result<query_msg::proto::MsgModuleQuerySafeResponse, ContractError> {
+            let tx_msg_data = self.to_tx_msg_data()?;
+            let msg_resp = tx_msg_data.msg_responses.get(index).ok_or_else(|| {
+                StdError::generic_err("no MsgData found at the given index".to_string())
+            })?;
+
+            Ok(query_msg::proto::MsgModuleQuerySafeResponse::decode(
+                msg_resp.value.as_slice(),
+            )?)
+        }
     }
 }
 

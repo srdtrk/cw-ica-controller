@@ -86,3 +86,6 @@ impl IcaControllerCallbackMsg {
 enum ReceiverExecuteMsg {
     ReceiveIcaCallback(IcaControllerCallbackMsg),
 }
+
+// TODO: Add tests for backwards compatibility with the old callbacks.rs file
+// which doesn't have the query_result field.
