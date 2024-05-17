@@ -33,12 +33,12 @@ pub const ALLOW_CHANNEL_CLOSE_INIT: Item<bool> = Item::new("allow_channel_close_
 /// Once the response is received, it is moved to the [`PENDING_QUERIES`] map and deleted from this item.
 /// This is used to ensure that the correct sequence is recorded for the response.
 #[cfg(feature = "query")]
-pub const QUERY: Item<Vec<String>> = Item::new("pending_query");
+pub const QUERY: Item<Vec<(String, bool)>> = Item::new("pending_query");
 
 /// `PENDING_QUERIES` is the map of pending queries.
 /// It maps channelID, and sequence to the query path.
 #[cfg(feature = "query")]
-pub const PENDING_QUERIES: cw_storage_plus::Map<(&str, u64), Vec<String>> =
+pub const PENDING_QUERIES: cw_storage_plus::Map<(&str, u64), Vec<(String, bool)>> =
     cw_storage_plus::Map::new("pending_queries");
 
 mod contract {

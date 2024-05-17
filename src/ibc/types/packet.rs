@@ -115,17 +115,11 @@ impl IcaPacketData {
                     if let Some(queries) = queries {
                         let (abci_queries, _paths): (
                             Vec<query_msg::proto::AbciQueryRequest>,
-                            Vec<String>,
+                            Vec<(String, bool)>,
                         ) = queries.into_iter().fold((vec![], vec![]), |mut acc, msg| {
                             let (path, data, is_stargate) = query_msg::query_to_protobuf(msg);
 
-                            let processed_path = if is_stargate {
-                                query_msg::constants::STARGATE_PLACEHOLDER.to_string()
-                            } else {
-                                path.clone()
-                            };
-
-                            acc.1.push(processed_path);
+                            acc.1.push((path.clone(), is_stargate));
                             acc.0
                                 .push(query_msg::proto::AbciQueryRequest { path, data });
 

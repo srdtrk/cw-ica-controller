@@ -6,8 +6,6 @@ pub use response::*;
 
 /// The constants for the `query_msg` module.
 pub mod constants {
-    /// The placeholder for a stargate query path.
-    pub const STARGATE_PLACEHOLDER: &str = "stargate";
     /// The query path for the Balance query.
     pub const BALANCE: &str = "/cosmos.bank.v1beta1.Query/Balance";
     /// The query path for the `AllBalances` query.
