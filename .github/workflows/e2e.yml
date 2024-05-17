@@ -8,6 +8,8 @@ on:
       - '**.go'
       - '**.toml'
       - '**.lock'
+      - '**.mod'
+      - '**.sum'
       - '.github/workflows/e2e.yml'
 permissions:
   contents: read
