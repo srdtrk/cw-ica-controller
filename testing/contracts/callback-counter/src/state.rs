@@ -7,34 +7,35 @@ pub const CALLBACK_COUNTER: Item<CallbackCounter> = Item::new("callback_counter"
 
 mod contract {
     use cosmwasm_schema::cw_serde;
+    use cw_ica_controller::types::callbacks::IcaControllerCallbackMsg;
 
     /// CallbackCounter tracks the number of callbacks in store.
     #[cw_serde]
     #[derive(Default)]
     pub struct CallbackCounter {
-        /// The number of successful callbacks.
-        pub success: u32,
-        /// The number of erroneous callbacks.
-        pub error: u32,
-        /// The number of timeout callbacks.
-        /// The channel is closed after a timeout due to the semantics of ordered channels.
-        pub timeout: u32,
+        /// The successful callbacks.
+        pub success: Vec<IcaControllerCallbackMsg>,
+        /// The erroneous callbacks.
+        pub error: Vec<IcaControllerCallbackMsg>,
+        /// The timeout callbacks.
+        /// The channel is closed after a timeout if the channel is ordered due to the semantics of ordered channels.
+        pub timeout: Vec<IcaControllerCallbackMsg>,
     }
 
     impl CallbackCounter {
-        /// Increments the success counter
-        pub fn success(&mut self) {
-            self.success += 1;
+        /// Pushes to the success counter
+        pub fn success(&mut self, msg: IcaControllerCallbackMsg) {
+            self.success.push(msg);
         }
 
-        /// Increments the error counter
-        pub fn error(&mut self) {
-            self.error += 1;
+        /// Pushes to the error counter
+        pub fn error(&mut self, msg: IcaControllerCallbackMsg) {
+            self.error.push(msg);
         }
 
-        /// Increments the timeout counter
-        pub fn timeout(&mut self) {
-            self.timeout += 1;
+        /// Pushes to the timeout counter
+        pub fn timeout(&mut self, msg: IcaControllerCallbackMsg) {
+            self.timeout.push(msg);
         }
     }
 }
