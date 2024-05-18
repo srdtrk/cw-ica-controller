@@ -8,6 +8,8 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 
+	sdkmath "cosmossdk.io/math"
+
 	interchaintest "github.com/strangelove-ventures/interchaintest/v8"
 	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
 	"github.com/strangelove-ventures/interchaintest/v8/ibc"
@@ -90,7 +92,7 @@ func (s *TestSuite) SetupSuite(ctx context.Context) {
 	s.Require().NoError(populateQueryReqToPath(ctx, s.ChainB))
 
 	// Fund a user accounts
-	const userFunds = int64(10_000_000_000)
+	userFunds := sdkmath.NewInt(10_000_000_000)
 	users := interchaintest.GetAndFundTestUsers(t, ctx, t.Name(), userFunds, s.ChainA, s.ChainB)
 	s.UserA = users[0]
 	s.UserB = users[1]
