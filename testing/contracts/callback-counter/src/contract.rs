@@ -69,14 +69,14 @@ mod execute {
             } => match ica_acknowledgement {
                 Data::Result(_) => {
                     CALLBACK_COUNTER.update(deps.storage, |mut counter| -> StdResult<_> {
-                        counter.success();
+                        counter.success(callback_msg);
                         Ok(counter)
                     })?;
                     Ok(Response::default())
                 }
                 Data::Error(_) => {
                     CALLBACK_COUNTER.update(deps.storage, |mut counter| -> StdResult<_> {
-                        counter.error();
+                        counter.error(callback_msg);
                         Ok(counter)
                     })?;
                     Ok(Response::default())
@@ -84,7 +84,7 @@ mod execute {
             },
             IcaControllerCallbackMsg::OnTimeoutPacketCallback { .. } => {
                 CALLBACK_COUNTER.update(deps.storage, |mut counter| -> StdResult<_> {
-                    counter.timeout();
+                    counter.timeout(callback_msg);
                     Ok(counter)
                 })?;
                 Ok(Response::default())
