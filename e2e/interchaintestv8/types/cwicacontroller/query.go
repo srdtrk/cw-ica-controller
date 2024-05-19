@@ -65,6 +65,25 @@ func (q *queryClient) queryContract(ctx context.Context, rawQueryData []byte, op
 	return out.Data, nil
 }
 
+func (q *queryClient) GetChannel(ctx context.Context, req *QueryMsg_GetChannel, opts ...grpc.CallOption) (*ChannelState, error) {
+	rawQueryData, err := json.Marshal(&QueryMsg{GetChannel: req})
+	if err != nil {
+		return nil, err
+	}
+
+	rawResponseData, err := q.queryContract(ctx, rawQueryData, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	var response ChannelState
+	if err := json.Unmarshal(rawResponseData, &response); err != nil {
+		return nil, err
+	}
+
+	return &response, nil
+}
+
 func (q *queryClient) GetContractState(ctx context.Context, req *QueryMsg_GetContractState, opts ...grpc.CallOption) (*State, error) {
 	rawQueryData, err := json.Marshal(&QueryMsg{GetContractState: req})
 	if err != nil {
@@ -96,25 +115,6 @@ func (q *queryClient) Ownership(ctx context.Context, req *QueryMsg_Ownership, op
 	}
 
 	var response Ownership_for_String
-	if err := json.Unmarshal(rawResponseData, &response); err != nil {
-		return nil, err
-	}
-
-	return &response, nil
-}
-
-func (q *queryClient) GetChannel(ctx context.Context, req *QueryMsg_GetChannel, opts ...grpc.CallOption) (*ChannelState, error) {
-	rawQueryData, err := json.Marshal(&QueryMsg{GetChannel: req})
-	if err != nil {
-		return nil, err
-	}
-
-	rawResponseData, err := q.queryContract(ctx, rawQueryData, opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	var response ChannelState
 	if err := json.Unmarshal(rawResponseData, &response); err != nil {
 		return nil, err
 	}
