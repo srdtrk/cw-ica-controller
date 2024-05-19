@@ -721,6 +721,54 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering cwicacontrol
 	})
 }
 
+func (s *ContractTestSuite) TestSendCosmosMsgsTestWithQueries() {
+	ctx := context.Background()
+
+	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
+	// sets up the contract and does the channel handshake for the contract test suite.
+	s.SetupContractTestSuite(ctx, cwicacontroller.IbcOrder_OrderUnordered)
+	wasmd, simd := s.ChainA, s.ChainB
+	wasmdUser := s.UserA
+	simdUser := s.UserB
+
+	// Fund the ICA address:
+	s.FundAddressChainB(ctx, s.IcaContractToAddrMap[s.Contract.Address])
+
+	s.Run("BankQuery::Balance", func() {
+		balanceQueryMsg := cwicacontroller.ExecuteMsg{
+			SendCosmosMsgs: &cwicacontroller.ExecuteMsg_SendCosmosMsgs{
+				Queries: []cwicacontroller.QueryRequest_for_Empty{
+					{
+						Bank: &cwicacontroller.QueryRequest_for_Empty_Bank{
+							Balance: &cwicacontroller.BankQuery_Balance{
+								Address: simdUser.FormattedAddress(),
+								Denom:   simd.Config().Denom,
+							},
+						},
+					},
+				},
+			},
+		}
+
+		_, err := simd.GetBalance(ctx, simdUser.FormattedAddress(), simd.Config().Denom)
+		s.Require().NoError(err)
+
+		_, err = s.Contract.Execute(ctx, wasmdUser.KeyName(), balanceQueryMsg)
+		s.Require().NoError(err)
+
+		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+		s.Require().NoError(err)
+
+		// Check if contract callbacks were executed:
+		callbackCounter, err := s.CallbackCounterContract.QueryClient().GetCallbackCounter(ctx, &callbackcounter.QueryMsg_GetCallbackCounter{})
+		s.Require().NoError(err)
+		s.Require().Equal(int(1), len(callbackCounter.Success))
+		s.Require().Equal(int(0), len(callbackCounter.Error))
+
+		// TODO: Deserialize query response
+	})
+}
+
 func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 	ctx := context.Background()
 
