@@ -201,7 +201,9 @@ mod execute {
 
         let contract_state = state::STATE.load(deps.storage)?;
         let ica_info = contract_state.get_ica_info()?;
-        let uses_query = queries.is_some();
+        let uses_query = queries
+            .as_ref()
+            .map_or(false, |queries| !queries.is_empty());
 
         let ica_packet = IcaPacketData::from_cosmos_msgs(
             deps.storage,
