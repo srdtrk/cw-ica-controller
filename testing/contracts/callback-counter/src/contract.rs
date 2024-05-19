@@ -61,7 +61,7 @@ mod execute {
         _info: MessageInfo,
         callback_msg: IcaControllerCallbackMsg,
     ) -> Result<Response, ContractError> {
-        match callback_msg {
+        match &callback_msg {
             IcaControllerCallbackMsg::OnChannelOpenAckCallback { .. } => Ok(Response::default()),
             IcaControllerCallbackMsg::OnAcknowledgementPacketCallback {
                 ica_acknowledgement,

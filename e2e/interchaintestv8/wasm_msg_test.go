@@ -147,8 +147,8 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		// Check if contract callbacks were executed:
 		callbackCounter, err := s.CallbackCounterContract.QueryClient().GetCallbackCounter(ctx, &callbackcounter.QueryMsg_GetCallbackCounter{})
 		s.Require().NoError(err)
-		s.Require().Equal(int(1), callbackCounter.Success)
-		s.Require().Equal(int(0), callbackCounter.Error)
+		s.Require().Equal(int(1), len(callbackCounter.Success))
+		s.Require().Equal(int(0), len(callbackCounter.Error))
 
 		contractByCodeRequest := wasmtypes.QueryContractsByCodeRequest{
 			CodeId: uint64(counterCodeID),
@@ -217,8 +217,8 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		// Check if contract callbacks were executed:
 		callbackCounter, err := s.CallbackCounterContract.QueryClient().GetCallbackCounter(ctx, &callbackcounter.QueryMsg_GetCallbackCounter{})
 		s.Require().NoError(err)
-		s.Require().Equal(int(2), callbackCounter.Success)
-		s.Require().Equal(int(0), callbackCounter.Error)
+		s.Require().Equal(int(2), len(callbackCounter.Success))
+		s.Require().Equal(int(0), len(callbackCounter.Error))
 
 		// Query the simple counter state:
 		counterState, err := counterContract.QueryClient().GetCount(ctx, &simplecounter.QueryMsg_GetCount{})
@@ -279,8 +279,8 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		// Check if contract callbacks were executed:
 		callbackCounter, err := s.CallbackCounterContract.QueryClient().GetCallbackCounter(ctx, &callbackcounter.QueryMsg_GetCallbackCounter{})
 		s.Require().NoError(err)
-		s.Require().Equal(int(3), callbackCounter.Success)
-		s.Require().Equal(int(0), callbackCounter.Error)
+		s.Require().Equal(int(3), len(callbackCounter.Success))
+		s.Require().Equal(int(0), len(callbackCounter.Error))
 
 		// Query the simple counter state:
 		counterState, err := counterContract2.QueryClient().GetCount(ctx, &simplecounter.QueryMsg_GetCount{})
