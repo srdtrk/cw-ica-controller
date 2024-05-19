@@ -797,7 +797,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 		// Check if contract channel state was updated:
 		contractChannelState, err := s.Contract.QueryClient().GetChannel(ctx, &cwicacontroller.QueryMsg_GetChannel{})
 		s.Require().NoError(err)
-		s.Require().Equal(cwicacontroller.Status_StateClosed, contractChannelState.ChannelStatus)
+		s.Require().Equal(cwicacontroller.ChannelStatus_StateClosed, contractChannelState.ChannelStatus)
 	})
 
 	s.Run("TestChannelReopening", func() {
@@ -833,7 +833,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 		// Check if contract channel state was updated:
 		contractChannelState, err := s.Contract.QueryClient().GetChannel(ctx, &cwicacontroller.QueryMsg_GetChannel{})
 		s.Require().NoError(err)
-		s.Require().Equal(cwicacontroller.Status_StateOpen, contractChannelState.ChannelStatus)
+		s.Require().Equal(cwicacontroller.ChannelStatus_StateOpen, contractChannelState.ChannelStatus)
 		s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionId)
 		s.Require().Equal(wasmdChannel.ChannelID, contractChannelState.Channel.Endpoint.ChannelId)
 		s.Require().Equal(wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortId)
@@ -960,7 +960,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Unordered_Protobuf() {
 		// Check if contract channel state is still open:
 		contractChannelState, err := s.Contract.QueryClient().GetChannel(ctx, &cwicacontroller.QueryMsg_GetChannel{})
 		s.Require().NoError(err)
-		s.Require().Equal(cwicacontroller.Status_StateOpen, contractChannelState.ChannelStatus)
+		s.Require().Equal(cwicacontroller.ChannelStatus_StateOpen, contractChannelState.ChannelStatus)
 	})
 
 	s.Run("TestSendCustomIcaMessagesAfterTimeout", func() {
@@ -1041,7 +1041,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		// Check if contract channel state was updated:
 		contractChannelState, err := s.Contract.QueryClient().GetChannel(ctx, &cwicacontroller.QueryMsg_GetChannel{})
 		s.Require().NoError(err)
-		s.Require().Equal(cwicacontroller.Status_StateClosed, contractChannelState.ChannelStatus)
+		s.Require().Equal(cwicacontroller.ChannelStatus_StateClosed, contractChannelState.ChannelStatus)
 	})
 
 	s.Run("TestChannelReopening", func() {
@@ -1086,7 +1086,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		// Check if contract channel state was updated:
 		contractChannelState, err := s.Contract.QueryClient().GetChannel(ctx, &cwicacontroller.QueryMsg_GetChannel{})
 		s.Require().NoError(err)
-		s.Require().Equal(cwicacontroller.Status_StateOpen, contractChannelState.ChannelStatus)
+		s.Require().Equal(cwicacontroller.ChannelStatus_StateOpen, contractChannelState.ChannelStatus)
 		s.Require().Equal(wasmdChannel.ConnectionHops[0], contractChannelState.Channel.ConnectionId)
 		s.Require().Equal(wasmdChannel.ChannelID, contractChannelState.Channel.Endpoint.ChannelId)
 		s.Require().Equal(wasmdChannel.PortID, contractChannelState.Channel.Endpoint.PortId)
@@ -1183,7 +1183,7 @@ func (s *ContractTestSuite) TestCloseChannel_Protobuf_Unordered() {
 		// Check if contract channel state was updated:
 		contractChannelState, err := s.Contract.QueryClient().GetChannel(ctx, &cwicacontroller.QueryMsg_GetChannel{})
 		s.Require().NoError(err)
-		s.Require().Equal(cwicacontroller.Status_StateClosed, contractChannelState.ChannelStatus)
+		s.Require().Equal(cwicacontroller.ChannelStatus_StateClosed, contractChannelState.ChannelStatus)
 	})
 }
 
