@@ -193,7 +193,7 @@ mod execute {
         env: Env,
         info: MessageInfo,
         messages: Vec<CosmosMsg>,
-        queries: Option<Vec<QueryRequest<Empty>>>,
+        queries: Vec<QueryRequest<Empty>>,
         packet_memo: Option<String>,
         timeout_seconds: Option<u64>,
     ) -> Result<Response, ContractError> {
@@ -201,9 +201,7 @@ mod execute {
 
         let contract_state = state::STATE.load(deps.storage)?;
         let ica_info = contract_state.get_ica_info()?;
-        let uses_query = queries
-            .as_ref()
-            .map_or(false, |queries| !queries.is_empty());
+        let has_queries = !queries.is_empty();
 
         let ica_packet = IcaPacketData::from_cosmos_msgs(
             deps.storage,
@@ -215,7 +213,7 @@ mod execute {
         )?;
         let send_packet_msg = ica_packet.to_ibc_msg(&env, ica_info.channel_id, timeout_seconds)?;
 
-        let send_packet_submsg = if uses_query {
+        let send_packet_submsg = if has_queries {
             SubMsg::reply_on_success(send_packet_msg, keys::reply_ids::SEND_QUERY_PACKET)
         } else {
             SubMsg::new(send_packet_msg)

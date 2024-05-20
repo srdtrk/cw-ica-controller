@@ -79,7 +79,7 @@ impl IcaPacketData {
     pub fn from_cosmos_msgs(
         #[cfg(feature = "export")] storage: &mut dyn cosmwasm_std::Storage,
         messages: Vec<CosmosMsg>,
-        queries: Option<Vec<cosmwasm_std::QueryRequest<cosmwasm_std::Empty>>>,
+        queries: Vec<cosmwasm_std::QueryRequest<cosmwasm_std::Empty>>,
         encoding: &TxEncoding,
         memo: Option<String>,
         ica_address: &str,
@@ -96,34 +96,32 @@ impl IcaPacketData {
                     })
                     .collect::<StdResult<Vec<cosmos_sdk_proto::Any>>>()?;
 
-                if let Some(queries) = queries {
-                    if !queries.is_empty() {
-                        let (abci_queries, _paths): (
-                            Vec<query_msg::proto::AbciQueryRequest>,
-                            Vec<(String, bool)>,
-                        ) = queries.into_iter().fold((vec![], vec![]), |mut acc, msg| {
-                            let (path, data, is_stargate) = query_msg::query_to_protobuf(msg);
+                if !queries.is_empty() {
+                    let (abci_queries, _paths): (
+                        Vec<query_msg::proto::AbciQueryRequest>,
+                        Vec<(String, bool)>,
+                    ) = queries.into_iter().fold((vec![], vec![]), |mut acc, msg| {
+                        let (path, data, is_stargate) = query_msg::query_to_protobuf(msg);
 
-                            acc.1.push((path.clone(), is_stargate));
-                            acc.0
-                                .push(query_msg::proto::AbciQueryRequest { path, data });
+                        acc.1.push((path.clone(), is_stargate));
+                        acc.0
+                            .push(query_msg::proto::AbciQueryRequest { path, data });
 
-                            acc
-                        });
+                        acc
+                    });
 
-                        #[cfg(feature = "export")]
-                        #[allow(clippy::used_underscore_binding)]
-                        crate::types::state::QUERY.save(storage, &_paths)?;
+                    #[cfg(feature = "export")]
+                    #[allow(clippy::used_underscore_binding)]
+                    crate::types::state::QUERY.save(storage, &_paths)?;
 
-                        let query_msg = query_msg::proto::MsgModuleQuerySafe {
-                            signer: ica_address.to_string(),
-                            requests: abci_queries,
-                        };
+                    let query_msg = query_msg::proto::MsgModuleQuerySafe {
+                        signer: ica_address.to_string(),
+                        requests: abci_queries,
+                    };
 
-                        proto_anys.push(cosmos_sdk_proto::Any::from_msg(&query_msg).map_err(
-                            |e| StdError::generic_err(format!("failed to convert query msg: {e}")),
-                        )?);
-                    }
+                    proto_anys.push(cosmos_sdk_proto::Any::from_msg(&query_msg).map_err(|e| {
+                        StdError::generic_err(format!("failed to convert query msg: {e}"))
+                    })?);
                 }
 
                 Ok(Self::from_proto_anys(proto_anys, memo))

@@ -48,8 +48,8 @@ pub enum ExecuteMsg {
         /// The stargate queries to convert and send to the ICA host.
         /// The queries are executed after the messages.
         #[cfg(feature = "query")]
-        #[serde(skip_serializing_if = "Option::is_none")]
-        queries: Option<Vec<cosmwasm_std::QueryRequest<cosmwasm_std::Empty>>>,
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        queries: Vec<cosmwasm_std::QueryRequest<cosmwasm_std::Empty>>,
         /// Optional memo to include in the ibc packet.
         #[serde(skip_serializing_if = "Option::is_none")]
         packet_memo: Option<String>,
