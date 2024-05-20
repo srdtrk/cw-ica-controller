@@ -197,7 +197,7 @@ pub mod acknowledgement {
     use cosmwasm_std::Binary;
 
     use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxMsgData;
-    use prost::Message;
+    use cosmos_sdk_proto::prost::Message;
 
     use crate::types::ContractError;
 
