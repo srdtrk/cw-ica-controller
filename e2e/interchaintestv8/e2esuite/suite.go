@@ -10,6 +10,8 @@ import (
 
 	sdkmath "cosmossdk.io/math"
 
+	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
+
 	interchaintest "github.com/strangelove-ventures/interchaintest/v8"
 	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
 	"github.com/strangelove-ventures/interchaintest/v8/ibc"
@@ -18,6 +20,7 @@ import (
 	"github.com/strangelove-ventures/interchaintest/v8/testutil"
 
 	"github.com/srdtrk/go-codegen/e2esuite/v8/chainconfig"
+	"github.com/srdtrk/go-codegen/e2esuite/v8/testvalues"
 )
 
 // TestSuite is a suite of tests that require two chains and a relayer
@@ -92,7 +95,7 @@ func (s *TestSuite) SetupSuite(ctx context.Context) {
 	s.Require().NoError(populateQueryReqToPath(ctx, s.ChainB))
 
 	// Fund a user accounts
-	userFunds := sdkmath.NewInt(10_000_000_000)
+	userFunds := sdkmath.NewInt(testvalues.StartingTokenAmount)
 	users := interchaintest.GetAndFundTestUsers(t, ctx, t.Name(), userFunds, s.ChainA, s.ChainB)
 	s.UserA = users[0]
 	s.UserB = users[1]
@@ -121,7 +124,7 @@ func (s *TestSuite) SetupSuite(ctx context.Context) {
 	// localhost is always a connection since ibc-go v7.1+
 	s.Require().Equal(2, len(connections))
 	wasmdConnection := connections[0]
-	s.Require().NotEqual("connection-localhost", wasmdConnection.ID)
+	s.Require().NotEqual(ibcexported.LocalhostConnectionID, wasmdConnection.ID)
 
 	// Query for the newly created connection in simd
 	connections, err = s.Relayer.GetConnections(ctx, s.ExecRep, s.ChainB.Config().ChainID)
@@ -129,7 +132,7 @@ func (s *TestSuite) SetupSuite(ctx context.Context) {
 	// localhost is always a connection since ibc-go v7.1+
 	s.Require().Equal(2, len(connections))
 	simdConnection := connections[0]
-	s.Require().NotEqual("connection-localhost", simdConnection.ID)
+	s.Require().NotEqual(ibcexported.LocalhostConnectionID, simdConnection.ID)
 
 	// Start the relayer and set the cleanup function.
 	err = s.Relayer.StartRelayer(ctx, s.ExecRep, s.PathName)

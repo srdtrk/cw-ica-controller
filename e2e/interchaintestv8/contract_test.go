@@ -19,6 +19,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	controllertypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/types"
+	icahosttypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/types"
 	icatypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/types"
 	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 	ibctesting "github.com/cosmos/ibc-go/v8/testing"
@@ -721,7 +722,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering cwicacontrol
 	})
 }
 
-func (s *ContractTestSuite) TestSendCosmosMsgsTestWithQueries() {
+func (s *ContractTestSuite) TestSendCosmosMsgsWithQueries() {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
@@ -737,6 +738,7 @@ func (s *ContractTestSuite) TestSendCosmosMsgsTestWithQueries() {
 	s.Run("BankQuery::Balance", func() {
 		balanceQueryMsg := cwicacontroller.ExecuteMsg{
 			SendCosmosMsgs: &cwicacontroller.ExecuteMsg_SendCosmosMsgs{
+				Messages: []cwicacontroller.CosmosMsg_for_Empty{},
 				Queries: []cwicacontroller.QueryRequest_for_Empty{
 					{
 						Bank: &cwicacontroller.QueryRequest_for_Empty_Bank{
@@ -750,7 +752,7 @@ func (s *ContractTestSuite) TestSendCosmosMsgsTestWithQueries() {
 			},
 		}
 
-		_, err := simd.GetBalance(ctx, simdUser.FormattedAddress(), simd.Config().Denom)
+		expBalance, err := simd.GetBalance(ctx, simdUser.FormattedAddress(), simd.Config().Denom)
 		s.Require().NoError(err)
 
 		_, err = s.Contract.Execute(ctx, wasmdUser.KeyName(), balanceQueryMsg)
@@ -765,7 +767,27 @@ func (s *ContractTestSuite) TestSendCosmosMsgsTestWithQueries() {
 		s.Require().Equal(int(1), len(callbackCounter.Success))
 		s.Require().Equal(int(0), len(callbackCounter.Error))
 
-		// TODO: Deserialize query response
+		icaAck := &sdk.TxMsgData{}
+		s.Require().True(s.Run("unmarshal ica response", func() {
+			err := proto.Unmarshal(callbackCounter.Success[0].OnAcknowledgementPacketCallback.IcaAcknowledgement.Result.Unwrap(), icaAck)
+			s.Require().NoError(err)
+			s.Require().Len(icaAck.GetMsgResponses(), 1)
+		}))
+
+		queryTxResp := &icahosttypes.MsgModuleQuerySafeResponse{}
+		s.Require().True(s.Run("unmarshal MsgModuleQuerySafeResponse", func() {
+			err := proto.Unmarshal(icaAck.MsgResponses[0].Value, queryTxResp)
+			s.Require().NoError(err)
+			s.Require().Len(queryTxResp.Responses, 1)
+		}))
+
+		balanceResp := &banktypes.QueryBalanceResponse{}
+		s.Require().True(s.Run("unmarshal and verify bank query response", func() {
+			err := proto.Unmarshal(queryTxResp.Responses[0], balanceResp)
+			s.Require().NoError(err)
+			s.Require().Equal(simd.Config().Denom, balanceResp.Balance.Denom)
+			s.Require().Equal(expBalance.Int64(), balanceResp.Balance.Amount.Int64())
+		}))
 	})
 }
 

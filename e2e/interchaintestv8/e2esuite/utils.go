@@ -13,16 +13,18 @@ import (
 	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
 	"github.com/strangelove-ventures/interchaintest/v8/ibc"
 	"github.com/strangelove-ventures/interchaintest/v8/testutil"
+
+	"github.com/srdtrk/go-codegen/e2esuite/v8/testvalues"
 )
 
 // FundAddressChainA sends funds to the given address on Chain A.
-// The amount sent is 1,000,000,000 of the chain's denom.
+// The amount sent is testvalues.FundingAmount of the chain's denom.
 func (s *TestSuite) FundAddressChainA(ctx context.Context, address string) {
 	s.fundAddress(ctx, s.ChainA, s.UserA.KeyName(), address)
 }
 
 // FundAddressChainB sends funds to the given address on Chain B.
-// The amount sent is 1,000,000,000 of the chain's denom.
+// The amount sent is testvalues.FundingAmount of the chain's denom.
 func (s *TestSuite) FundAddressChainB(ctx context.Context, address string) {
 	s.fundAddress(ctx, s.ChainB, s.UserB.KeyName(), address)
 }
@@ -85,7 +87,7 @@ func (s *TestSuite) fundAddress(ctx context.Context, chain *cosmos.CosmosChain, 
 	err := chain.SendFunds(ctx, keyName, ibc.WalletAmount{
 		Address: address,
 		Denom:   chain.Config().Denom,
-		Amount:  math.NewInt(1_000_000_000),
+		Amount:  math.NewInt(testvalues.FundingAmount),
 	})
 	s.Require().NoError(err)
 
