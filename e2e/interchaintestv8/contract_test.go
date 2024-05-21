@@ -735,7 +735,7 @@ func (s *ContractTestSuite) TestSendCosmosMsgsWithQueries() {
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, s.IcaContractToAddrMap[s.Contract.Address])
 
-	s.Run("BankQuery::Balance", func() {
+	s.Run("BankQuery_Balance", func() {
 		balanceQueryMsg := cwicacontroller.ExecuteMsg{
 			SendCosmosMsgs: &cwicacontroller.ExecuteMsg_SendCosmosMsgs{
 				Messages: []cwicacontroller.CosmosMsg_for_Empty{},
@@ -767,27 +767,37 @@ func (s *ContractTestSuite) TestSendCosmosMsgsWithQueries() {
 		s.Require().Equal(int(1), len(callbackCounter.Success))
 		s.Require().Equal(int(0), len(callbackCounter.Error))
 
-		icaAck := &sdk.TxMsgData{}
-		s.Require().True(s.Run("unmarshal ica response", func() {
-			err := proto.Unmarshal(callbackCounter.Success[0].OnAcknowledgementPacketCallback.IcaAcknowledgement.Result.Unwrap(), icaAck)
-			s.Require().NoError(err)
-			s.Require().Len(icaAck.GetMsgResponses(), 1)
-		}))
+		s.Run("test unmarshaling ica acknowledgement", func() {
+			icaAck := &sdk.TxMsgData{}
+			s.Require().True(s.Run("unmarshal ica response", func() {
+				err := proto.Unmarshal(callbackCounter.Success[0].OnAcknowledgementPacketCallback.IcaAcknowledgement.Result.Unwrap(), icaAck)
+				s.Require().NoError(err)
+				s.Require().Len(icaAck.GetMsgResponses(), 1)
+			}))
 
-		queryTxResp := &icahosttypes.MsgModuleQuerySafeResponse{}
-		s.Require().True(s.Run("unmarshal MsgModuleQuerySafeResponse", func() {
-			err := proto.Unmarshal(icaAck.MsgResponses[0].Value, queryTxResp)
-			s.Require().NoError(err)
-			s.Require().Len(queryTxResp.Responses, 1)
-		}))
+			queryTxResp := &icahosttypes.MsgModuleQuerySafeResponse{}
+			s.Require().True(s.Run("unmarshal MsgModuleQuerySafeResponse", func() {
+				err := proto.Unmarshal(icaAck.MsgResponses[0].Value, queryTxResp)
+				s.Require().NoError(err)
+				s.Require().Len(queryTxResp.Responses, 1)
+			}))
 
-		balanceResp := &banktypes.QueryBalanceResponse{}
-		s.Require().True(s.Run("unmarshal and verify bank query response", func() {
-			err := proto.Unmarshal(queryTxResp.Responses[0], balanceResp)
-			s.Require().NoError(err)
-			s.Require().Equal(simd.Config().Denom, balanceResp.Balance.Denom)
-			s.Require().Equal(expBalance.Int64(), balanceResp.Balance.Amount.Int64())
-		}))
+			balanceResp := &banktypes.QueryBalanceResponse{}
+			s.Require().True(s.Run("unmarshal and verify bank query response", func() {
+				err := proto.Unmarshal(queryTxResp.Responses[0], balanceResp)
+				s.Require().NoError(err)
+				s.Require().Equal(simd.Config().Denom, balanceResp.Balance.Denom)
+				s.Require().Equal(expBalance.Int64(), balanceResp.Balance.Amount.Int64())
+			}))
+		})
+
+		s.Run("test query result", func() {
+			s.Require().Nil(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Error)
+			s.Require().NotNil(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success)
+			s.Require().Len(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses, 1)
+			s.Require().Equal(simd.Config().Denom, callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Bank.Balance.Amount.Denom)
+			s.Require().Equal(expBalance.String(), string(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Bank.Balance.Amount.Amount))
+		})
 	})
 }
 
