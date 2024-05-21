@@ -722,7 +722,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering cwicacontrol
 	})
 }
 
-func (s *ContractTestSuite) TestSendCosmosMsgsWithQueries() {
+func (s *ContractTestSuite) TestSendCosmosMsgs_WithQueries() {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
