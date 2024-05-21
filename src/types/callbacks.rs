@@ -12,8 +12,17 @@ use crate::ibc::types::{
     metadata::TxEncoding, packet::acknowledgement::Data as AcknowledgementData,
 };
 
-/// IcaControllerCallbackMsg is the type of message that this contract can send to other contracts.
-#[cw_serde]
+/// `IcaControllerCallbackMsg` is the type of message that this contract can send to other contracts.
+#[derive(
+    ::cosmwasm_schema::serde::Serialize,
+    ::cosmwasm_schema::serde::Deserialize,
+    ::std::clone::Clone,
+    ::std::fmt::Debug,
+    ::std::cmp::PartialEq,
+    ::cosmwasm_schema::schemars::JsonSchema,
+)]
+#[serde(rename_all = "snake_case", crate = "::cosmwasm_schema::serde")] // do not deny unknown fields
+#[schemars(crate = "::cosmwasm_schema::schemars")]
 pub enum IcaControllerCallbackMsg {
     /// OnAcknowledgementPacketCallback is the callback that this contract makes to other contracts
     /// when it receives an acknowledgement packet.
