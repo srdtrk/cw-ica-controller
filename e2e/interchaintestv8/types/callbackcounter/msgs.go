@@ -15,25 +15,28 @@ type QueryMsg struct {
 }
 
 type IbcPacket struct {
+	// The raw data sent from the other side in the packet
+	Data Binary `json:"data"`
+	// identifies the channel and port on the receiving chain.
+	Dest IbcEndpoint `json:"dest"`
 	// The sequence number of the packet on the given channel
 	Sequence int `json:"sequence"`
 	// identifies the channel and port on the sending chain.
 	Src IbcEndpoint `json:"src"`
 	Timeout IbcTimeout `json:"timeout"`
-	// The raw data sent from the other side in the packet
-	Data Binary `json:"data"`
-	// identifies the channel and port on the receiving chain.
-	Dest IbcEndpoint `json:"dest"`
 }
 
-// IcaControllerCallbackMsg is the type of message that this contract can send to other contracts.
-type IcaControllerCallbackMsg struct {
-	// OnAcknowledgementPacketCallback is the callback that this contract makes to other contracts when it receives an acknowledgement packet.
-	OnAcknowledgementPacketCallback *IcaControllerCallbackMsg_OnAcknowledgementPacketCallback `json:"on_acknowledgement_packet_callback,omitempty"`
-	// OnTimeoutPacketCallback is the callback that this contract makes to other contracts when it receives a timeout packet.
-	OnTimeoutPacketCallback *IcaControllerCallbackMsg_OnTimeoutPacketCallback `json:"on_timeout_packet_callback,omitempty"`
-	// OnChannelOpenAckCallback is the callback that this contract makes to other contracts when it receives a channel open acknowledgement.
-	OnChannelOpenAckCallback *IcaControllerCallbackMsg_OnChannelOpenAckCallback `json:"on_channel_open_ack_callback,omitempty"`
+type IbcEndpoint struct {
+	ChannelId string `json:"channel_id"`
+	PortId string `json:"port_id"`
+}
+
+// `Data` is the response to an ibc packet. It either contains a result or an error.
+type Data struct {
+	// Result is the result of a successful transaction.
+	Result *Data_Result `json:"result,omitempty"`
+	// Error is the error message of a failed transaction. It is a string of the error message (not base64 encoded).
+	Error *Data_Error `json:"error,omitempty"`
 }
 
 /*
@@ -50,11 +53,31 @@ let ts = ts.plus_seconds(2); assert_eq!(ts.nanos(), 3_000_000_202); assert_eq!(t
 type Timestamp Uint64
 
 /*
-Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.
+A human readable address.
 
-This is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.
+In Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.
+
+This type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.
+
+This type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.
 */
-type Binary string
+type Addr string
+
+// IbcOrder defines if a channel is ORDERED or UNORDERED Values come from https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/ibc/core/channel/v1/channel.proto#L69-L80 Naming comes from the protobuf files and go translations.
+type IbcOrder string
+
+const (
+	IbcOrder_OrderUnordered IbcOrder = "ORDER_UNORDERED"
+	IbcOrder_OrderOrdered   IbcOrder = "ORDER_ORDERED"
+)
+
+// IBCTimeoutHeight Height is a monotonically increasing data type that can be compared against another Height for the purposes of updating and freezing clients. Ordering is (revision_number, timeout_height)
+type IbcTimeoutBlock struct {
+	// block height after which the packet times out. the height within the given revision
+	Height int `json:"height"`
+	// the version that the client is currently on (e.g. after resetting the chain this could increment 1 as height drops to 0)
+	Revision int `json:"revision"`
+}
 
 /*
 A thin wrapper around u64 that is using strings for JSON encoding/decoding, such that the full u64 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.
@@ -69,14 +92,30 @@ let b = Uint64::from(70u32); assert_eq!(b.u64(), 70); ```
 */
 type Uint64 string
 
-type QueryMsg_GetCallbackCounter struct{}
+/*
+Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.
 
-// `Data` is the response to an ibc packet. It either contains a result or an error.
-type Data struct {
-	// Result is the result of a successful transaction.
-	Result *Data_Result `json:"result,omitempty"`
-	// Error is the error message of a failed transaction. It is a string of the error message (not base64 encoded).
-	Error *Data_Error `json:"error,omitempty"`
+This is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.
+*/
+type Binary string
+
+type QueryMsg_GetCallbackCounter struct{}
+type ExecuteMsg_ReceiveIcaCallback IcaControllerCallbackMsg
+
+// IcaControllerCallbackMsg is the type of message that this contract can send to other contracts.
+type IcaControllerCallbackMsg struct {
+	// OnAcknowledgementPacketCallback is the callback that this contract makes to other contracts when it receives an acknowledgement packet.
+	OnAcknowledgementPacketCallback *IcaControllerCallbackMsg_OnAcknowledgementPacketCallback `json:"on_acknowledgement_packet_callback,omitempty"`
+	// OnTimeoutPacketCallback is the callback that this contract makes to other contracts when it receives a timeout packet.
+	OnTimeoutPacketCallback *IcaControllerCallbackMsg_OnTimeoutPacketCallback `json:"on_timeout_packet_callback,omitempty"`
+	// OnChannelOpenAckCallback is the callback that this contract makes to other contracts when it receives a channel open acknowledgement.
+	OnChannelOpenAckCallback *IcaControllerCallbackMsg_OnChannelOpenAckCallback `json:"on_channel_open_ack_callback,omitempty"`
+}
+
+// In IBC each package must set at least one type of timeout: the timestamp or the block height. Using this rather complex enum instead of two timeout fields we ensure that at least one timeout is set.
+type IbcTimeout struct {
+	Timestamp *Timestamp `json:"timestamp,omitempty"`
+	Block *IbcTimeoutBlock `json:"block,omitempty"`
 }
 
 // `TxEncoding` is the encoding of the transactions sent to the ICA host.
@@ -100,62 +139,26 @@ type IbcChannel struct {
 	Endpoint IbcEndpoint `json:"endpoint"`
 }
 
-type IbcEndpoint struct {
-	ChannelId string `json:"channel_id"`
-	PortId string `json:"port_id"`
-}
-
-// In IBC each package must set at least one type of timeout: the timestamp or the block height. Using this rather complex enum instead of two timeout fields we ensure that at least one timeout is set.
-type IbcTimeout struct {
-	Block *IbcTimeoutBlock `json:"block,omitempty"`
-	Timestamp *Timestamp `json:"timestamp,omitempty"`
-}
-type ExecuteMsg_ReceiveIcaCallback IcaControllerCallbackMsg
-
-// IbcOrder defines if a channel is ORDERED or UNORDERED Values come from https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/ibc/core/channel/v1/channel.proto#L69-L80 Naming comes from the protobuf files and go translations.
-type IbcOrder string
-
-const (
-	IbcOrder_OrderUnordered IbcOrder = "ORDER_UNORDERED"
-	IbcOrder_OrderOrdered   IbcOrder = "ORDER_ORDERED"
-)
-
-// IBCTimeoutHeight Height is a monotonically increasing data type that can be compared against another Height for the purposes of updating and freezing clients. Ordering is (revision_number, timeout_height)
-type IbcTimeoutBlock struct {
-	// block height after which the packet times out. the height within the given revision
-	Height int `json:"height"`
-	// the version that the client is currently on (e.g. after resetting the chain this could increment 1 as height drops to 0)
-	Revision int `json:"revision"`
-}
-
-/*
-A human readable address.
-
-In Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.
-
-This type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.
-
-This type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.
-*/
-type Addr string
-
 // CallbackCounter tracks the number of callbacks in store.
 type CallbackCounter struct {
 	// The erroneous callbacks.
-	Error []IcaControllerCallbackMsg `json:"error,omitempty"`
+	Error []IcaControllerCallbackMsg `json:"error"`
 	// The successful callbacks.
-	Success []IcaControllerCallbackMsg `json:"success,omitempty"`
+	Success []IcaControllerCallbackMsg `json:"success"`
 	// The timeout callbacks. The channel is closed after a timeout if the channel is ordered due to the semantics of ordered channels.
-	Timeout []IcaControllerCallbackMsg `json:"timeout,omitempty"`
+	Timeout []IcaControllerCallbackMsg `json:"timeout"`
 }
+type Data_Result Binary
+
+type Data_Error string
 
 type IcaControllerCallbackMsg_OnAcknowledgementPacketCallback struct {
+	// The relayer that submitted acknowledgement packet
+	Relayer Addr `json:"relayer"`
 	// The deserialized ICA acknowledgement data
 	IcaAcknowledgement Data `json:"ica_acknowledgement"`
 	// The original packet that was sent
 	OriginalPacket IbcPacket `json:"original_packet"`
-	// The relayer that submitted acknowledgement packet
-	Relayer Addr `json:"relayer"`
 }
 
 type IcaControllerCallbackMsg_OnTimeoutPacketCallback struct {
@@ -173,6 +176,3 @@ type IcaControllerCallbackMsg_OnChannelOpenAckCallback struct {
 	// The tx encoding this ICA channel uses.
 	TxEncoding TxEncoding `json:"tx_encoding"`
 }
-type Data_Result Binary
-
-type Data_Error string
