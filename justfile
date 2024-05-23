@@ -27,6 +27,16 @@ build-test-contracts:
     cosmwasm/optimizer:0.15.1 ./testing/contracts/callback-counter
   echo "Optimized wasm files created at 'artifacts/cw-ica-owner.wasm' and 'artifacts/callback-counter.wasm'"
 
+# Generate JSON schema files for all contracts in the project
+generate-schemas:
+  echo "Generating JSON schema files..."
+  echo "Generating schema for cw-ica-controller..."
+  cargo schema
+  echo "Generating schema for cw-ica-owner..."
+  cd testing/contracts/cw-ica-owner && cargo schema
+  echo "Generating schema for callback-counter..."
+  cd testing/contracts/callback-counter && cargo schema
+
 # Run the unit tests
 unit-tests:
   RUST_BACKTRACE=1 cargo test --locked --all-features
