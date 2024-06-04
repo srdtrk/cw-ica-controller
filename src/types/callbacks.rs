@@ -21,7 +21,7 @@ use crate::ibc::types::{
     ::std::cmp::PartialEq,
     ::cosmwasm_schema::schemars::JsonSchema,
 )]
-#[serde(rename_all = "snake_case", crate = "::cosmwasm_schema::serde")] // do not deny unknown fields
+#[serde(rename_all = "snake_case", crate = "::cosmwasm_schema::serde")]
 #[schemars(crate = "::cosmwasm_schema::schemars")]
 pub enum IcaControllerCallbackMsg {
     /// OnAcknowledgementPacketCallback is the callback that this contract makes to other contracts
@@ -95,6 +95,3 @@ impl IcaControllerCallbackMsg {
 enum ReceiverExecuteMsg {
     ReceiveIcaCallback(IcaControllerCallbackMsg),
 }
-
-// TODO: Add tests for backwards compatibility with the old callbacks.rs file
-// which doesn't have the query_result field.

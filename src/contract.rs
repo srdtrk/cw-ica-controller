@@ -274,10 +274,9 @@ mod reply {
     ) -> Result<Response, ContractError> {
         match result {
             SubMsgResult::Ok(resp) => {
-                let sequence = anybuf::Bufany::deserialize(&resp.data.unwrap_or_default())
-                    .map_err(|_| ContractError::BufanyError)?
+                let sequence = anybuf::Bufany::deserialize(&resp.data.unwrap_or_default())?
                     .uint64(1)
-                    .ok_or(ContractError::BufanyError)?;
+                    .unwrap();
                 let channel_id = state::STATE.load(deps.storage)?.get_ica_info()?.channel_id;
                 let query_paths = state::QUERY.load(deps.storage)?;
 

@@ -32,6 +32,9 @@ pub enum ContractError {
     #[error("{0}")]
     OwnershipError(#[from] cw_ownable::OwnershipError),
 
+    #[error("{0}")]
+    BufanyError(#[from] anybuf::BufanyError),
+
     #[error("this contract must have an owner")]
     OwnershipCannotBeRenounced,
 
@@ -100,9 +103,4 @@ pub enum ContractError {
 
     #[error("unknown reply id: {0}")]
     UnknownReplyId(u64),
-
-    // TODO: derive this error from the `anyhow` crate after
-    // https://github.com/noislabs/anybuf/issues/20 is resolved
-    #[error("anybuf decoding error")]
-    BufanyError,
 }
