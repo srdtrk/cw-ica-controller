@@ -24,7 +24,7 @@ use crate::ibc::types::{
 #[serde(rename_all = "snake_case", crate = "::cosmwasm_schema::serde")]
 #[schemars(crate = "::cosmwasm_schema::schemars")]
 pub enum IcaControllerCallbackMsg {
-    /// OnAcknowledgementPacketCallback is the callback that this contract makes to other contracts
+    /// `OnAcknowledgementPacketCallback` is the callback that this contract makes to other contracts
     /// when it receives an acknowledgement packet.
     OnAcknowledgementPacketCallback {
         /// The deserialized ICA acknowledgement data
@@ -38,7 +38,7 @@ pub enum IcaControllerCallbackMsg {
         #[serde(skip_serializing_if = "Option::is_none")]
         query_result: Option<super::query_msg::IcaQueryResult>,
     },
-    /// OnTimeoutPacketCallback is the callback that this contract makes to other contracts
+    /// `OnTimeoutPacketCallback` is the callback that this contract makes to other contracts
     /// when it receives a timeout packet.
     OnTimeoutPacketCallback {
         /// The original packet that was sent
@@ -46,7 +46,7 @@ pub enum IcaControllerCallbackMsg {
         /// The relayer that submitted acknowledgement packet
         relayer: Addr,
     },
-    /// OnChannelOpenAckCallback is the callback that this contract makes to other contracts
+    /// `OnChannelOpenAckCallback` is the callback that this contract makes to other contracts
     /// when it receives a channel open acknowledgement.
     OnChannelOpenAckCallback {
         /// The channel that was opened.

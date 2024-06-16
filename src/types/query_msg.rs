@@ -557,12 +557,12 @@ pub mod proto {
     #[derive(::prost::Message)]
     pub struct AbciQueryRequest {
         #[prost(string, tag = "1")]
-        /// `path` defines the path of the query request as defined by ADR-021.
-        /// https://github.com/cosmos/cosmos-sdk/blob/main/docs/architecture/adr-021-protobuf-query-encoding.md#custom-query-registration-and-routing
+        /// `path` defines the path of the query request as defined by
+        /// [ADR-021](https://github.com/cosmos/cosmos-sdk/blob/main/docs/architecture/adr-021-protobuf-query-encoding.md#custom-query-registration-and-routing).
         pub path: ::prost::alloc::string::String,
         #[prost(bytes = "vec", tag = "2")]
         /// `data` defines the payload of the query request as defined by ADR-021.
-        /// https://github.com/cosmos/cosmos-sdk/blob/main/docs/architecture/adr-021-protobuf-query-encoding.md#custom-query-registration-and-routing
+        /// [ADR-021](https://github.com/cosmos/cosmos-sdk/blob/main/docs/architecture/adr-021-protobuf-query-encoding.md#custom-query-registration-and-routing).
         pub data: ::prost::alloc::vec::Vec<u8>,
     }
 

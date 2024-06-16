@@ -195,7 +195,7 @@ mod channel {
         }
     }
 
-    impl std::fmt::Display for Status {
+    impl std::fmt::Display for ChannelStatus {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             match self {
                 Self::Uninitialized => write!(f, "STATE_UNINITIALIZED_UNSPECIFIED"),
