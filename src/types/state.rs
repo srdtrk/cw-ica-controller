@@ -195,16 +195,16 @@ mod channel {
         }
     }
 
-    impl ToString for ChannelStatus {
-        fn to_string(&self) -> String {
+    impl std::fmt::Display for Status {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             match self {
-                Self::Uninitialized => "STATE_UNINITIALIZED_UNSPECIFIED".to_string(),
-                Self::Init => "STATE_INIT".to_string(),
-                Self::TryOpen => "STATE_TRYOPEN".to_string(),
-                Self::Open => "STATE_OPEN".to_string(),
-                Self::Closed => "STATE_CLOSED".to_string(),
-                Self::Flushing => "STATE_FLUSHING".to_string(),
-                Self::FlushComplete => "STATE_FLUSHCOMPLETE".to_string(),
+                Self::Uninitialized => write!(f, "STATE_UNINITIALIZED_UNSPECIFIED"),
+                Self::Init => write!(f, "STATE_INIT"),
+                Self::TryOpen => write!(f, "STATE_TRYOPEN"),
+                Self::Open => write!(f, "STATE_OPEN"),
+                Self::Closed => write!(f, "STATE_CLOSED"),
+                Self::Flushing => write!(f, "STATE_FLUSHING"),
+                Self::FlushComplete => write!(f, "STATE_FLUSHCOMPLETE"),
             }
         }
     }

@@ -106,7 +106,7 @@ type Uint64 string
 
 type Coin struct {
 	Amount Uint128 `json:"amount"`
-	Denom string `json:"denom"`
+	Denom  string  `json:"denom"`
 }
 
 // `Data` is the response to an ibc packet. It either contains a result or an error.
@@ -119,7 +119,7 @@ type Data struct {
 
 type IbcEndpoint struct {
 	ChannelId string `json:"channel_id"`
-	PortId string `json:"port_id"`
+	PortId    string `json:"port_id"`
 }
 
 // IbcOrder defines if a channel is ORDERED or UNORDERED Values come from https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/ibc/core/channel/v1/channel.proto#L69-L80 Naming comes from the protobuf files and go translations.
@@ -133,7 +133,7 @@ const (
 type AllDenomMetadataResponse struct {
 	// Always returns metadata for all token denoms on the base chain.
 	Metadata []DenomMetadata `json:"metadata"`
-	NextKey *Binary `json:"next_key,omitempty"`
+	NextKey  *Binary         `json:"next_key,omitempty"`
 }
 
 type QueryMsg_GetCallbackCounter struct{}
@@ -154,8 +154,8 @@ type IbcPacket struct {
 	// The sequence number of the packet on the given channel
 	Sequence int `json:"sequence"`
 	// identifies the channel and port on the sending chain.
-	Src IbcEndpoint `json:"src"`
-	Timeout IbcTimeout `json:"timeout"`
+	Src     IbcEndpoint `json:"src"`
+	Timeout IbcTimeout  `json:"timeout"`
 	// The raw data sent from the other side in the packet
 	Data Binary `json:"data"`
 }
@@ -175,20 +175,20 @@ type SupplyResponse struct {
 
 // Replicates the cosmos-sdk bank module Metadata type
 type DenomMetadata struct {
-	Base string `json:"base"`
-	DenomUnits []DenomUnit `json:"denom_units"`
-	Description string `json:"description"`
-	Display string `json:"display"`
-	Name string `json:"name"`
-	Symbol string `json:"symbol"`
-	Uri string `json:"uri"`
-	UriHash string `json:"uri_hash"`
+	Base        string      `json:"base"`
+	DenomUnits  []DenomUnit `json:"denom_units"`
+	Description string      `json:"description"`
+	Display     string      `json:"display"`
+	Name        string      `json:"name"`
+	Symbol      string      `json:"symbol"`
+	Uri         string      `json:"uri"`
+	UriHash     string      `json:"uri_hash"`
 }
 
 // In IBC each package must set at least one type of timeout: the timestamp or the block height. Using this rather complex enum instead of two timeout fields we ensure that at least one timeout is set.
 type IbcTimeout struct {
-	Block *IbcTimeoutBlock `json:"block,omitempty"`
-	Timestamp *Timestamp `json:"timestamp,omitempty"`
+	Block     *IbcTimeoutBlock `json:"block,omitempty"`
+	Timestamp *Timestamp       `json:"timestamp,omitempty"`
 }
 
 /*
@@ -200,9 +200,9 @@ type Binary string
 
 // Replicates the cosmos-sdk bank module DenomUnit type
 type DenomUnit struct {
-	Aliases []string `json:"aliases"`
-	Denom string `json:"denom"`
-	Exponent int `json:"exponent"`
+	Aliases  []string `json:"aliases"`
+	Denom    string   `json:"denom"`
+	Exponent int      `json:"exponent"`
 }
 
 // IbcChannel defines all information on a channel. This is generally used in the hand-shake process, but can be queried directly.
@@ -210,10 +210,10 @@ type IbcChannel struct {
 	// Note: in ibcv3 this may be "", in the IbcOpenChannel handshake messages
 	Version string `json:"version"`
 	// The connection upon which this channel was created. If this is a multi-hop channel, we only expose the first hop.
-	ConnectionId string `json:"connection_id"`
+	ConnectionId         string      `json:"connection_id"`
 	CounterpartyEndpoint IbcEndpoint `json:"counterparty_endpoint"`
-	Endpoint IbcEndpoint `json:"endpoint"`
-	Order IbcOrder `json:"order"`
+	Endpoint             IbcEndpoint `json:"endpoint"`
+	Order                IbcOrder    `json:"order"`
 }
 type ExecuteMsg_ReceiveIcaCallback IcaControllerCallbackMsg
 

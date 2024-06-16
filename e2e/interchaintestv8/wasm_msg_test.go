@@ -116,7 +116,7 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 	s.FundAddressChainB(ctx, s.IcaContractToAddrMap[s.Contract.Address])
 
 	var counterContract *simplecounter.Contract
-	s.Run("TestInstantiate", func() {
+	s.Require().True(s.Run("TestInstantiate", func() {
 		icaAddress := s.IcaContractToAddrMap[s.Contract.Address]
 
 		// Instantiate the contract:
@@ -164,10 +164,10 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		counterState, err := counterContract.QueryClient().GetCount(ctx, &simplecounter.QueryMsg_GetCount{})
 		s.Require().NoError(err)
 		s.Require().Equal(int(0), counterState.Count)
-	})
+	}))
 
 	var counterContract2 *simplecounter.Contract
-	s.Run("TestExecuteAndInstantiate2AndClearAdminMsg", func() {
+	s.Require().True(s.Run("TestExecuteAndInstantiate2AndClearAdminMsg", func() {
 		icaAddress := s.IcaContractToAddrMap[s.Contract.Address]
 
 		// Execute the contract:
@@ -242,9 +242,9 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 
 		counterContract2, err = simplecounter.NewContract(contractByCodeResp.Contracts[1], strconv.FormatUint(uint64(counterCodeID), 10), wasmd2)
 		s.Require().NoError(err)
-	})
+	}))
 
-	s.Run("TestMigrateAndUpdateAdmin", func() {
+	s.Require().True(s.Run("TestMigrateAndUpdateAdmin", func() {
 		migrateMsg := cwicacontroller.CosmosMsg_for_Empty{
 			Wasm: &cwicacontroller.CosmosMsg_for_Empty_Wasm{
 				Migrate: &cwicacontroller.WasmMsg_Migrate{
@@ -293,7 +293,7 @@ func (s *ContractTestSuite) TestSendWasmMsgsProtobufEncoding() {
 		s.Require().NoError(err)
 		s.Require().Equal(counterCodeID+1, int(contractInfoResp.ContractInfo.CodeID))
 		s.Require().Equal(wasmd2User.FormattedAddress(), contractInfoResp.ContractInfo.Admin)
-	})
+	}))
 }
 
 func toBase64(msg string) string {

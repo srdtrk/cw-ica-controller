@@ -72,8 +72,7 @@ mod execute {
     use cw_ica_controller::types::msg::ExecuteMsg as IcaControllerExecuteMsg;
     use cw_ica_controller::types::state::{ChannelState, ChannelStatus};
     use cw_ica_controller::{
-        helpers::CwIcaControllerCode,
-        types::msg::options::ChannelOpenInitOptions,
+        helpers::CwIcaControllerCode, types::msg::options::ChannelOpenInitOptions,
     };
 
     use crate::state::{self, CONTRACT_ADDR_TO_ICA_ID, ICA_COUNT, ICA_STATES};
@@ -155,7 +154,7 @@ mod execute {
             timeout_seconds: None,
         };
 
-        let msg = cw_ica_contract.call(ica_controller_msg)?;
+        let msg = cw_ica_contract.execute(ica_controller_msg)?;
 
         Ok(Response::default().add_message(msg))
     }

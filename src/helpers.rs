@@ -23,6 +23,15 @@ pub struct CwIcaControllerContract(pub Addr);
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct CwIcaControllerCode(pub u64);
 
+/// `CwIcaControllerContractQuerier` is a wrapper around [`QuerierWrapper`] that provides
+/// helpers for querying this contract.
+///
+/// This can be constructed by [`CwIcaControllerContract::query`] or [`Self::new`].
+pub struct CwIcaControllerContractQuerier<'a> {
+    querier: &'a QuerierWrapper<'a>,
+    addr: String,
+}
+
 impl CwIcaControllerContract {
     /// new creates a new [`CwIcaControllerContract`]
     #[must_use]
@@ -36,12 +45,12 @@ impl CwIcaControllerContract {
         self.0.clone()
     }
 
-    /// call creates a [`WasmMsg::Execute`] message targeting this contract,
+    /// `execute` creates a [`WasmMsg::Execute`] message targeting this contract,
     ///
     /// # Errors
     ///
     /// This function returns an error if the given message cannot be serialized
-    pub fn call(&self, msg: impl Into<msg::ExecuteMsg>) -> StdResult<CosmosMsg> {
+    pub fn execute(&self, msg: impl Into<msg::ExecuteMsg>) -> StdResult<CosmosMsg> {
         let msg = to_json_binary(&msg.into())?;
         Ok(WasmMsg::Execute {
             contract_addr: self.addr().into(),
@@ -51,22 +60,10 @@ impl CwIcaControllerContract {
         .into())
     }
 
-    /// `query_channel` queries the [`state::ChannelState`] of this contract
-    ///
-    /// # Errors
-    ///
-    /// This function returns an error if the query fails
-    pub fn query_channel(&self, querier: QuerierWrapper) -> StdResult<state::ChannelState> {
-        querier.query_wasm_smart(self.addr(), &msg::QueryMsg::GetChannel {})
-    }
-
-    /// `query_state` queries the [`state::ContractState`] of this contract
-    ///
-    /// # Errors
-    ///
-    /// This function returns an error if the query fails
-    pub fn query_state(&self, querier: QuerierWrapper) -> StdResult<state::ContractState> {
-        querier.query_wasm_smart(self.addr(), &msg::QueryMsg::GetContractState {})
+    /// `query` creates a new [`LightClientContractQuerier`] for this contract.
+    #[must_use]
+    pub fn query<'a>(&self, querier: &'a QuerierWrapper) -> CwIcaControllerContractQuerier<'a> {
+        CwIcaControllerContractQuerier::new(querier, self.addr().into_string())
     }
 
     /// `update_admin` creates a [`WasmMsg::UpdateAdmin`] message targeting this contract
@@ -182,5 +179,42 @@ impl CwIcaControllerCode {
         };
 
         Ok((instantiate_msg.into(), contract_addr))
+    }
+}
+
+impl<'a> CwIcaControllerContractQuerier<'a> {
+    /// Creates a new [`LightClientContractQuerier`]
+    #[must_use]
+    pub const fn new(querier: &'a QuerierWrapper<'a>, addr: String) -> Self {
+        Self { querier, addr }
+    }
+
+    /// `get_channel` sends a [`msg::QueryMsg::GetChannel`] query to this contract.
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error if the query fails
+    pub fn get_channel(&self) -> StdResult<state::ChannelState> {
+        self.querier
+            .query_wasm_smart(&self.addr, &msg::QueryMsg::GetChannel {})
+    }
+
+    /// `get_contract_state` sends a [`msg::QueryMsg::GetContractState`] query to this contract.
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error if the query fails
+    pub fn get_contract_state(&self) -> StdResult<state::ContractState> {
+        self.querier
+            .query_wasm_smart(&self.addr, &msg::QueryMsg::GetContractState {})
+    }
+
+    /// `ownership` sends a [`msg::QueryMsg::Ownership`] query to this contract.
+    ///
+    /// # Errors
+    /// This function returns an error if the query fails
+    pub fn ownership(&self) -> StdResult<cw_ownable::Ownership<String>> {
+        self.querier
+            .query_wasm_smart(&self.addr, &msg::QueryMsg::Ownership {})
     }
 }
