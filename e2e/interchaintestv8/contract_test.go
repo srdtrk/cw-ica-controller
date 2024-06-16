@@ -722,6 +722,12 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering cwicacontrol
 	}))
 }
 
+// TestSendCosmosMsgs_WithQueries tests all allowed queries in the SendCosmosMsgs message. The following queries are tested:
+// - Bank::Balance
+// - Bank::AllBalances
+// - Bank::DenomMetadata
+// - Bank::AllDenomMetadata
+// - Bank::Supply
 func (s *ContractTestSuite) TestSendCosmosMsgs_WithQueries() {
 	ctx := context.Background()
 
@@ -766,6 +772,7 @@ func (s *ContractTestSuite) TestSendCosmosMsgs_WithQueries() {
 		s.Require().NoError(err)
 		s.Require().Equal(int(1), len(callbackCounter.Success))
 		s.Require().Equal(int(0), len(callbackCounter.Error))
+		s.Require().Equal(int(0), len(callbackCounter.Timeout))
 
 		s.Require().True(s.Run("test unmarshaling ica acknowledgement", func() {
 			icaAck := &sdk.TxMsgData{}
@@ -797,6 +804,76 @@ func (s *ContractTestSuite) TestSendCosmosMsgs_WithQueries() {
 			s.Require().Len(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses, 1)
 			s.Require().Equal(simd.Config().Denom, callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Bank.Balance.Amount.Denom)
 			s.Require().Equal(expBalance.String(), string(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Bank.Balance.Amount.Amount))
+		}))
+	}))
+
+	s.Require().True(s.Run("BankQueries", func() {
+		allBankQueriesMsg := cwicacontroller.ExecuteMsg{
+			SendCosmosMsgs: &cwicacontroller.ExecuteMsg_SendCosmosMsgs{
+				Messages: []cwicacontroller.CosmosMsg_for_Empty{},
+				Queries: []cwicacontroller.QueryRequest_for_Empty{
+					{
+						Bank: &cwicacontroller.QueryRequest_for_Empty_Bank{
+							AllBalances: &cwicacontroller.BankQuery_AllBalances{
+								Address: simdUser.FormattedAddress(),
+							},
+						},
+					},
+					// fail: need to set metadata first
+					// {
+					// 	Bank: &cwicacontroller.QueryRequest_for_Empty_Bank{
+					// 		DenomMetadata: &cwicacontroller.BankQuery_DenomMetadata{
+					// 			Denom: simd.Config().Denom,
+					// 		},
+					// 	},
+					// },
+					{
+						Bank: &cwicacontroller.QueryRequest_for_Empty_Bank{
+							AllDenomMetadata: &cwicacontroller.BankQuery_AllDenomMetadata{},
+						},
+					},
+					{
+						Bank: &cwicacontroller.QueryRequest_for_Empty_Bank{
+							Supply: &cwicacontroller.BankQuery_Supply{
+								Denom: simd.Config().Denom,
+							},
+						},
+					},
+				},
+			},
+		}
+
+		expBalance, err := simd.GetBalance(ctx, simdUser.FormattedAddress(), simd.Config().Denom)
+		s.Require().NoError(err)
+		expSupply, err := e2esuite.GRPCQuery[banktypes.QueryTotalSupplyResponse](ctx, simd, &banktypes.QueryTotalSupplyRequest{})
+		s.Require().NoError(err)
+
+		_, err = s.Contract.Execute(ctx, wasmdUser.KeyName(), allBankQueriesMsg)
+		s.Require().NoError(err)
+
+		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+		s.Require().NoError(err)
+
+		// Check if contract callbacks were executed:
+		callbackCounter, err := s.CallbackCounterContract.QueryClient().GetCallbackCounter(ctx, &callbackcounter.QueryMsg_GetCallbackCounter{})
+		s.Require().NoError(err)
+		s.Require().Equal(int(2), len(callbackCounter.Success))
+		s.Require().Equal(int(0), len(callbackCounter.Error))
+		s.Require().Equal(int(0), len(callbackCounter.Timeout))
+
+		s.Require().True(s.Run("verify query result", func() {
+			s.Require().Nil(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Error)
+			s.Require().NotNil(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success)
+			s.Require().Len(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses, 3)
+
+			s.Require().Len(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Bank.AllBalances.Amount, 1)
+			s.Require().Equal(simd.Config().Denom, callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Bank.AllBalances.Amount[0].Denom)
+			s.Require().Equal(expBalance.String(), string(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Bank.AllBalances.Amount[0].Amount))
+
+			s.Require().Len(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[1].Bank.AllDenomMetadata.Metadata, 0)
+
+			s.Require().Equal(simd.Config().Denom, callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[2].Bank.Supply.Amount.Denom)
+			s.Require().Less(expSupply.Supply[0].Amount.String(), string(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[2].Bank.Supply.Amount.Amount))
 		}))
 	}))
 }
