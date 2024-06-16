@@ -142,15 +142,15 @@ impl IcaMetadata {
     }
 }
 
-impl ToString for IcaMetadata {
-    fn to_string(&self) -> String {
-        serde_json_wasm::to_string(self).unwrap()
+impl std::fmt::Display for IcaMetadata {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&serde_json_wasm::to_string(self).unwrap())
     }
 }
 
-impl ToString for TxEncoding {
-    fn to_string(&self) -> String {
-        serde_json_wasm::to_string(self).unwrap()
+impl std::fmt::Display for TxEncoding {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&serde_json_wasm::to_string(self).unwrap())
     }
 }
 
