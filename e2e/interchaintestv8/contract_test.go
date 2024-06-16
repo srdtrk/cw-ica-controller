@@ -735,7 +735,7 @@ func (s *ContractTestSuite) TestSendCosmosMsgs_WithQueries() {
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, s.IcaContractToAddrMap[s.Contract.Address])
 
-	s.Run("BankQuery_Balance", func() {
+	s.Require().True(s.Run("BankQuery_Balance", func() {
 		balanceQueryMsg := cwicacontroller.ExecuteMsg{
 			SendCosmosMsgs: &cwicacontroller.ExecuteMsg_SendCosmosMsgs{
 				Messages: []cwicacontroller.CosmosMsg_for_Empty{},
@@ -767,7 +767,7 @@ func (s *ContractTestSuite) TestSendCosmosMsgs_WithQueries() {
 		s.Require().Equal(int(1), len(callbackCounter.Success))
 		s.Require().Equal(int(0), len(callbackCounter.Error))
 
-		s.Run("test unmarshaling ica acknowledgement", func() {
+		s.Require().True(s.Run("test unmarshaling ica acknowledgement", func() {
 			icaAck := &sdk.TxMsgData{}
 			s.Require().True(s.Run("unmarshal ica response", func() {
 				err := proto.Unmarshal(callbackCounter.Success[0].OnAcknowledgementPacketCallback.IcaAcknowledgement.Result.Unwrap(), icaAck)
@@ -789,16 +789,16 @@ func (s *ContractTestSuite) TestSendCosmosMsgs_WithQueries() {
 				s.Require().Equal(simd.Config().Denom, balanceResp.Balance.Denom)
 				s.Require().Equal(expBalance.Int64(), balanceResp.Balance.Amount.Int64())
 			}))
-		})
+		}))
 
-		s.Run("verify query result", func() {
+		s.Require().True(s.Run("verify query result", func() {
 			s.Require().Nil(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Error)
 			s.Require().NotNil(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success)
 			s.Require().Len(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses, 1)
 			s.Require().Equal(simd.Config().Denom, callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Bank.Balance.Amount.Denom)
 			s.Require().Equal(expBalance.String(), string(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Bank.Balance.Amount.Amount))
-		})
-	})
+		}))
+	}))
 }
 
 func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
