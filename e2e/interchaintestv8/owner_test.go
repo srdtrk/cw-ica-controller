@@ -89,7 +89,7 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 	icaContract, err := cwicacontroller.NewContract(string(icaState.ContractAddr), strconv.FormatInt(s.IcaContractCodeId, 10), wasmd)
 	s.Require().NoError(err)
 
-	s.Run("TestChannelHandshakeSuccess", func() {
+	s.Require().True(s.Run("TestChannelHandshakeSuccess", func() {
 		// Test if the handshake was successful
 		wasmdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, wasmd.Config().ChainID)
 		s.Require().NoError(err)
@@ -140,7 +140,7 @@ func (s *OwnerTestSuite) TestOwnerCreateIcaContract() {
 		s.Require().Equal(s.OwnerContract.Address, *ownershipResponse.Owner)
 		s.Require().Nil(ownershipResponse.PendingOwner)
 		s.Require().Nil(ownershipResponse.PendingExpiry)
-	})
+	}))
 }
 
 func (s *OwnerTestSuite) TestOwnerPredefinedAction() {
@@ -167,7 +167,7 @@ func (s *OwnerTestSuite) TestOwnerPredefinedAction() {
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, icaAddress)
 
-	s.Run("TestSendPredefinedActionSuccess", func() {
+	s.Require().True(s.Run("TestSendPredefinedActionSuccess", func() {
 		execPredefinedActionMsg := cwicaowner.ExecuteMsg{
 			SendPredefinedAction: &cwicaowner.ExecuteMsg_SendPredefinedAction{
 				IcaId:     0,
@@ -183,5 +183,5 @@ func (s *OwnerTestSuite) TestOwnerPredefinedAction() {
 		icaBalance, err := simd.GetBalance(ctx, icaAddress, simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(sdkmath.NewInt(1000000000-100), icaBalance)
-	})
+	}))
 }
