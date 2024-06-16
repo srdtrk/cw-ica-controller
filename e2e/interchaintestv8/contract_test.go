@@ -119,7 +119,7 @@ func (s *ContractTestSuite) IcaContractChannelHandshakeTest_WithOrdering(orderin
 	s.SetupContractTestSuite(ctx, ordering)
 	wasmd, simd := s.ChainA, s.ChainB
 
-	s.Run("TestChannelHandshakeSuccess", func() {
+	s.Require().True(s.Run("TestChannelHandshakeSuccess", func() {
 		// Test if the handshake was successful
 		wasmdChannels, err := s.Relayer.GetChannels(ctx, s.ExecRep, wasmd.Config().ChainID)
 		s.Require().NoError(err)
@@ -165,7 +165,7 @@ func (s *ContractTestSuite) IcaContractChannelHandshakeTest_WithOrdering(orderin
 		contractState, err := s.Contract.QueryClient().GetContractState(ctx, &cwicacontroller.QueryMsg_GetContractState{})
 		s.Require().NoError(err)
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelId)
-	})
+	}))
 }
 
 // This tests that the relayer cannot create a channel with the contract's port.
@@ -217,7 +217,7 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 	codeId, err := wasmd.StoreContract(ctx, wasmdUser.KeyName(), "../../artifacts/cw_ica_controller.wasm")
 	s.Require().NoError(err)
 
-	s.Run("TestChannelHandshakeFail: invalid connection id", func() {
+	s.Require().True(s.Run("TestChannelHandshakeFail: invalid connection id", func() {
 		// Instantiate the contract with channel:
 		instantiateMsg := cwicacontroller.InstantiateMsg{
 			Owner: nil,
@@ -231,9 +231,9 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 
 		_, err = cwicacontroller.Instantiate(ctx, wasmdUser.KeyName(), codeId, "", wasmd, instantiateMsg, "--gas", "500000")
 		s.Require().ErrorContains(err, "submessages: invalid connection hop ID")
-	})
+	}))
 
-	s.Run("TestChannelHandshakeFail: invalid counterparty connection id", func() {
+	s.Require().True(s.Run("TestChannelHandshakeFail: invalid counterparty connection id", func() {
 		// Instantiate the contract with channel:
 		instantiateMsg := cwicacontroller.InstantiateMsg{
 			Owner: nil,
@@ -247,9 +247,9 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 
 		s.Contract, err = cwicacontroller.Instantiate(ctx, wasmdUser.KeyName(), codeId, "", wasmd, instantiateMsg, "--gas", "500000")
 		s.Require().NoError(err)
-	})
+	}))
 
-	s.Run("TestChannelHandshakeSuccessAfterFail", func() {
+	s.Require().True(s.Run("TestChannelHandshakeSuccessAfterFail", func() {
 		createChannelMsg := cwicacontroller.ExecuteMsg{
 			CreateChannel: &cwicacontroller.ExecuteMsg_CreateChannel{
 				ChannelOpenInitOptions: &cwicacontroller.ChannelOpenInitOptions{
@@ -310,7 +310,7 @@ func (s *ContractTestSuite) TestRecoveredIcaContractInstantiatedChannelHandshake
 		contractState, err := s.Contract.QueryClient().GetContractState(ctx, &cwicacontroller.QueryMsg_GetContractState{})
 		s.Require().NoError(err)
 		s.Require().Equal(wasmdChannel.ChannelID, contractState.IcaInfo.ChannelId)
-	})
+	}))
 }
 
 func (s *ContractTestSuite) TestIcaContractExecution_Ordered_Protobuf() {
@@ -333,7 +333,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering cwicac
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, s.IcaContractToAddrMap[s.Contract.Address])
 
-	s.Run("TestStargateMsgSuccess", func() {
+	s.Require().True(s.Run("TestStargateMsgSuccess", func() {
 		// Send custom ICA messages through the contract:
 		// Let's create a governance proposal on simd and deposit some funds to it.
 		govAddress := s.GetModuleAddress(ctx, simd, govtypes.ModuleName)
@@ -381,9 +381,9 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering cwicac
 		postBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(intialBalance.Sub(sdkmath.NewInt(10_000_000)), postBalance)
-	})
+	}))
 
-	s.Run("TestSendCosmosMsgsSuccess", func() {
+	s.Require().True(s.Run("TestSendCosmosMsgsSuccess", func() {
 		intialBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 
@@ -450,9 +450,9 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering cwicac
 		s.Require().Len(voteResp.Vote.Options, 1)
 		s.Require().Equal(govv1.OptionYes, voteResp.Vote.Options[0].Option)
 		s.Require().Equal(sdkmath.LegacyNewDec(1).String(), voteResp.Vote.Options[0].Weight)
-	})
+	}))
 
-	s.Run("TestIcaError", func() {
+	s.Require().True(s.Run("TestIcaError", func() {
 		// Test erroneous callback:
 		// Send incorrect custom ICA messages through the contract:
 		badSendMsg := cwicacontroller.CosmosMsg_for_Empty{
@@ -487,7 +487,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering cwicac
 		s.Require().Equal(int(2), len(callbackCounter.Success))
 		s.Require().Equal(int(1), len(callbackCounter.Error))
 		s.Require().Equal(int(0), len(callbackCounter.Timeout))
-	})
+	}))
 }
 
 func (s *ContractTestSuite) TestSendCosmosMsgs_Ordered_Protobuf() {
@@ -519,7 +519,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering cwicacontrol
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, s.IcaContractToAddrMap[s.Contract.Address])
 
-	s.Run("TestStargate", func() {
+	s.Require().True(s.Run("TestStargate", func() {
 		// Send custom ICA messages through the contract:
 		// Let's create a governance proposal on simd and deposit some funds to it.
 		govAddress := s.GetModuleAddress(ctx, simd, govtypes.ModuleName)
@@ -567,9 +567,9 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering cwicacontrol
 		postBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(initialBalance.Sub(sdkmath.NewInt(10_000_000)), postBalance)
-	})
+	}))
 
-	s.Run("TestDelegateAndVoteWeightedAndCommunityPool", func() {
+	s.Require().True(s.Run("TestDelegateAndVoteWeightedAndCommunityPool", func() {
 		intialBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 
@@ -667,9 +667,9 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering cwicacontrol
 		s.Require().True(expWeight.Equal(actualWeight))
 		s.Require().Equal(govv1.OptionAbstain, voteResp.Vote.Options[1].Option)
 		s.Require().True(expWeight.Equal(actualWeight2))
-	})
+	}))
 
-	s.Run("TestSendAndSetWithdrawAddress", func() {
+	s.Require().True(s.Run("TestSendAndSetWithdrawAddress", func() {
 		initialBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 
@@ -718,7 +718,7 @@ func (s *ContractTestSuite) SendCosmosMsgsTestWithOrdering(ordering cwicacontrol
 		postBalance, err := simd.GetBalance(ctx, s.IcaContractToAddrMap[s.Contract.Address], simd.Config().Denom)
 		s.Require().NoError(err)
 		s.Require().Equal(sdkmath.NewInt(1_000_000), initialBalance.Sub(postBalance))
-	})
+	}))
 }
 
 func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
@@ -737,7 +737,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 	s.Require().NoError(err)
 
 	var simdChannelsLen int
-	s.Run("TestTimeout", func() {
+	s.Require().True(s.Run("TestTimeout", func() {
 		// We will send a message to the host that will timeout after 3 seconds.
 		// You cannot use 0 seconds because block timestamp will be greater than the timeout timestamp which is not allowed.
 		// Host will not be able to respond to this message in time.
@@ -798,9 +798,9 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 		contractChannelState, err := s.Contract.QueryClient().GetChannel(ctx, &cwicacontroller.QueryMsg_GetChannel{})
 		s.Require().NoError(err)
 		s.Require().Equal(cwicacontroller.Status_StateClosed, contractChannelState.ChannelStatus)
-	})
+	}))
 
-	s.Run("TestChannelReopening", func() {
+	s.Require().True(s.Run("TestChannelReopening", func() {
 		// Reopen the channel:
 		createChannelMsg := cwicacontroller.ExecuteMsg{
 			CreateChannel: &cwicacontroller.ExecuteMsg_CreateChannel{
@@ -851,9 +851,9 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 		s.Require().Equal(int(0), len(callbackCounter.Success))
 		s.Require().Equal(int(0), len(callbackCounter.Error))
 		s.Require().Equal(int(1), len(callbackCounter.Timeout))
-	})
+	}))
 
-	s.Run("TestSendCustomIcaMessagesAfterReopen", func() {
+	s.Require().True(s.Run("TestSendCustomIcaMessagesAfterReopen", func() {
 		// Send custom ICA message through the contract:
 		sendMsg := &banktypes.MsgSend{
 			FromAddress: s.IcaContractToAddrMap[s.Contract.Address],
@@ -881,7 +881,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Ordered_Protobuf() {
 		s.Require().Equal(int(1), len(callbackCounter.Success))
 		s.Require().Equal(int(0), len(callbackCounter.Error))
 		s.Require().Equal(int(1), len(callbackCounter.Timeout))
-	})
+	}))
 }
 
 func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Unordered_Protobuf() {
@@ -900,7 +900,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Unordered_Protobuf() {
 	s.Require().NoError(err)
 
 	var simdChannelsLen int
-	s.Run("TestTimeout", func() {
+	s.Require().True(s.Run("TestTimeout", func() {
 		// We will send a message to the host that will timeout after 3 seconds.
 		// You cannot use 0 seconds because block timestamp will be greater than the timeout timestamp which is not allowed.
 		// Host will not be able to respond to this message in time.
@@ -961,9 +961,9 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Unordered_Protobuf() {
 		contractChannelState, err := s.Contract.QueryClient().GetChannel(ctx, &cwicacontroller.QueryMsg_GetChannel{})
 		s.Require().NoError(err)
 		s.Require().Equal(cwicacontroller.Status_StateOpen, contractChannelState.ChannelStatus)
-	})
+	}))
 
-	s.Run("TestSendCustomIcaMessagesAfterTimeout", func() {
+	s.Require().True(s.Run("TestSendCustomIcaMessagesAfterTimeout", func() {
 		// Send custom ICA message through the contract:
 		sendMsg := &banktypes.MsgSend{
 			FromAddress: s.IcaContractToAddrMap[s.Contract.Address],
@@ -991,7 +991,7 @@ func (s *ContractTestSuite) TestIcaContractTimeoutPacket_Unordered_Protobuf() {
 		s.Require().Equal(int(1), len(callbackCounter.Success))
 		s.Require().Equal(int(0), len(callbackCounter.Error))
 		s.Require().Equal(int(1), len(callbackCounter.Timeout))
-	})
+	}))
 }
 
 func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
@@ -1007,7 +1007,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 	s.FundAddressChainB(ctx, s.IcaContractToAddrMap[s.Contract.Address])
 
 	var simdChannelsLen int
-	s.Run("TestCloseChannel", func() {
+	s.Require().True(s.Run("TestCloseChannel", func() {
 		// Close the channel:
 		closeChannelMsg := cwicacontroller.ExecuteMsg{
 			CloseChannel: &cwicacontroller.ExecuteMsg_CloseChannel{},
@@ -1042,9 +1042,9 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		contractChannelState, err := s.Contract.QueryClient().GetChannel(ctx, &cwicacontroller.QueryMsg_GetChannel{})
 		s.Require().NoError(err)
 		s.Require().Equal(cwicacontroller.Status_StateClosed, contractChannelState.ChannelStatus)
-	})
+	}))
 
-	s.Run("TestChannelReopening", func() {
+	s.Require().True(s.Run("TestChannelReopening", func() {
 		// Reopen the channel:
 		ordering := cwicacontroller.IbcOrder_OrderUnordered
 
@@ -1104,9 +1104,9 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		s.Require().Equal(int(0), len(callbackCounter.Success))
 		s.Require().Equal(int(0), len(callbackCounter.Error))
 		s.Require().Equal(int(0), len(callbackCounter.Timeout))
-	})
+	}))
 
-	s.Run("TestSendCustomIcaMessagesAfterReopen", func() {
+	s.Require().True(s.Run("TestSendCustomIcaMessagesAfterReopen", func() {
 		// Send custom ICA message through the contract:
 		sendMsg := &banktypes.MsgSend{
 			FromAddress: s.IcaContractToAddrMap[s.Contract.Address],
@@ -1134,7 +1134,7 @@ func (s *ContractTestSuite) TestMigrateOrderedToUnordered() {
 		s.Require().Equal(int(1), len(callbackCounter.Success))
 		s.Require().Equal(int(0), len(callbackCounter.Error))
 		s.Require().Equal(int(0), len(callbackCounter.Timeout))
-	})
+	}))
 }
 
 func (s *ContractTestSuite) TestCloseChannel_Protobuf_Unordered() {
@@ -1149,7 +1149,7 @@ func (s *ContractTestSuite) TestCloseChannel_Protobuf_Unordered() {
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, s.IcaContractToAddrMap[s.Contract.Address])
 
-	s.Run("TestCloseChannel", func() {
+	s.Require().True(s.Run("TestCloseChannel", func() {
 		// Close the channel:
 		closeChannelMsg := cwicacontroller.ExecuteMsg{
 			CloseChannel: &cwicacontroller.ExecuteMsg_CloseChannel{},
@@ -1184,7 +1184,7 @@ func (s *ContractTestSuite) TestCloseChannel_Protobuf_Unordered() {
 		contractChannelState, err := s.Contract.QueryClient().GetChannel(ctx, &cwicacontroller.QueryMsg_GetChannel{})
 		s.Require().NoError(err)
 		s.Require().Equal(cwicacontroller.Status_StateClosed, contractChannelState.ChannelStatus)
-	})
+	}))
 }
 
 // toJSONString returns a string representation of the given value
