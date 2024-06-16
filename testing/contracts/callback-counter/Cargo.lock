@@ -15,9 +15,9 @@ dependencies = [
 
 [[package]]
 name = "anybuf"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c1a43b7dc14f396c5d1ac0eaea10f33cb40a2b46751d0869864d6d5abed20db"
+checksum = "cb5f1dee23caf80904249463cc4493b6789c2250f88c8f8d9160de5c6099bfe7"
 
 [[package]]
 name = "anyhow"
@@ -594,7 +594,7 @@ checksum = "ed3955f1a9c7c0c15e092f9c887db08b1fc683305fdf6eb6684f22555355e202"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.65",
+ "syn 2.0.66",
 ]
 
 [[package]]
