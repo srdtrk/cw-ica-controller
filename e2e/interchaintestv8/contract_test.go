@@ -791,7 +791,7 @@ func (s *ContractTestSuite) TestSendCosmosMsgs_WithQueries() {
 			}))
 		})
 
-		s.Run("test query result", func() {
+		s.Run("verify query result", func() {
 			s.Require().Nil(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Error)
 			s.Require().NotNil(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success)
 			s.Require().Len(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses, 1)

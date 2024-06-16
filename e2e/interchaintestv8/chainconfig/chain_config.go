@@ -30,7 +30,7 @@ var DefaultChainSpecs = []*interchaintest.ChainSpec{
 			NoHostMount:    false,
 		},
 	},
-	// -- WASMD --
+	// -- IBC-Go --
 	{
 		ChainConfig: ibc.ChainConfig{
 			Type:    "cosmos",
