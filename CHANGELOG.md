@@ -4,6 +4,11 @@
 
 ### API Breaking Changes
 
+- Improved the query helpers. (https://github.com/srdtrk/cw-ica-controller/pull/114)
+- Changed `call` to `execute` in `helpers.rs`. (https://github.com/srdtrk/cw-ica-controller/pull/114)
+
+### API Breaking Changes
+
 - Removed support for `proto3json` encoding. (https://github.com/srdtrk/cw-ica-controller/pull/92)
 - Removed `tx_encoding` field from `ChannelOpenInitOptions`. (https://github.com/srdtrk/cw-ica-controller/pull/92)
 - Removed `ExecuteMsg::SendCustomIcaMessages`. (https://github.com/srdtrk/cw-ica-controller/pull/92)
