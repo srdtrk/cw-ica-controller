@@ -4,7 +4,7 @@ use cosmwasm_std::{Empty, QueryRequest};
 
 pub use response::*;
 
-/// Converts a [`QueryRequest`] to a gRPC method path, protobuf bytes, and a flag indicating if the query is stargate.
+/// Converts a [`QueryRequest`] to a grpc method path, protobuf bytes, and a flag indicating if the query is stargate.
 ///
 /// # Panics
 ///
