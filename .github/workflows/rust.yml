@@ -125,6 +125,34 @@ jobs:
           command: build
           args: --locked --features=staking
 
+  build-with-query:
+    name: Build with Query Feature
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: 1.73.0
+          override: true
+
+      - name: Run unit tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: unit-test
+          args: --locked --features=staking
+        env:
+          RUST_BACKTRACE: 1
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked --features=query
+
   lints:
     name: Lint Contract
     runs-on: ubuntu-latest
