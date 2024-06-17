@@ -49,6 +49,7 @@ pub enum ExecuteMsg {
         /// The queries are executed after the messages.
         #[cfg(feature = "query")]
         #[serde(skip_serializing_if = "Vec::is_empty")]
+        #[serde(default)]
         queries: Vec<cosmwasm_std::QueryRequest<cosmwasm_std::Empty>>,
         /// Optional memo to include in the ibc packet.
         #[serde(skip_serializing_if = "Option::is_none")]
