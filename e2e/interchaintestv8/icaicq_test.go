@@ -6,7 +6,9 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	icahosttypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/types"
@@ -24,7 +26,7 @@ import (
 // - Bank::AllDenomMetadata
 // - Bank::Supply
 // TODO: Bank::DenomMetadata
-func (s *ContractTestSuite) TestBankQueries() {
+func (s *ContractTestSuite) TestBankAndStargateQueries() {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
@@ -102,7 +104,7 @@ func (s *ContractTestSuite) TestBankQueries() {
 		}))
 	}))
 
-	s.Require().True(s.Run("Other bank queries", func() {
+	s.Require().True(s.Run("Other bank queries and stargate query", func() {
 		allBankQueriesMsg := cwicacontroller.ExecuteMsg{
 			SendCosmosMsgs: &cwicacontroller.ExecuteMsg_SendCosmosMsgs{
 				Messages: []cwicacontroller.CosmosMsg_for_Empty{},
@@ -134,6 +136,11 @@ func (s *ContractTestSuite) TestBankQueries() {
 							},
 						},
 					},
+					{
+						Stargate: cwicacontroller.NewStargateQuery_FromProto("/cosmos.auth.v1beta1.Query/ModuleAccountByName", &authtypes.QueryModuleAccountByNameRequest{
+							Name: govtypes.ModuleName,
+						}),
+					},
 				},
 			},
 		}
@@ -141,6 +148,11 @@ func (s *ContractTestSuite) TestBankQueries() {
 		expBalance, err := simd.GetBalance(ctx, simdUser.FormattedAddress(), simd.Config().Denom)
 		s.Require().NoError(err)
 		expSupply, err := e2esuite.GRPCQuery[banktypes.QueryTotalSupplyResponse](ctx, simd, &banktypes.QueryTotalSupplyRequest{})
+		s.Require().NoError(err)
+
+		expStargateResp, err := e2esuite.GRPCQuery[authtypes.QueryModuleAccountByNameResponse](ctx, simd, &authtypes.QueryModuleAccountByNameRequest{
+			Name: govtypes.ModuleName,
+		})
 		s.Require().NoError(err)
 
 		_, err = s.Contract.Execute(ctx, wasmdUser.KeyName(), allBankQueriesMsg)
@@ -159,7 +171,7 @@ func (s *ContractTestSuite) TestBankQueries() {
 		s.Require().True(s.Run("verify query result", func() {
 			s.Require().Nil(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Error)
 			s.Require().NotNil(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success)
-			s.Require().Len(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses, 3)
+			s.Require().Len(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses, 4)
 
 			s.Require().Len(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Bank.AllBalances.Amount, 1)
 			s.Require().Equal(simd.Config().Denom, callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Bank.AllBalances.Amount[0].Denom)
@@ -169,6 +181,14 @@ func (s *ContractTestSuite) TestBankQueries() {
 
 			s.Require().Equal(simd.Config().Denom, callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[2].Bank.Supply.Amount.Denom)
 			s.Require().Less(expSupply.Supply[0].Amount.String(), string(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[2].Bank.Supply.Amount.Amount))
+
+			s.Require().Equal("/cosmos.auth.v1beta1.Query/ModuleAccountByName", callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[3].Stargate.Path)
+
+			resp := &authtypes.QueryModuleAccountByNameResponse{}
+			err = proto.Unmarshal(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[3].Stargate.Data.Unwrap(), resp)
+			s.Require().NoError(err)
+
+			s.Require().Equal(expStargateResp, resp)
 		}))
 	}))
 }

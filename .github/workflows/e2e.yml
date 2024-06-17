@@ -48,7 +48,8 @@ jobs:
           - TestWithContractTestSuite/TestSendWasmMsgsProtobufEncoding
           - TestWithContractTestSuite/TestMigrateOrderedToUnordered
           - TestWithContractTestSuite/TestCloseChannel_Protobuf_Unordered
-          - TestWithContractTestSuite/TestBankQueries
+          - TestWithContractTestSuite/TestBankAndStargateQueries
+          - TestWithContractTestSuite/TestStakingQueries
     name: ${{ matrix.test }}
     runs-on: ubuntu-latest
     steps:
