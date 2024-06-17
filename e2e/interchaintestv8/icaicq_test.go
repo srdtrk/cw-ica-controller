@@ -30,8 +30,7 @@ func (s *ContractTestSuite) TestBankQueries() {
 	// sets up the contract and does the channel handshake for the contract test suite.
 	s.SetupContractTestSuite(ctx, cwicacontroller.IbcOrder_OrderUnordered)
 	wasmd, simd := s.ChainA, s.ChainB
-	wasmdUser := s.UserA
-	simdUser := s.UserB
+	wasmdUser, simdUser := s.UserA, s.UserB
 
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, s.IcaContractToAddrMap[s.Contract.Address])
@@ -169,6 +168,90 @@ func (s *ContractTestSuite) TestBankQueries() {
 
 			s.Require().Equal(simd.Config().Denom, callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[2].Bank.Supply.Amount.Denom)
 			s.Require().Less(expSupply.Supply[0].Amount.String(), string(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[2].Bank.Supply.Amount.Amount))
+		}))
+	}))
+}
+
+func (s *ContractTestSuite) TestStakingQuery() {
+	ctx := context.Background()
+
+	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
+	// sets up the contract and does the channel handshake for the contract test suite.
+	s.SetupContractTestSuite(ctx, cwicacontroller.IbcOrder_OrderUnordered)
+	wasmd, simd := s.ChainA, s.ChainB
+	wasmdUser, _ := s.UserA, s.UserB
+
+	// Fund the ICA address:
+	icaAddress := s.IcaContractToAddrMap[s.Contract.Address]
+	s.FundAddressChainB(ctx, icaAddress)
+
+	s.Require().True(s.Run("Query after msg", func() {
+		validator, err := simd.Validators[0].KeyBech32(ctx, "validator", "val")
+		s.Require().NoError(err)
+
+		// Stake some tokens through CosmosMsgs:
+		stakeAmount := cwicacontroller.Coin{
+			Denom:  simd.Config().Denom,
+			Amount: "10000000",
+		}
+		stakeCosmosMsg := cwicacontroller.CosmosMsg_for_Empty{
+			Staking: &cwicacontroller.CosmosMsg_for_Empty_Staking{
+				Delegate: &cwicacontroller.StakingMsg_Delegate{
+					Validator: validator,
+					Amount:    stakeAmount,
+				},
+			},
+		}
+		// Execute the contract:
+		sendCosmosMsgsExecMsg := cwicacontroller.ExecuteMsg{
+			SendCosmosMsgs: &cwicacontroller.ExecuteMsg_SendCosmosMsgs{
+				Messages: []cwicacontroller.CosmosMsg_for_Empty{stakeCosmosMsg},
+				Queries: []cwicacontroller.QueryRequest_for_Empty{
+					{
+						Staking: &cwicacontroller.QueryRequest_for_Empty_Staking{
+							Delegation: &cwicacontroller.StakingQuery_Delegation{
+								Validator: validator,
+								Delegator: icaAddress,
+							},
+						},
+					},
+					{
+						Staking: &cwicacontroller.QueryRequest_for_Empty_Staking{
+							AllDelegations: &cwicacontroller.StakingQuery_AllDelegations{
+								Delegator: icaAddress,
+							},
+						},
+					},
+				},
+			},
+		}
+		_, err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCosmosMsgsExecMsg)
+		s.Require().NoError(err)
+
+		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+		s.Require().NoError(err)
+
+		callbackCounter, err := s.CallbackCounterContract.QueryClient().GetCallbackCounter(ctx, &callbackcounter.QueryMsg_GetCallbackCounter{})
+		s.Require().NoError(err)
+		s.Require().Equal(int(1), len(callbackCounter.Success))
+		s.Require().Equal(int(0), len(callbackCounter.Error))
+		s.Require().Equal(int(0), len(callbackCounter.Timeout))
+
+		s.Require().True(s.Run("verify query result", func() {
+			s.Require().Nil(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Error)
+			s.Require().NotNil(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success)
+			s.Require().Len(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses, 2)
+
+			s.Require().Equal(validator, callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Staking.Delegation.Delegation.Validator)
+			s.Require().Equal(icaAddress, callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Staking.Delegation.Delegation.Delegator)
+			s.Require().Equal(stakeAmount.Denom, callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Staking.Delegation.Delegation.Amount.Denom)
+			s.Require().Equal(string(stakeAmount.Amount), string(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Staking.Delegation.Delegation.Amount.Amount))
+
+			s.Require().Len(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[1].Staking.AllDelegations.Delegations, 1)
+			s.Require().Equal(validator, callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[1].Staking.AllDelegations.Delegations[0].Validator)
+			s.Require().Equal(icaAddress, callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[1].Staking.AllDelegations.Delegations[0].Delegator)
+			s.Require().Equal(stakeAmount.Denom, callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[1].Staking.AllDelegations.Delegations[0].Amount.Denom)
+			s.Require().Equal(string(stakeAmount.Amount), string(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[1].Staking.AllDelegations.Delegations[0].Amount.Amount))
 		}))
 	}))
 }
