@@ -7,6 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	icahosttypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/types"
 
@@ -172,7 +173,13 @@ func (s *ContractTestSuite) TestBankQueries() {
 	}))
 }
 
-func (s *ContractTestSuite) TestStakingQuery() {
+// `TestStakingQuery` tests all allowed staking queries in the SendCosmosMsgs message. The following queries are tested:
+// - Staking::Delegation
+// - Staking::AllDelegations
+// - Staking::Validator
+// - Staking::AllValidator
+// - Staking::BondedDenom
+func (s *ContractTestSuite) TestStakingQueries() {
 	ctx := context.Background()
 
 	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
@@ -185,8 +192,10 @@ func (s *ContractTestSuite) TestStakingQuery() {
 	icaAddress := s.IcaContractToAddrMap[s.Contract.Address]
 	s.FundAddressChainB(ctx, icaAddress)
 
+	var validator string
 	s.Require().True(s.Run("Query after msg", func() {
-		validator, err := simd.Validators[0].KeyBech32(ctx, "validator", "val")
+		var err error
+		validator, err = simd.Validators[0].KeyBech32(ctx, "validator", "val")
 		s.Require().NoError(err)
 
 		// Stake some tokens through CosmosMsgs:
@@ -203,7 +212,7 @@ func (s *ContractTestSuite) TestStakingQuery() {
 			},
 		}
 		// Execute the contract:
-		sendCosmosMsgsExecMsg := cwicacontroller.ExecuteMsg{
+		execMsgWithQueries := cwicacontroller.ExecuteMsg{
 			SendCosmosMsgs: &cwicacontroller.ExecuteMsg_SendCosmosMsgs{
 				Messages: []cwicacontroller.CosmosMsg_for_Empty{stakeCosmosMsg},
 				Queries: []cwicacontroller.QueryRequest_for_Empty{
@@ -225,7 +234,7 @@ func (s *ContractTestSuite) TestStakingQuery() {
 				},
 			},
 		}
-		_, err = s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCosmosMsgsExecMsg)
+		_, err = s.Contract.Execute(ctx, wasmdUser.KeyName(), execMsgWithQueries)
 		s.Require().NoError(err)
 
 		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
@@ -252,6 +261,64 @@ func (s *ContractTestSuite) TestStakingQuery() {
 			s.Require().Equal(icaAddress, callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[1].Staking.AllDelegations.Delegations[0].Delegator)
 			s.Require().Equal(stakeAmount.Denom, callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[1].Staking.AllDelegations.Delegations[0].Amount.Denom)
 			s.Require().Equal(string(stakeAmount.Amount), string(callbackCounter.Success[0].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[1].Staking.AllDelegations.Delegations[0].Amount.Amount))
+		}))
+	}))
+
+	s.Require().True(s.Run("Other staking queries", func() {
+		execMsgWithQueries := cwicacontroller.ExecuteMsg{
+			SendCosmosMsgs: &cwicacontroller.ExecuteMsg_SendCosmosMsgs{
+				Messages: []cwicacontroller.CosmosMsg_for_Empty{},
+				Queries: []cwicacontroller.QueryRequest_for_Empty{
+					{
+						Staking: &cwicacontroller.QueryRequest_for_Empty_Staking{
+							Validator: &cwicacontroller.StakingQuery_Validator{
+								Address: validator,
+							},
+						},
+					},
+					{
+						Staking: &cwicacontroller.QueryRequest_for_Empty_Staking{
+							AllValidators: &cwicacontroller.StakingQuery_AllValidators{},
+						},
+					},
+					{
+						Staking: &cwicacontroller.QueryRequest_for_Empty_Staking{
+							BondedDenom: &cwicacontroller.StakingQuery_BondedDenom{},
+						},
+					},
+				},
+			},
+		}
+
+		_, err := s.Contract.Execute(ctx, wasmdUser.KeyName(), execMsgWithQueries)
+		s.Require().NoError(err)
+
+		err = testutil.WaitForBlocks(ctx, 5, wasmd, simd)
+		s.Require().NoError(err)
+
+		callbackCounter, err := s.CallbackCounterContract.QueryClient().GetCallbackCounter(ctx, &callbackcounter.QueryMsg_GetCallbackCounter{})
+		s.Require().NoError(err)
+		s.Require().Equal(int(2), len(callbackCounter.Success))
+		s.Require().Equal(int(0), len(callbackCounter.Error))
+		s.Require().Equal(int(0), len(callbackCounter.Timeout))
+
+		valResp, err := e2esuite.GRPCQuery[stakingtypes.QueryValidatorResponse](ctx, simd, &stakingtypes.QueryValidatorRequest{ValidatorAddr: validator})
+		s.Require().NoError(err)
+
+		s.Require().True(s.Run("verify query result", func() {
+			s.Require().Nil(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Error)
+			s.Require().NotNil(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success)
+			s.Require().Len(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses, 3)
+
+			s.Require().Equal(validator, callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Staking.Validator.Validator.Address)
+			s.Require().Equal(valResp.Validator.Commission.CommissionRates.Rate.BigInt().String(), string(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Staking.Validator.Validator.Commission))
+			s.Require().Equal(valResp.Validator.Commission.CommissionRates.MaxRate.BigInt().String(), string(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Staking.Validator.Validator.MaxCommission))
+			s.Require().Equal(valResp.Validator.Commission.CommissionRates.MaxChangeRate.BigInt().String(), string(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Staking.Validator.Validator.MaxChangeRate))
+
+			s.Require().Len(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[1].Staking.AllValidators.Validators, 2)
+			s.Require().Equal(*callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Staking.Validator.Validator, callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[1].Staking.AllValidators.Validators[0])
+
+			s.Require().Equal(simd.Config().Denom, callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[2].Staking.BondedDenom.Denom)
 		}))
 	}))
 }
