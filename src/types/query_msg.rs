@@ -124,6 +124,7 @@ mod response {
     }
 
     /// The response type for the [`cosmwasm_std::BankQuery`] queries.
+    #[non_exhaustive]
     #[cw_serde]
     pub enum BankQueryResponse {
         /// Response for the [`cosmwasm_std::BankQuery::Supply`] query.
@@ -139,6 +140,7 @@ mod response {
     }
 
     /// The response type for the [`cosmwasm_std::StakingQuery`] queries.
+    #[non_exhaustive]
     #[cw_serde]
     pub enum StakingQueryResponse {
         /// Response for the [`cosmwasm_std::StakingQuery::BondedDenom`] query.
