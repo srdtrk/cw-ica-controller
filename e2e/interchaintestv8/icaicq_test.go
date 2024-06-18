@@ -287,7 +287,6 @@ func (s *ContractTestSuite) TestStakingQueries() {
 	s.Require().True(s.Run("Other staking queries", func() {
 		execMsgWithQueries := cwicacontroller.ExecuteMsg{
 			SendCosmosMsgs: &cwicacontroller.ExecuteMsg_SendCosmosMsgs{
-				Messages: []cwicacontroller.CosmosMsg_for_Empty{},
 				Queries: []cwicacontroller.QueryRequest_for_Empty{
 					{
 						Staking: &cwicacontroller.QueryRequest_for_Empty_Staking{
