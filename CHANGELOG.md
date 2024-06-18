@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## v0.6.0 (2024-06-18)
+
 ### Features
 
 - Added support for ICA queries. (https://github.com/srdtrk/cw-ica-controller/issues/88)
