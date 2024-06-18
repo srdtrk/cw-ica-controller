@@ -1,5 +1,5 @@
-import {themes as prismThemes} from 'prism-react-renderer';
-import type {Config} from '@docusaurus/types';
+import { themes as prismThemes } from 'prism-react-renderer';
+import type { Config } from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
@@ -43,12 +43,16 @@ const config: Config = {
           routeBasePath: "/",
           sidebarCollapsed: false,
           // Select the latest version
-          lastVersion: "v0.5.x",
+          lastVersion: "v0.6.x",
           versions: {
             current: {
               label: 'main',
               path: 'main',
               banner: 'unreleased',
+            },
+            "v0.6.x": {
+              label: 'v0.6.x',
+              path: 'v0.6',
             },
             "v0.5.x": {
               label: 'v0.5.x',
@@ -158,10 +162,10 @@ const config: Config = {
     },
     // github codeblock theme configuration
     codeblock: {
-        showGithubLink: true,
-        githubLinkLabel: 'View on GitHub',
-        showRunmeLink: false,
-        runmeLinkLabel: 'Checkout via Runme'
+      showGithubLink: true,
+      githubLinkLabel: 'View on GitHub',
+      showRunmeLink: false,
+      runmeLinkLabel: 'Checkout via Runme'
     },
   } satisfies Preset.ThemeConfig,
   plugins: [
