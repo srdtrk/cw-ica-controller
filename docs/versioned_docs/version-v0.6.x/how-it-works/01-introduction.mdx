@@ -1,0 +1,38 @@
+---
+title: Introduction
+sidebar_label: Introduction
+sidebar_position: 1
+slug: /how-it-works/introduction
+---
+
+# How it works?
+
+:::info
+
+[ICS-27](https://github.com/cosmos/ibc/tree/main/spec/app/ics-027-interchain-accounts) is an interchain standard
+that specifies packet data structure, state machine handling logic, and encoding details for the account management
+system over an IBC channel between separate chains.
+
+:::
+
+CosmWasm provides native entry points for IBC channel and packet semantics (known as [ICS-4](https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channel-and-packet-semantics)).
+This allows CosmWasm contracts to implement interchain specifications for IBC applications. Some notable examples are:
+
+- [`cw20-ics20`](https://github.com/CosmWasm/cw-plus/tree/main/contracts/cw20-ics20) contract which implements the [ICS-20](https://github.com/cosmos/ibc/tree/main/spec/app/ics-020-fungible-token-transfer) fungible token transfer standard.
+- [`cw-ics721`](https://github.com/public-awesome/cw-ics721) contract which implements the [ICS-721](https://github.com/cosmos/ibc/tree/main/spec/app/ics-721-nft-transfer) non-fungible token transfer standard.
+
+CosmWasm ICA Controller is a contract that implements the [ICS-27](https://github.com/cosmos/ibc/tree/main/spec/app/ics-027-interchain-accounts) interchain accounts standard. It allows this contract to manage accounts an another chain.
+This means that this contract doesn't rely on the golang implementation of the ICS-27, but rather implements it in Rust and provides a CosmWasm native API for managing accounts on another chain.
+
+It is important to note that this contract is not a full implementation of the ICS-27 standard. It only implements the
+controller contract, which is responsible for creating and managing accounts on another chain. The contract does not
+implement the ICA host module, which is responsible for executing the ICA transactions sent by the controller contract.
+
+Most IBC enabled chains do have the golang implementation of the ICS-27 standard, so you can use the CosmWasm ICA
+Controller contract to manage accounts on those chains, the Cosmos Hub, Osmosis, etc.
+
+In this section, we will go over the following topics:
+
+- ⚔️ [Golang ICA Controller vs CosmWasm ICA Controller](./02-go-vs-cosmwasm.mdx)
+- 🤝 [Channel Opening Handshake](./03-channel-handshake.mdx)
+- ✉️ [Packet Data Structure](./04-packet-data.mdx)
