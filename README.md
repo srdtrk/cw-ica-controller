@@ -23,7 +23,7 @@ This is a CosmWasm smart contract that communicates with the golang `ica/host` m
       - [Using `InstantiateMsg`](#using-instantiatemsg)
       - [Using `ExecuteMsg::CreateChannel`](#using-executemsgcreatechannel)
     - [Execute an interchain account transaction](#execute-an-interchain-account-transaction)
-      - [`SendCosmosMsgs`](#sendcosmosmsgs)
+      - [Querying the host chain](#querying-the-host-chain)
     - [Execute a callback](#execute-a-callback)
     - [Channel Closing and Reopening](#channel-closing-and-reopening)
       - [Channel Closing](#channel-closing)
@@ -99,11 +99,9 @@ Learn more about channel closing and reopening [here](#channel-closing-and-reope
 
 ### Execute an interchain account transaction
 
-`ExecuteMsg::SendCosmosMsgs` is used to commit a packet to be sent to the host chain. It accepts `cosmwasm_std::CosmosMsg`s to be sent to the host chain. (The contract then these messages to protobuf messages and sends them to the host chain. You can execute any custom message using `CosmosMsg::Stargate`.
+`ExecuteMsg::SendCosmosMsgs` is used to commit a packet to be sent to the host chain. It accepts `cosmwasm_std::CosmosMsg`s to be sent to the host chain. (The contract then these messages to protobuf messages and sends them to the host chain. You can execute any custom message using `CosmosMsg::Stargate`).
 
-#### `SendCosmosMsgs`
-
-In CosmWasm contracts, `CosmosMsg` are used to execute transactions on the chain that the contract is deployed on. In this contract, we use `CosmosMsg`s to execute transactions on the host chain. This is done by converting the `CosmosMsg`s to an ICA tx based on the encoding of the channel. The ICA tx is then sent to the host chain. The host chain then executes the ICA tx and sends the result back to this contract.
+In CosmWasm contracts, `CosmosMsg` are used to execute transactions on the chain that the contract is deployed on. In this contract, we use `CosmosMsg`s to execute transactions on the host (counterparty) chain. This is done by converting the `CosmosMsg`s to a protobuf ICA tx. The ICA tx is then sent to the host chain. The host chain then executes the ICA tx and sends the result back to this contract.
 
 This execute message allows the user to submit an array of [`cosmwasm_std::CosmosMsg`](https://github.com/CosmWasm/cosmwasm/blob/v1.5.0/packages/std/src/results/cosmos_msg.rs#L27) which are then converted by the contract to an atomic ICA tx.
 
@@ -117,7 +115,15 @@ pub enum ExecuteMsg {
     /// **This is the recommended way to send messages to the ICA host.**
     SendCosmosMsgs {
         /// The stargate messages to convert and send to the ICA host.
+        #[serde_as(deserialize_as = "serde_with::DefaultOnNull")]
         messages: Vec<CosmosMsg>,
+        /// The stargate queries to convert and send to the ICA host.
+        /// The queries are executed after the messages.
+        #[cfg(feature = "query")]
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        #[serde(default)]
+        #[serde_as(deserialize_as = "serde_with::DefaultOnNull")]
+        queries: Vec<cosmwasm_std::QueryRequest<cosmwasm_std::Empty>>,
         /// Optional memo to include in the ibc packet.
         #[serde(skip_serializing_if = "Option::is_none")]
         packet_memo: Option<String>,
@@ -131,7 +137,7 @@ pub enum ExecuteMsg {
 }
 ```
 
-(`Stargate` allows the user to submit any protobuf message to the host chain.)
+(`CosmosMsg::Stargate` allows the user to submit any protobuf message to the host chain.)
 
 Here is an example execute message that delegates tokens to a validator on the host chain and then votes on a proposal (atomically).
 
@@ -163,6 +169,14 @@ Here is an example execute message that delegates tokens to a validator on the h
 }
 ```
 
+#### Querying the host chain
+
+This contract also supports querying the host chain. To do this, you can submit a `ExecuteMsg::SendCosmosMsgs` with the queries field filled out. The queries are always executed after the messages, and their results are deserialized and returned in the [callbacks](#execute-a-callback).
+
+Similarly to `CosmosMsg`, in CosmWasm contracts, `QueryRequest` are used to execute queries on the chain that the contract is deployed on. In this contract, we use `QueryRequest`s to execute queries as transactions on the host (counterparty) chain. This is done by converting the `QueryRequests`s to a protobuf ICA tx. The ICA tx is then sent to the host chain. The host chain then executes the ICA tx and sends the result back to this contract.
+
+Note that if both `messages` and `queries` are provided, the `queries` are executed after the `messages`.
+
 ### Execute a callback
 
 This contract supports external contract callbacks. See [`src/types/callbacks.rs`](./src/types/callbacks.rs) to learn what callbacks are supported.
@@ -180,6 +194,20 @@ pub enum ExecuteMsg {
 
     /// The callback message from the ICA controller contract.
     ReceiveIcaCallback(IcaControllerCallbackMsg),
+}
+```
+
+Note that this crate also includes a proc-macro to add the `ReceiveIcaCallback` variant to the `ExecuteMsg` enum. This is done by adding the following macro to the callback contract:
+
+```rust, ignore
+use cosmwasm_schema::cw_serde;
+use cw_ica_controller::helpers::ica_callback_execute;
+
+#[ica_callback_execute]
+#[cw_serde]
+/// This is the execute message of the contract.
+pub enum ExecuteMsg {
+    // ... other variants
 }
 ```
 
