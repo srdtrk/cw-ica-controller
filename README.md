@@ -173,9 +173,14 @@ Here is an example execute message that delegates tokens to a validator on the h
 
 This contract also supports querying the host chain. To do this, you can submit a `ExecuteMsg::SendCosmosMsgs` with the queries field filled out. The queries are always executed after the messages, and their results are deserialized and returned in the [callbacks](#execute-a-callback).
 
+This feature only works if the host (counterparty) chain is on ibc-go v7.5+. If the host chain is on an older version, then the packet will return an error acknowledgement.
+
 Similarly to `CosmosMsg`, in CosmWasm contracts, `QueryRequest` are used to execute queries on the chain that the contract is deployed on. In this contract, we use `QueryRequest`s to execute queries as transactions on the host (counterparty) chain. This is done by converting the `QueryRequests`s to a protobuf ICA tx. The ICA tx is then sent to the host chain. The host chain then executes the ICA tx and sends the result back to this contract.
 
 Note that if both `messages` and `queries` are provided, the `queries` are executed after the `messages`.
+
+<!-- TODO: Update link below. -->
+Unlike the `messages`, not all query requests are supported, as query execution is not generally deterministic in CosmosSDK. See the documentation for the supported query requests [here](https://srdtrk.github.io/cw-ica-controller/).
 
 ### Execute a callback
 

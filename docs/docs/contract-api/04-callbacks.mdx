@@ -81,7 +81,7 @@ If the ICA channel is ordered, cases 2 and 3 will result in the halting of the c
 The `IcaControllerCallbackMsg` enum is the message type that is sent to the callback contract. It contains the following variants:
 
 ```rust reference
-https://github.com/srdtrk/cw-ica-controller/blob/v0.4.1/src/types/callbacks.rs#L15-L46
+https://github.com/srdtrk/cw-ica-controller/blob/7773fbd8d4e227b6c942f0c88575f9800809b4bf/src/types/callbacks.rs#L15-L59
 ```
 
 ### OnChannelOpenAckCallback
@@ -124,6 +124,8 @@ thus, they cannot be included in the IBC packet acknowledgement which is a deter
 - **`original_packet`**: This is the original ICA packet that was sent by the calling `cw-ica-controller` contract. See [`cosmwasm_std::IbcPacket`](https://github.com/CosmWasm/cosmwasm/blob/v1.5.2/packages/std/src/ibc.rs#L195-L207)
 
 - **`relayer`**: This is the address of the relayer that relayed the packet to the counterparty chain.
+
+- **`query_result`**: This is the result of the queries that were executed on the counterparty chain. This is only present if the packet contained queries. See [`IcaQueryResult`](https://github.com/srdtrk/cw-ica-controller/blob/7773fbd8d4e227b6c942f0c88575f9800809b4bf/src/types/query_msg.rs#L93-L106)
 
 ### OnTimeoutPacketCallback
 

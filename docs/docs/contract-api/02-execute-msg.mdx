@@ -13,7 +13,7 @@ The `ExecuteMsg` is the message that is used to interact with the `cw-ica-contro
 ## `CreateChannel`
 
 ```rust reference
-https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/msg.rs#L27-L37
+https://github.com/srdtrk/cw-ica-controller/blob/7773fbd8d4e227b6c942f0c88575f9800809b4bf/src/types/msg.rs#L29-L39
 ```
 
 This message is used to initiate an ICS-27 channel open handshake. It is only callable by the owner.
@@ -28,7 +28,7 @@ message and save them for future `CreateChannel` messages.
 ## `CloseChannel`
 
 ```rust reference
-https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/msg.rs#L38-L39
+https://github.com/srdtrk/cw-ica-controller/blob/7773fbd8d4e227b6c942f0c88575f9800809b4bf/src/types/msg.rs#L40-L41
 ```
 
 This message is used to close the ICS-27 channel. It is only callable by the owner.
@@ -38,7 +38,7 @@ original channel open handshake.
 ## `SendCosmosMsgs`
 
 ```rust reference
-https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/msg.rs#L40-L54
+https://github.com/srdtrk/cw-ica-controller/blob/7773fbd8d4e227b6c942f0c88575f9800809b4bf/src/types/msg.rs#L42-L64
 ```
 
 Once an ICS-27 channel open handshake is complete, the owner can control the interchain account on the counterparty
@@ -73,6 +73,37 @@ The `proto3json` encoding is not supported by this contract anymore.
 
 Note that `🟢` means that the `CosmosMsg` is supported but not tested in the contract's test suite.
 These will be tested in the future.
+
+:::
+
+### `queries`
+
+This is a list of `QueryRequest`s that the contract will execute on the counterparty chain using the interchain account.
+
+:::warning
+
+This feature only works if the host (counterparty) chain is on ibc-go v7.5+. If the host chain is on an older version, then the packet will return an error acknowledgement.
+
+:::
+
+:::info
+
+If both `messages` and `queries` are provided, then the `messages` will be executed first. If the `messages` are successful, then the `queries` will be executed. If any of the `queries` fail, then the entire execution will fail.
+
+:::
+
+:::note
+
+In CosmosSDK, query execution is not generally deterministic. This is the main reason why not all query requests are supported. The supported query requests are:
+
+|   **QueryRequest**  | `proto3` |
+|:-------------------:|:--------:|
+|     `BankQuery`     |     ✅    |
+|      `Stargate`     |     ✅    |
+|    `StakingQuery`   |     ✅    |
+|      `IbcQuery`     |     ❌    |
+| `DistributionQuery` |     ❌    |
+|     `WasmQuery`     |     ❌    |
 
 :::
 
