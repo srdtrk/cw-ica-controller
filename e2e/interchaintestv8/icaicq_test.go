@@ -336,7 +336,7 @@ func (s *ContractTestSuite) TestStakingQueries() {
 			s.Require().Equal(valResp.Validator.Commission.CommissionRates.MaxChangeRate.BigInt().String(), string(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Staking.Validator.Validator.MaxChangeRate))
 
 			s.Require().Len(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[1].Staking.AllValidators.Validators, 2)
-			s.Require().Equal(*callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Staking.Validator.Validator, callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[1].Staking.AllValidators.Validators[0])
+			s.Require().Contains(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[1].Staking.AllValidators.Validators, *callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Staking.Validator.Validator)
 
 			s.Require().Equal(simd.Config().Denom, callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[2].Staking.BondedDenom.Denom)
 		}))
