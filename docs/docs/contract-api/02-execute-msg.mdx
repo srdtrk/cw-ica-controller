@@ -105,6 +105,10 @@ In CosmosSDK, query execution is not generally deterministic. This is the main r
 | `DistributionQuery` |     ❌    |
 |     `WasmQuery`     |     ❌    |
 
+Note that not all Stargate queries are supported. Only queries which are marked with [`module_query_safe`](https://github.com/cosmos/cosmos-sdk/blob/27a231ae4816fd8c3ee39a1cc02eccf977fb1b79/proto/cosmos/query/v1/query.proto#L36) tag are supported. You can find a list of supported queries in the [ibc-go documentation](https://ibc.cosmos.network/main/apps/interchain-accounts/messages/#queries) for different versions of ibc-go.
+
+Note that `WasmQuery` support will be added once [this issue](https://github.com/CosmWasm/wasmd/issues/1903) is resolved. Moreover, governance queries (as stargate queries) and `DistributionQuery` will be supported in the next version of the SDK.
+
 :::
 
 ### `packet_memo`
