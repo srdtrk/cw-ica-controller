@@ -106,6 +106,7 @@ mod response {
     }
 
     /// The response for a successful ICA query.
+    #[non_exhaustive]
     #[cw_serde]
     pub enum IcaQueryResponse {
         /// Response for a [`cosmwasm_std::BankQuery`].
@@ -119,7 +120,6 @@ mod response {
             path: String,
         },
         /// Response for a [`cosmwasm_std::StakingQuery`].
-        #[cfg(feature = "staking")]
         Staking(StakingQueryResponse),
     }
 
@@ -139,7 +139,6 @@ mod response {
     }
 
     /// The response type for the [`cosmwasm_std::StakingQuery`] queries.
-    #[cfg(feature = "staking")]
     #[cw_serde]
     pub enum StakingQueryResponse {
         /// Response for the [`cosmwasm_std::StakingQuery::BondedDenom`] query.
@@ -155,7 +154,6 @@ mod response {
     }
 
     /// Response for the [`cosmwasm_std::StakingQuery::Delegation`] query over ICA.
-    #[cfg(feature = "staking")]
     #[cw_serde]
     pub struct IcaDelegationResponse {
         /// The delegation response if it exists.
@@ -163,7 +161,6 @@ mod response {
     }
 
     /// Response for the [`cosmwasm_std::StakingQuery::AllDelegations`] query over ICA.
-    #[cfg(feature = "staking")]
     #[cw_serde]
     pub struct IcaAllDelegationsResponse {
         /// The delegations.
@@ -171,7 +168,6 @@ mod response {
     }
 
     /// Delegation is the detailed information about a delegation.
-    #[cfg(feature = "staking")]
     #[cw_serde]
     pub struct Delegation {
         /// The delegator address.
