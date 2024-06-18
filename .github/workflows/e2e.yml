@@ -1,9 +1,16 @@
 name: e2e
 on:
-  workflow_run:
-    workflows: [rust]
-    types:
-      - completed
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - '**.rs'
+      - '**.go'
+      - '**.toml'
+      - '**.lock'
+      - '**.mod'
+      - '**.sum'
+      - '.github/workflows/e2e.yml'
 permissions:
   contents: read
 jobs:
@@ -13,7 +20,7 @@ jobs:
     steps:
       - uses: actions/setup-go@v4
         with:
-          go-version: "1.22"
+          go-version: "1.21"
       - uses: actions/checkout@v3
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3.7.0
@@ -57,7 +64,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.22"
+          go-version: "1.21"
           check-latest: true
           cache-dependency-path: |
              e2e/interchaintest/go.sum
