@@ -34,3 +34,16 @@ func NewExecuteMsg_SendCosmosMsgs_FromProto(msgs []proto.Message, memo *string, 
 		},
 	}
 }
+
+// NewStargateQuery_FromProto creates a new QueryRequest_for_Empty_Stargate
+func NewStargateQuery_FromProto(path string, data proto.Message) *QueryRequest_for_Empty_Stargate {
+	dataBz, err := proto.Marshal(data)
+	if err != nil {
+		panic(err)
+	}
+
+	return &QueryRequest_for_Empty_Stargate{
+		Data: Binary(base64.StdEncoding.EncodeToString(dataBz)),
+		Path: path,
+	}
+}

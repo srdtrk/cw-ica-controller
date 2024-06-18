@@ -22,6 +22,8 @@ pub struct InstantiateMsg {
 
 /// The messages to execute the ICA controller contract.
 #[cw_ownable::cw_ownable_execute]
+#[serde_with::serde_as]
+#[non_exhaustive]
 #[cw_serde]
 pub enum ExecuteMsg {
     /// `CreateChannel` makes the contract submit a stargate MsgChannelOpenInit to the chain.
@@ -43,7 +45,15 @@ pub enum ExecuteMsg {
     /// **This is the recommended way to send messages to the ICA host.**
     SendCosmosMsgs {
         /// The stargate messages to convert and send to the ICA host.
+        #[serde_as(deserialize_as = "serde_with::DefaultOnNull")]
         messages: Vec<CosmosMsg>,
+        /// The stargate queries to convert and send to the ICA host.
+        /// The queries are executed after the messages.
+        #[cfg(feature = "query")]
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        #[serde(default)]
+        #[serde_as(deserialize_as = "serde_with::DefaultOnNull")]
+        queries: Vec<cosmwasm_std::QueryRequest<cosmwasm_std::Empty>>,
         /// Optional memo to include in the ibc packet.
         #[serde(skip_serializing_if = "Option::is_none")]
         packet_memo: Option<String>,
@@ -62,6 +72,7 @@ pub enum ExecuteMsg {
 
 /// The messages to query the ICA controller contract.
 #[cw_ownable::cw_ownable_query]
+#[non_exhaustive]
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {

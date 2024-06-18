@@ -27,15 +27,8 @@ type QueryMsg struct {
 	GetIcaCount *QueryMsg_GetIcaCount `json:"get_ica_count,omitempty"`
 }
 
-// IbcOrder defines if a channel is ORDERED or UNORDERED Values come from https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/ibc/core/channel/v1/channel.proto#L69-L80 Naming comes from the protobuf files and go translations.
-type IbcOrder string
-
-const (
-	IbcOrder_OrderUnordered IbcOrder = "ORDER_UNORDERED"
-	IbcOrder_OrderOrdered   IbcOrder = "ORDER_ORDERED"
-)
-
 type IbcPacket struct {
+	Timeout IbcTimeout `json:"timeout"`
 	// The raw data sent from the other side in the packet
 	Data Binary `json:"data"`
 	// identifies the channel and port on the receiving chain.
@@ -44,65 +37,113 @@ type IbcPacket struct {
 	Sequence int `json:"sequence"`
 	// identifies the channel and port on the sending chain.
 	Src IbcEndpoint `json:"src"`
-	Timeout IbcTimeout `json:"timeout"`
 }
 
-/*
-A thin wrapper around u64 that is using strings for JSON encoding/decoding, such that the full u64 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.
+// In IBC each package must set at least one type of timeout: the timestamp or the block height. Using this rather complex enum instead of two timeout fields we ensure that at least one timeout is set.
+type IbcTimeout struct {
+	Timestamp *Timestamp `json:"timestamp,omitempty"`
+	Block *IbcTimeoutBlock `json:"block,omitempty"`
+}
 
-# Examples
-
-Use `from` to create instances of this and `u64` to get the value out:
-
-``` # use cosmwasm_std::Uint64; let a = Uint64::from(42u64); assert_eq!(a.u64(), 42);
-
-let b = Uint64::from(70u32); assert_eq!(b.u64(), 70); ```
-*/
-type Uint64 string
-
-type QueryMsg_GetContractState struct{}
-
-type ExecuteMsg_CreateIcaContract struct {
-	Salt *string `json:"salt,omitempty"`
-	ChannelOpenInitOptions ChannelOpenInitOptions `json:"channel_open_init_options"`
+// IcaState is the state of the ICA.
+type IcaState struct {
+	IcaAddr string `json:"ica_addr"`
+	IcaId int `json:"ica_id"`
+	TxEncoding TxEncoding `json:"tx_encoding"`
+	ChannelState ChannelState `json:"channel_state"`
 }
 type ExecuteMsg_ReceiveIcaCallback IcaControllerCallbackMsg
 
-// IbcChannel defines all information on a channel. This is generally used in the hand-shake process, but can be queried directly.
-type IbcChannel struct {
-	// Note: in ibcv3 this may be "", in the IbcOpenChannel handshake messages
-	Version string `json:"version"`
-	// The connection upon which this channel was created. If this is a multi-hop channel, we only expose the first hop.
+// The options needed to initialize the IBC channel.
+type ChannelOpenInitOptions struct {
+	// The counterparty connection id on the counterparty chain.
+	CounterpartyConnectionId string `json:"counterparty_connection_id"`
+	// The counterparty port id. If not specified, [`crate::ibc::types::keys::HOST_PORT_ID`] is used. Currently, this contract only supports the host port.
+	CounterpartyPortId *string `json:"counterparty_port_id,omitempty"`
+	// The order of the channel. If not specified, [`IbcOrder::Ordered`] is used. [`IbcOrder::Unordered`] is only supported if the counterparty chain is using `ibc-go` v8.1.0 or later.
+	ChannelOrdering *IbcOrder `json:"channel_ordering,omitempty"`
+	// The connection id on this chain.
 	ConnectionId string `json:"connection_id"`
-	CounterpartyEndpoint IbcEndpoint `json:"counterparty_endpoint"`
-	Endpoint IbcEndpoint `json:"endpoint"`
-	Order IbcOrder `json:"order"`
 }
 
-type IbcEndpoint struct {
-	ChannelId string `json:"channel_id"`
-	PortId string `json:"port_id"`
+// IbcOrder defines if a channel is ORDERED or UNORDERED Values come from https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/ibc/core/channel/v1/channel.proto#L69-L80 Naming comes from the protobuf files and go translations.
+type IbcOrder string
+
+const (
+	IbcOrder_OrderUnordered IbcOrder = "ORDER_UNORDERED"
+	IbcOrder_OrderOrdered   IbcOrder = "ORDER_ORDERED"
+)
+
+// State is the state of the IBC application's channel. This application only supports one channel.
+type ChannelState struct {
+	// The IBC channel, as defined by cosmwasm.
+	Channel IbcChannel `json:"channel"`
+	// The status of the channel.
+	ChannelStatus ChannelStatus `json:"channel_status"`
 }
 
-type QueryMsg_GetIcaContractState struct {
-	IcaId int `json:"ica_id"`
+// `Data` is the response to an ibc packet. It either contains a result or an error.
+type Data struct {
+	// Result is the result of a successful transaction.
+	Result *Data_Result `json:"result,omitempty"`
+	// Error is the error message of a failed transaction. It is a string of the error message (not base64 encoded).
+	Error *Data_Error `json:"error,omitempty"`
 }
 
 type QueryMsg_GetIcaCount struct{}
 
-// IcaState is the state of the ICA.
-type IcaState struct {
-	ChannelState State `json:"channel_state"`
-	IcaAddr string `json:"ica_addr"`
-	IcaId int `json:"ica_id"`
-	TxEncoding TxEncoding `json:"tx_encoding"`
+// ContractState is the state of the IBC application.
+type ContractState struct {
+	// The admin of this contract.
+	Admin Addr `json:"admin"`
+	// The code ID of the cw-ica-controller contract.
+	IcaControllerCodeId int `json:"ica_controller_code_id"`
 }
 
-// IcaContractState is the state of the cw-ica-controller contract.
-type IcaContractState struct {
-	ContractAddr Addr `json:"contract_addr"`
-	IcaState *IcaState `json:"ica_state,omitempty"`
+type QueryMsg_GetContractState struct{}
+
+// Status is the status of an IBC channel.
+type ChannelStatus string
+
+const (
+	// Uninitialized is the default state of the channel.
+	ChannelStatus_StateUninitializedUnspecified ChannelStatus = "STATE_UNINITIALIZED_UNSPECIFIED"
+	// Init is the state of the channel when it is created.
+	ChannelStatus_StateInit ChannelStatus = "STATE_INIT"
+	// TryOpen is the state of the channel when it is trying to open.
+	ChannelStatus_StateTryopen ChannelStatus = "STATE_TRYOPEN"
+	// Open is the state of the channel when it is open.
+	ChannelStatus_StateOpen ChannelStatus = "STATE_OPEN"
+	// Closed is the state of the channel when it is closed.
+	ChannelStatus_StateClosed ChannelStatus = "STATE_CLOSED"
+	// The channel has just accepted the upgrade handshake attempt and is flushing in-flight packets. Added in `ibc-go` v8.1.0.
+	ChannelStatus_StateFlushing ChannelStatus = "STATE_FLUSHING"
+	// The channel has just completed flushing any in-flight packets. Added in `ibc-go` v8.1.0.
+	ChannelStatus_StateFlushcomplete ChannelStatus = "STATE_FLUSHCOMPLETE"
+)
+
+type ExecuteMsg_CreateIcaContract struct {
+	ChannelOpenInitOptions ChannelOpenInitOptions `json:"channel_open_init_options"`
+	Salt *string `json:"salt,omitempty"`
 }
+
+/*
+A human readable address.
+
+In Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.
+
+This type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.
+
+This type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.
+*/
+type Addr string
+
+/*
+Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.
+
+This is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.
+*/
+type Binary string
 
 // IcaControllerCallbackMsg is the type of message that this contract can send to other contracts.
 type IcaControllerCallbackMsg struct {
@@ -112,24 +153,6 @@ type IcaControllerCallbackMsg struct {
 	OnTimeoutPacketCallback *IcaControllerCallbackMsg_OnTimeoutPacketCallback `json:"on_timeout_packet_callback,omitempty"`
 	// OnChannelOpenAckCallback is the callback that this contract makes to other contracts when it receives a channel open acknowledgement.
 	OnChannelOpenAckCallback *IcaControllerCallbackMsg_OnChannelOpenAckCallback `json:"on_channel_open_ack_callback,omitempty"`
-}
-
-// `TxEncoding` is the encoding of the transactions sent to the ICA host.
-type TxEncoding string
-
-const (
-	// `Protobuf` is the protobuf serialization of the CosmosSDK's Any.
-	TxEncoding_Proto3 TxEncoding = "proto3"
-	// `Proto3Json` is the json serialization of the CosmosSDK's Any.
-	TxEncoding_Proto3Json TxEncoding = "proto3json"
-)
-
-// `Data` is the response to an ibc packet. It either contains a result or an error.
-type Data struct {
-	// Result is the result of a successful transaction.
-	Result *Data_Result `json:"result,omitempty"`
-	// Error is the error message of a failed transaction. It is a string of the error message (not base64 encoded).
-	Error *Data_Error `json:"error,omitempty"`
 }
 
 /*
@@ -145,76 +168,16 @@ let ts = ts.plus_seconds(2); assert_eq!(ts.nanos(), 3_000_000_202); assert_eq!(t
 */
 type Timestamp Uint64
 
-// The options needed to initialize the IBC channel.
-type ChannelOpenInitOptions struct {
-	// The connection id on this chain.
+// IbcChannel defines all information on a channel. This is generally used in the hand-shake process, but can be queried directly.
+type IbcChannel struct {
+	// Note: in ibcv3 this may be "", in the IbcOpenChannel handshake messages
+	Version string `json:"version"`
+	// The connection upon which this channel was created. If this is a multi-hop channel, we only expose the first hop.
 	ConnectionId string `json:"connection_id"`
-	// The counterparty connection id on the counterparty chain.
-	CounterpartyConnectionId string `json:"counterparty_connection_id"`
-	// The counterparty port id. If not specified, [`crate::ibc::types::keys::HOST_PORT_ID`] is used. Currently, this contract only supports the host port.
-	CounterpartyPortId *string `json:"counterparty_port_id,omitempty"`
-	// The order of the channel. If not specified, [`IbcOrder::Ordered`] is used. [`IbcOrder::Unordered`] is only supported if the counterparty chain is using `ibc-go` v8.1.0 or later.
-	ChannelOrdering *IbcOrder `json:"channel_ordering,omitempty"`
+	CounterpartyEndpoint IbcEndpoint `json:"counterparty_endpoint"`
+	Endpoint IbcEndpoint `json:"endpoint"`
+	Order IbcOrder `json:"order"`
 }
-
-// ContractState is the state of the IBC application.
-type ContractState struct {
-	// The admin of this contract.
-	Admin Addr `json:"admin"`
-	// The code ID of the cw-ica-controller contract.
-	IcaControllerCodeId int `json:"ica_controller_code_id"`
-}
-
-// Status is the status of an IBC channel.
-type Status string
-
-const (
-	// Uninitialized is the default state of the channel.
-	Status_StateUninitializedUnspecified Status = "STATE_UNINITIALIZED_UNSPECIFIED"
-	// Init is the state of the channel when it is created.
-	Status_StateInit Status = "STATE_INIT"
-	// TryOpen is the state of the channel when it is trying to open.
-	Status_StateTryopen Status = "STATE_TRYOPEN"
-	// Open is the state of the channel when it is open.
-	Status_StateOpen Status = "STATE_OPEN"
-	// Closed is the state of the channel when it is closed.
-	Status_StateClosed Status = "STATE_CLOSED"
-	// The channel has just accepted the upgrade handshake attempt and is flushing in-flight packets. Added in `ibc-go` v8.1.0.
-	Status_StateFlushing Status = "STATE_FLUSHING"
-	// The channel has just completed flushing any in-flight packets. Added in `ibc-go` v8.1.0.
-	Status_StateFlushcomplete Status = "STATE_FLUSHCOMPLETE"
-)
-
-type ExecuteMsg_SendPredefinedAction struct {
-	// The ICA ID.
-	IcaId int `json:"ica_id"`
-	// The recipient's address, on the counterparty chain, to send the tokens to from ICA host.
-	ToAddress string `json:"to_address"`
-}
-
-// In IBC each package must set at least one type of timeout: the timestamp or the block height. Using this rather complex enum instead of two timeout fields we ensure that at least one timeout is set.
-type IbcTimeout struct {
-	Block *IbcTimeoutBlock `json:"block,omitempty"`
-	Timestamp *Timestamp `json:"timestamp,omitempty"`
-}
-
-/*
-Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.
-
-This is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.
-*/
-type Binary string
-
-/*
-A human readable address.
-
-In Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.
-
-This type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.
-
-This type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.
-*/
-type Addr string
 
 // IBCTimeoutHeight Height is a monotonically increasing data type that can be compared against another Height for the purposes of updating and freezing clients. Ordering is (revision_number, timeout_height)
 type IbcTimeoutBlock struct {
@@ -224,21 +187,60 @@ type IbcTimeoutBlock struct {
 	Revision int `json:"revision"`
 }
 
-// State is the state of the IBC application's channel. This application only supports one channel.
-type State struct {
-	// The IBC channel, as defined by cosmwasm.
-	Channel IbcChannel `json:"channel"`
-	// The status of the channel.
-	ChannelStatus Status `json:"channel_status"`
+// `TxEncoding` is the encoding of the transactions sent to the ICA host.
+type TxEncoding string
+
+const (
+	// `Protobuf` is the protobuf serialization of the CosmosSDK's Any.
+	TxEncoding_Proto3 TxEncoding = "proto3"
+	// `Proto3Json` is the json serialization of the CosmosSDK's Any.
+	TxEncoding_Proto3Json TxEncoding = "proto3json"
+)
+
+type ExecuteMsg_SendPredefinedAction struct {
+	// The ICA ID.
+	IcaId int `json:"ica_id"`
+	// The recipient's address, on the counterparty chain, to send the tokens to from ICA host.
+	ToAddress string `json:"to_address"`
 }
 
+type IbcEndpoint struct {
+	ChannelId string `json:"channel_id"`
+	PortId string `json:"port_id"`
+}
+
+/*
+A thin wrapper around u64 that is using strings for JSON encoding/decoding, such that the full u64 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.
+
+# Examples
+
+Use `from` to create instances of this and `u64` to get the value out:
+
+``` # use cosmwasm_std::Uint64; let a = Uint64::from(42u64); assert_eq!(a.u64(), 42);
+
+let b = Uint64::from(70u32); assert_eq!(b.u64(), 70); ```
+*/
+type Uint64 string
+
+type QueryMsg_GetIcaContractState struct {
+	IcaId int `json:"ica_id"`
+}
+
+// IcaContractState is the state of the cw-ica-controller contract.
+type IcaContractState struct {
+	ContractAddr Addr `json:"contract_addr"`
+	IcaState *IcaState `json:"ica_state,omitempty"`
+}
+
+type Data_Error string
+
 type IcaControllerCallbackMsg_OnAcknowledgementPacketCallback struct {
-	// The deserialized ICA acknowledgement data
-	IcaAcknowledgement Data `json:"ica_acknowledgement"`
 	// The original packet that was sent
 	OriginalPacket IbcPacket `json:"original_packet"`
 	// The relayer that submitted acknowledgement packet
 	Relayer Addr `json:"relayer"`
+	// The deserialized ICA acknowledgement data
+	IcaAcknowledgement Data `json:"ica_acknowledgement"`
 }
 
 type IcaControllerCallbackMsg_OnTimeoutPacketCallback struct {
@@ -257,5 +259,3 @@ type IcaControllerCallbackMsg_OnChannelOpenAckCallback struct {
 	TxEncoding TxEncoding `json:"tx_encoding"`
 }
 type Data_Result Binary
-
-type Data_Error string

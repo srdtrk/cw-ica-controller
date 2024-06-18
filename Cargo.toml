@@ -27,9 +27,10 @@ overflow-checks = true
 
 [features]
 # disable export feature to disable all instantiate/execute/query exports
-default = ["export", "staking"]
-export = []
+default = ["export", "staking", "query"]
+export = ["query", "staking"]
 staking = ["cosmwasm-std/staking"]
+query = ["dep:prost"]
 
 [package.metadata.scripts]
 optimize = """docker run --rm -v "$(pwd)":/code \
@@ -51,10 +52,13 @@ schemars = "0.8.10"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde-json-wasm = "1.0.0"
 thiserror = "1.0.50"
-cosmos-sdk-proto = { version = "0.20.0", default-features = false, features = ["cosmwasm"] }
+cosmos-sdk-proto = { version = "0.21.1", default-features = false, features = ["cosmwasm"] }
 semver = "1.0"
 cw-ownable = "0.5.1"
 cw-ica-controller-derive = "0.4.2"
+prost = { version = "0.12", optional = true }
+anybuf = "0.5.0"
+serde_with = "3.8.1"
 
 [dev-dependencies]
 base64 = "0.13.1"

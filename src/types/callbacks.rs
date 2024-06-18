@@ -12,10 +12,19 @@ use crate::ibc::types::{
     metadata::TxEncoding, packet::acknowledgement::Data as AcknowledgementData,
 };
 
-/// IcaControllerCallbackMsg is the type of message that this contract can send to other contracts.
-#[cw_serde]
+/// `IcaControllerCallbackMsg` is the type of message that this contract can send to other contracts.
+#[derive(
+    ::cosmwasm_schema::serde::Serialize,
+    ::cosmwasm_schema::serde::Deserialize,
+    ::std::clone::Clone,
+    ::std::fmt::Debug,
+    ::std::cmp::PartialEq,
+    ::cosmwasm_schema::schemars::JsonSchema,
+)]
+#[serde(rename_all = "snake_case", crate = "::cosmwasm_schema::serde")]
+#[schemars(crate = "::cosmwasm_schema::schemars")]
 pub enum IcaControllerCallbackMsg {
-    /// OnAcknowledgementPacketCallback is the callback that this contract makes to other contracts
+    /// `OnAcknowledgementPacketCallback` is the callback that this contract makes to other contracts
     /// when it receives an acknowledgement packet.
     OnAcknowledgementPacketCallback {
         /// The deserialized ICA acknowledgement data
@@ -24,8 +33,12 @@ pub enum IcaControllerCallbackMsg {
         original_packet: IbcPacket,
         /// The relayer that submitted acknowledgement packet
         relayer: Addr,
+        /// The responses to the queries.
+        #[cfg(feature = "query")]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        query_result: Option<super::query_msg::IcaQueryResult>,
     },
-    /// OnTimeoutPacketCallback is the callback that this contract makes to other contracts
+    /// `OnTimeoutPacketCallback` is the callback that this contract makes to other contracts
     /// when it receives a timeout packet.
     OnTimeoutPacketCallback {
         /// The original packet that was sent
@@ -33,7 +46,7 @@ pub enum IcaControllerCallbackMsg {
         /// The relayer that submitted acknowledgement packet
         relayer: Addr,
     },
-    /// OnChannelOpenAckCallback is the callback that this contract makes to other contracts
+    /// `OnChannelOpenAckCallback` is the callback that this contract makes to other contracts
     /// when it receives a channel open acknowledgement.
     OnChannelOpenAckCallback {
         /// The channel that was opened.

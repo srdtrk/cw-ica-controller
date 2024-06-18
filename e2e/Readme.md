@@ -29,6 +29,8 @@ All contract tests are located in `interchaintest/contract_test.go` file. Curren
 - TestWithContractTestSuite/TestSendWasmMsgsProtobufEncoding
 - TestWithContractTestSuite/TestMigrateOrderedToUnordered
 - TestWithContractTestSuite/TestCloseChannel_Protobuf_Unordered
+- TestWithContractTestSuite/TestBankAndStargateQueries
+- TestWithContractTestSuite/TestStakingQueries
 
 To run the tests locally, run the following command in the root of the repository:
 

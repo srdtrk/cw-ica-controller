@@ -1,6 +1,6 @@
 //! This module handles the execution logic of the contract.
 
-use cosmwasm_std::entry_point;
+use cosmwasm_std::{entry_point, Reply};
 use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
 use crate::ibc::types::stargate::channel::new_ica_channel_open_init_cosmos_msg;
@@ -66,10 +66,29 @@ pub fn execute(
         }
         ExecuteMsg::SendCosmosMsgs {
             messages,
+            queries,
             packet_memo,
             timeout_seconds,
-        } => execute::send_cosmos_msgs(deps, env, info, messages, packet_memo, timeout_seconds),
+        } => execute::send_cosmos_msgs(
+            deps,
+            env,
+            info,
+            messages,
+            queries,
+            packet_memo,
+            timeout_seconds,
+        ),
         ExecuteMsg::UpdateOwnership(action) => execute::update_ownership(deps, env, info, action),
+    }
+}
+
+/// Handles the replies to the submessages.
+#[entry_point]
+#[allow(clippy::pedantic)]
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
+    match msg.id {
+        keys::reply_ids::SEND_QUERY_PACKET => reply::send_query_packet(deps, env, msg.result),
+        _ => Err(ContractError::UnknownReplyId(msg.id)),
     }
 }
 
@@ -99,14 +118,16 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 }
 
 mod execute {
-    use cosmwasm_std::{CosmosMsg, IbcMsg};
+    use cosmwasm_std::{CosmosMsg, IbcMsg, SubMsg};
 
     use crate::{ibc::types::packet::IcaPacketData, types::msg::options::ChannelOpenInitOptions};
 
     use super::{
-        new_ica_channel_open_init_cosmos_msg, state, ContractError, DepsMut, Env, MessageInfo,
-        Response,
+        keys, new_ica_channel_open_init_cosmos_msg, state, ContractError, DepsMut, Env,
+        MessageInfo, Response,
     };
+
+    use cosmwasm_std::{Empty, QueryRequest};
 
     /// Submits a stargate `MsgChannelOpenInit` to the chain.
     /// Can only be called by the contract owner or a whitelisted address.
@@ -172,6 +193,7 @@ mod execute {
         env: Env,
         info: MessageInfo,
         messages: Vec<CosmosMsg>,
+        queries: Vec<QueryRequest<Empty>>,
         packet_memo: Option<String>,
         timeout_seconds: Option<u64>,
     ) -> Result<Response, ContractError> {
@@ -179,16 +201,25 @@ mod execute {
 
         let contract_state = state::STATE.load(deps.storage)?;
         let ica_info = contract_state.get_ica_info()?;
+        let has_queries = !queries.is_empty();
 
         let ica_packet = IcaPacketData::from_cosmos_msgs(
+            deps.storage,
             messages,
+            queries,
             &ica_info.encoding,
             packet_memo,
             &ica_info.ica_address,
         )?;
         let send_packet_msg = ica_packet.to_ibc_msg(&env, ica_info.channel_id, timeout_seconds)?;
 
-        Ok(Response::default().add_message(send_packet_msg))
+        let send_packet_submsg = if has_queries {
+            SubMsg::reply_on_success(send_packet_msg, keys::reply_ids::SEND_QUERY_PACKET)
+        } else {
+            SubMsg::new(send_packet_msg)
+        };
+
+        Ok(Response::default().add_submessage(send_packet_submsg))
     }
 
     /// Update the ownership of the contract.
@@ -226,6 +257,36 @@ mod execute {
         state::STATE.save(deps.storage, &contract_state)?;
 
         Ok(Response::default())
+    }
+}
+
+mod reply {
+    use cosmwasm_std::SubMsgResult;
+
+    use super::{state, ContractError, DepsMut, Env, Response};
+
+    /// Handles the reply to the query packet.
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn send_query_packet(
+        deps: DepsMut,
+        _env: Env,
+        result: SubMsgResult,
+    ) -> Result<Response, ContractError> {
+        match result {
+            SubMsgResult::Ok(resp) => {
+                let sequence = anybuf::Bufany::deserialize(&resp.data.unwrap_or_default())?
+                    .uint64(1)
+                    .unwrap();
+                let channel_id = state::STATE.load(deps.storage)?.get_ica_info()?.channel_id;
+                let query_paths = state::QUERY.load(deps.storage)?;
+
+                state::QUERY.remove(deps.storage);
+                state::PENDING_QUERIES.save(deps.storage, (&channel_id, sequence), &query_paths)?;
+
+                Ok(Response::default())
+            }
+            SubMsgResult::Err(err) => unreachable!("query packet failed: {err}"),
+        }
     }
 }
 

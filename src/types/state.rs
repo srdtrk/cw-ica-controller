@@ -7,7 +7,7 @@ use cw_storage_plus::Item;
 use super::{msg::options::ChannelOpenInitOptions, ContractError};
 
 #[allow(clippy::module_name_repetitions)]
-pub use channel::{State as ChannelState, Status as ChannelStatus};
+pub use channel::{ChannelState, ChannelStatus};
 #[allow(clippy::module_name_repetitions)]
 pub use contract::State as ContractState;
 
@@ -28,6 +28,18 @@ pub const ALLOW_CHANNEL_OPEN_INIT: Item<bool> = Item::new("allow_channel_open_in
 /// The item used to store whether or not channel close init is allowed.
 /// Used to prevent relayers from closing channels. This right is reserved to the contract.
 pub const ALLOW_CHANNEL_CLOSE_INIT: Item<bool> = Item::new("allow_channel_close_init");
+
+/// The item used to store the paths of an ICA query until its `SendPacket` response is received.
+/// Once the response is received, it is moved to the [`PENDING_QUERIES`] map and deleted from this item.
+/// This is used to ensure that the correct sequence is recorded for the response.
+#[cfg(feature = "query")]
+pub const QUERY: Item<Vec<(String, bool)>> = Item::new("pending_query");
+
+/// `PENDING_QUERIES` is the map of pending queries.
+/// It maps `channel_id`, and sequence to the query path.
+#[cfg(feature = "query")]
+pub const PENDING_QUERIES: cw_storage_plus::Map<(&str, u64), Vec<(String, bool)>> =
+    cw_storage_plus::Map::new("pending_queries");
 
 mod contract {
     use crate::ibc::types::metadata::TxEncoding;
@@ -111,6 +123,7 @@ mod contract {
     }
 }
 
+#[allow(clippy::module_name_repetitions)]
 mod channel {
     use cosmwasm_std::IbcOrder;
 
@@ -118,7 +131,7 @@ mod channel {
 
     /// Status is the status of an IBC channel.
     #[cw_serde]
-    pub enum Status {
+    pub enum ChannelStatus {
         /// Uninitialized is the default state of the channel.
         #[serde(rename = "STATE_UNINITIALIZED_UNSPECIFIED")]
         Uninitialized,
@@ -147,32 +160,32 @@ mod channel {
     /// State is the state of the IBC application's channel.
     /// This application only supports one channel.
     #[cw_serde]
-    pub struct State {
+    pub struct ChannelState {
         /// The IBC channel, as defined by cosmwasm.
         pub channel: IbcChannel,
         /// The status of the channel.
-        pub channel_status: Status,
+        pub channel_status: ChannelStatus,
     }
 
-    impl State {
+    impl ChannelState {
         /// Creates a new [`ChannelState`]
         #[must_use]
         pub const fn new_open_channel(channel: IbcChannel) -> Self {
             Self {
                 channel,
-                channel_status: Status::Open,
+                channel_status: ChannelStatus::Open,
             }
         }
 
         /// Checks if the channel is open
         #[must_use]
         pub const fn is_open(&self) -> bool {
-            matches!(self.channel_status, Status::Open)
+            matches!(self.channel_status, ChannelStatus::Open)
         }
 
         /// Closes the channel
         pub fn close(&mut self) {
-            self.channel_status = Status::Closed;
+            self.channel_status = ChannelStatus::Closed;
         }
 
         /// Checks if the channel is [`IbcOrder::Ordered`]
@@ -182,7 +195,7 @@ mod channel {
         }
     }
 
-    impl std::fmt::Display for Status {
+    impl std::fmt::Display for ChannelStatus {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             match self {
                 Self::Uninitialized => write!(f, "STATE_UNINITIALIZED_UNSPECIFIED"),
@@ -194,6 +207,25 @@ mod channel {
                 Self::FlushComplete => write!(f, "STATE_FLUSHCOMPLETE"),
             }
         }
+    }
+}
+
+/// This module defines the types stored in the state for ICA queries.
+#[cfg(feature = "query")]
+pub mod ica_query {
+    use super::cw_serde;
+
+    /// PendingQuery is the query packet that is pending a response.
+    #[cw_serde]
+    pub struct PendingQuery {
+        /// The source channel ID of the query packet.
+        pub channel_id: String,
+        /// The sequence number of the query packet.
+        pub sequence: u64,
+        /// The gRPC query path.
+        pub path: String,
+        /// Whether the query was [`cosmwasm_std::QueryRequest::Stargate`] or not.
+        pub is_stargate: bool,
     }
 }
 
