@@ -2,16 +2,23 @@
 
 ## [Unreleased]
 
+### Features
+
+- Added support for ICA queries. (https://github.com/srdtrk/cw-ica-controller/issues/88)
+
 ### API Breaking Changes
 
+- Added a `query_result` field to `IcaControllerCallbackMsg`. (https://github.com/srdtrk/cw-ica-controller/pull/118)
+- Added a `queries` field to `ExecuteMsg::SendCosmosMsgs`. (https://github.com/srdtrk/cw-ica-controller/pull/118)
 - Improved the query helpers. (https://github.com/srdtrk/cw-ica-controller/pull/114)
 - Changed `call` to `execute` in `helpers.rs`. (https://github.com/srdtrk/cw-ica-controller/pull/114)
-
-### API Breaking Changes
-
 - Removed support for `proto3json` encoding. (https://github.com/srdtrk/cw-ica-controller/pull/92)
 - Removed `tx_encoding` field from `ChannelOpenInitOptions`. (https://github.com/srdtrk/cw-ica-controller/pull/92)
 - Removed `ExecuteMsg::SendCustomIcaMessages`. (https://github.com/srdtrk/cw-ica-controller/pull/92)
+
+### State Breaking Changes
+
+- Removed support for CosmWasm (and wasmvm) version `v1.3`. (https://github.com/srdtrk/cw-ica-controller/pull/90)
 
 ## v0.5.0 (2024-02-05)
 
