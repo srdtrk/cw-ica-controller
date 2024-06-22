@@ -76,5 +76,5 @@ jobs:
         continue-on-error: true
         with:
           name: '${{ matrix.entrypoint }}-${{ matrix.test }}'
-          path: e2e/diagnostics
+          path: e2e/interchaintestv8/diagnostics
           retention-days: 5
