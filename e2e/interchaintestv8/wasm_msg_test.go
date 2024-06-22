@@ -52,7 +52,7 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context) int {
 	s.SetupSuite(ctx)
 
 	codeId, err := s.ChainA.StoreContract(ctx, s.UserA.KeyName(), "../../artifacts/callback_counter.wasm")
-	s.Require().Error(err)
+	s.Require().NoError(err)
 
 	s.CallbackCounterContract, err = callbackcounter.Instantiate(ctx, s.UserA.KeyName(), codeId, "", s.ChainA, callbackcounter.InstantiateMsg{})
 	s.Require().NoError(err)
