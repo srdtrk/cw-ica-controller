@@ -62,7 +62,7 @@ func (q *queryClient) queryContract(ctx context.Context, rawQueryData []byte, op
 }
 
 func (q *queryClient) GetCallbackCounter(ctx context.Context, req *QueryMsg_GetCallbackCounter, opts ...grpc.CallOption) (*CallbackCounter, error) {
-	rawQueryData, err := json.Marshal(&QueryMsg{GetCallbackCounter: req})
+	rawQueryData, err := json.Marshal(map[string]any{"get_callback_counter": req})
 	if err != nil {
 		return nil, err
 	}
