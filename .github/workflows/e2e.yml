@@ -70,14 +70,10 @@ jobs:
              e2e/interchaintest/go.sum
       - name: TestContract
         run: just e2e-test ${{ matrix.test }}
-      - name: Set Artifact Name for Diagnostics
-        if: failure()
-        run: echo "ARTIFACT_NAME=${{ matrix.test//\//- }}" >> $GITHUB_ENV
       - name: Upload Diagnostics on Failure
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: ${{ failure() }}
         continue-on-error: true
         with:
-          name: '${{ env.ARTIFACT_NAME }}'
           path: e2e/interchaintestv8/diagnostics
           retention-days: 5
