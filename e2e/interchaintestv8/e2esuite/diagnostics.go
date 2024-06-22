@@ -20,7 +20,7 @@ const (
 	testLabel = "ibc-test"
 
 	dockerInspectFileName = "docker-inspect.json"
-	e2eDir                = "interchaintestv8"
+	e2eDir                = "e2e/interchaintestv8"
 	defaultFilePerm       = 0o750
 )
 
