@@ -13,91 +13,10 @@ type QueryMsg struct {
 	// GetCallbackCounter returns the callback counter.
 	GetCallbackCounter *QueryMsg_GetCallbackCounter `json:"get_callback_counter,omitempty"`
 }
-type ExecuteMsg_ReceiveIcaCallback IcaControllerCallbackMsg
-
-/*
-A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0
-
-The greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)
-*/
-type Decimal string
-
-// In IBC each package must set at least one type of timeout: the timestamp or the block height. Using this rather complex enum instead of two timeout fields we ensure that at least one timeout is set.
-type IbcTimeout struct {
-	Block *IbcTimeoutBlock `json:"block,omitempty"`
-	Timestamp *Timestamp `json:"timestamp,omitempty"`
-}
-
-/*
-Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.
-
-This is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.
-*/
-type Binary string
-
-type QueryMsg_GetCallbackCounter struct{}
-
-type IbcEndpoint struct {
-	ChannelId string `json:"channel_id"`
-	PortId string `json:"port_id"`
-}
-
-// The response type for the [`cosmwasm_std::StakingQuery`] queries.
-type StakingQueryResponse struct {
-	// Response for the [`cosmwasm_std::StakingQuery::BondedDenom`] query.
-	BondedDenom *StakingQueryResponse_BondedDenom `json:"bonded_denom,omitempty"`
-	// Response for the [`cosmwasm_std::StakingQuery::AllDelegations`] query.
-	AllDelegations *StakingQueryResponse_AllDelegations `json:"all_delegations,omitempty"`
-	// Response for the [`cosmwasm_std::StakingQuery::Delegation`] query.
-	Delegation *StakingQueryResponse_Delegation `json:"delegation,omitempty"`
-	// Response for the [`cosmwasm_std::StakingQuery::AllValidators`] query.
-	AllValidators *StakingQueryResponse_AllValidators `json:"all_validators,omitempty"`
-	// Response for the [`cosmwasm_std::StakingQuery::Validator`] query.
-	Validator *StakingQueryResponse_Validator `json:"validator,omitempty"`
-}
-
-/*
-A human readable address.
-
-In Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.
-
-This type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.
-
-This type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.
-*/
-type Addr string
 
 type Coin struct {
 	Amount Uint128 `json:"amount"`
 	Denom string `json:"denom"`
-}
-
-// IbcOrder defines if a channel is ORDERED or UNORDERED Values come from https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/ibc/core/channel/v1/channel.proto#L69-L80 Naming comes from the protobuf files and go translations.
-type IbcOrder string
-
-const (
-	IbcOrder_OrderUnordered IbcOrder = "ORDER_UNORDERED"
-	IbcOrder_OrderOrdered   IbcOrder = "ORDER_ORDERED"
-)
-
-// CallbackCounter tracks the number of callbacks in store.
-type CallbackCounter struct {
-	// The successful callbacks.
-	Success []IcaControllerCallbackMsg `json:"success"`
-	// The timeout callbacks. The channel is closed after a timeout if the channel is ordered due to the semantics of ordered channels.
-	Timeout []IcaControllerCallbackMsg `json:"timeout"`
-	// The erroneous callbacks.
-	Error []IcaControllerCallbackMsg `json:"error"`
-}
-
-type DenomMetadataResponse struct {
-	// The metadata for the queried denom.
-	Metadata DenomMetadata `json:"metadata"`
-}
-
-type AllBalanceResponse struct {
-	// Returns all non-zero coins held by this account.
-	Amount []Coin `json:"amount"`
 }
 
 /*
@@ -113,58 +32,11 @@ let b = Uint64::from(70u32); assert_eq!(b.u64(), 70); ```
 */
 type Uint64 string
 
-// Instances are created in the querier.
-type Validator struct {
-	/*
-	   The operator address of the validator (e.g. cosmosvaloper1...). See https://github.com/cosmos/cosmos-sdk/blob/v0.47.4/proto/cosmos/staking/v1beta1/staking.proto#L95-L96 for more information.
-
-	   This uses `String` instead of `Addr` since the bech32 address prefix is different from the ones that regular user accounts use.
-	*/
-	Address string `json:"address"`
-	Commission Decimal `json:"commission"`
-	// The maximum daily increase of the commission
-	MaxChangeRate Decimal `json:"max_change_rate"`
-	MaxCommission Decimal `json:"max_commission"`
-}
-
-// `Data` is the response to an ibc packet. It either contains a result or an error.
-type Data struct {
-	// Result is the result of a successful transaction.
-	Result *Data_Result `json:"result,omitempty"`
-	// Error is the error message of a failed transaction. It is a string of the error message (not base64 encoded).
-	Error *Data_Error `json:"error,omitempty"`
-}
-
-// The response type for the [`cosmwasm_std::BankQuery`] queries.
-type BankQueryResponse struct {
-	// Response for the [`cosmwasm_std::BankQuery::Supply`] query.
-	Supply *BankQueryResponse_Supply `json:"supply,omitempty"`
-	// Response for the [`cosmwasm_std::BankQuery::Balance`] query.
-	Balance *BankQueryResponse_Balance `json:"balance,omitempty"`
-	// Response for the [`cosmwasm_std::BankQuery::AllBalances`] query.
-	AllBalances *BankQueryResponse_AllBalances `json:"all_balances,omitempty"`
-	// Response for the [`cosmwasm_std::BankQuery::DenomMetadata`] query.
-	DenomMetadata *BankQueryResponse_DenomMetadata `json:"denom_metadata,omitempty"`
-	// Response for the [`cosmwasm_std::BankQuery::AllDenomMetadata`] query.
-	AllDenomMetadata *BankQueryResponse_AllDenomMetadata `json:"all_denom_metadata,omitempty"`
-}
-
-// BondedDenomResponse is data format returned from StakingRequest::BondedDenom query
-type BondedDenomResponse struct {
+// Replicates the cosmos-sdk bank module DenomUnit type
+type DenomUnit struct {
+	Aliases []string `json:"aliases"`
 	Denom string `json:"denom"`
-}
-
-// IBCTimeoutHeight Height is a monotonically increasing data type that can be compared against another Height for the purposes of updating and freezing clients. Ordering is (revision_number, timeout_height)
-type IbcTimeoutBlock struct {
-	// block height after which the packet times out. the height within the given revision
-	Height int `json:"height"`
-	// the version that the client is currently on (e.g. after resetting the chain this could increment 1 as height drops to 0)
-	Revision int `json:"revision"`
-}
-
-// The data format returned from StakingRequest::Validator query
-type ValidatorResponse struct {
-	Validator *Validator `json:"validator,omitempty"`
+	Exponent int `json:"exponent"`
 }
 
 // The response for a successful ICA query.
@@ -177,38 +49,23 @@ type IcaQueryResponse struct {
 	Staking *IcaQueryResponse_Staking `json:"staking,omitempty"`
 }
 
+// `Data` is the response to an ibc packet. It either contains a result or an error.
+type Data struct {
+	// Result is the result of a successful transaction.
+	Result *Data_Result `json:"result,omitempty"`
+	// Error is the error message of a failed transaction. It is a string of the error message (not base64 encoded).
+	Error *Data_Error `json:"error,omitempty"`
+}
+
+// The data format returned from StakingRequest::Validator query
+type ValidatorResponse struct {
+	Validator *Validator `json:"validator,omitempty"`
+}
+
 // Response for the [`cosmwasm_std::StakingQuery::AllDelegations`] query over ICA.
 type IcaAllDelegationsResponse struct {
 	// The delegations.
 	Delegations []Delegation `json:"delegations"`
-}
-
-// The result of an ICA query packet.
-type IcaQueryResult struct {
-	// The query was successful and the responses are included.
-	Success *IcaQueryResult_Success `json:"success,omitempty"`
-	// The query failed with an error message. The error string often does not contain useful information for the end user.
-	Error *IcaQueryResult_Error `json:"error,omitempty"`
-}
-
-// `TxEncoding` is the encoding of the transactions sent to the ICA host.
-type TxEncoding string
-
-const (
-	// `Protobuf` is the protobuf serialization of the CosmosSDK's Any.
-	TxEncoding_Proto3 TxEncoding = "proto3"
-	// `Proto3Json` is the json serialization of the CosmosSDK's Any.
-	TxEncoding_Proto3Json TxEncoding = "proto3json"
-)
-
-// Delegation is the detailed information about a delegation.
-type Delegation struct {
-	// Delegation amount.
-	Amount Coin `json:"amount"`
-	// The delegator address.
-	Delegator string `json:"delegator"`
-	// A validator address (e.g. cosmosvaloper1...)
-	Validator string `json:"validator"`
 }
 
 /*
@@ -223,6 +80,129 @@ This type can represent times from 1970-01-01T00:00:00Z to 2554-07-21T23:34:33Z.
 let ts = ts.plus_seconds(2); assert_eq!(ts.nanos(), 3_000_000_202); assert_eq!(ts.seconds(), 3); assert_eq!(ts.subsec_nanos(), 202); ```
 */
 type Timestamp Uint64
+
+type AllBalanceResponse struct {
+	// Returns all non-zero coins held by this account.
+	Amount []Coin `json:"amount"`
+}
+
+// IbcOrder defines if a channel is ORDERED or UNORDERED Values come from https://github.com/cosmos/cosmos-sdk/blob/v0.40.0/proto/ibc/core/channel/v1/channel.proto#L69-L80 Naming comes from the protobuf files and go translations.
+type IbcOrder string
+
+const (
+	IbcOrder_OrderUnordered IbcOrder = "ORDER_UNORDERED"
+	IbcOrder_OrderOrdered   IbcOrder = "ORDER_ORDERED"
+)
+
+// `TxEncoding` is the encoding of the transactions sent to the ICA host.
+type TxEncoding string
+
+const (
+	// `Protobuf` is the protobuf serialization of the CosmosSDK's Any.
+	TxEncoding_Proto3 TxEncoding = "proto3"
+	// `Proto3Json` is the json serialization of the CosmosSDK's Any.
+	TxEncoding_Proto3Json TxEncoding = "proto3json"
+)
+
+// IbcChannel defines all information on a channel. This is generally used in the hand-shake process, but can be queried directly.
+type IbcChannel struct {
+	CounterpartyEndpoint IbcEndpoint `json:"counterparty_endpoint"`
+	Endpoint IbcEndpoint `json:"endpoint"`
+	Order IbcOrder `json:"order"`
+	// Note: in ibcv3 this may be "", in the IbcOpenChannel handshake messages
+	Version string `json:"version"`
+	// The connection upon which this channel was created. If this is a multi-hop channel, we only expose the first hop.
+	ConnectionId string `json:"connection_id"`
+}
+
+// CallbackCounter tracks the number of callbacks in store.
+type CallbackCounter struct {
+	// The timeout callbacks. The channel is closed after a timeout if the channel is ordered due to the semantics of ordered channels.
+	Timeout []IcaControllerCallbackMsg `json:"timeout"`
+	// The erroneous callbacks.
+	Error []IcaControllerCallbackMsg `json:"error"`
+	// The successful callbacks.
+	Success []IcaControllerCallbackMsg `json:"success"`
+}
+
+// The result of an ICA query packet.
+type IcaQueryResult struct {
+	// The query was successful and the responses are included.
+	Success *IcaQueryResult_Success `json:"success,omitempty"`
+	// The query failed with an error message. The error string often does not contain useful information for the end user.
+	Error *IcaQueryResult_Error `json:"error,omitempty"`
+}
+
+type AllDenomMetadataResponse struct {
+	// Always returns metadata for all token denoms on the base chain.
+	Metadata []DenomMetadata `json:"metadata"`
+	NextKey *Binary `json:"next_key,omitempty"`
+}
+
+type BalanceResponse struct {
+	// Always returns a Coin with the requested denom. This may be of 0 amount if no such funds.
+	Amount Coin `json:"amount"`
+}
+
+/*
+Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.
+
+This is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.
+*/
+type Binary string
+
+type IbcEndpoint struct {
+	ChannelId string `json:"channel_id"`
+	PortId string `json:"port_id"`
+}
+
+type SupplyResponse struct {
+	// Always returns a Coin with the requested denom. This will be of zero amount if the denom does not exist.
+	Amount Coin `json:"amount"`
+}
+
+type QueryMsg_GetCallbackCounter struct{}
+
+// Delegation is the detailed information about a delegation.
+type Delegation struct {
+	// Delegation amount.
+	Amount Coin `json:"amount"`
+	// The delegator address.
+	Delegator string `json:"delegator"`
+	// A validator address (e.g. cosmosvaloper1...)
+	Validator string `json:"validator"`
+}
+
+// The data format returned from StakingRequest::AllValidators query
+type AllValidatorsResponse struct {
+	Validators []Validator `json:"validators"`
+}
+
+type IbcPacket struct {
+	Timeout IbcTimeout `json:"timeout"`
+	// The raw data sent from the other side in the packet
+	Data Binary `json:"data"`
+	// identifies the channel and port on the receiving chain.
+	Dest IbcEndpoint `json:"dest"`
+	// The sequence number of the packet on the given channel
+	Sequence int `json:"sequence"`
+	// identifies the channel and port on the sending chain.
+	Src IbcEndpoint `json:"src"`
+}
+
+// In IBC each package must set at least one type of timeout: the timestamp or the block height. Using this rather complex enum instead of two timeout fields we ensure that at least one timeout is set.
+type IbcTimeout struct {
+	Block *IbcTimeoutBlock `json:"block,omitempty"`
+	Timestamp *Timestamp `json:"timestamp,omitempty"`
+}
+
+// IBCTimeoutHeight Height is a monotonically increasing data type that can be compared against another Height for the purposes of updating and freezing clients. Ordering is (revision_number, timeout_height)
+type IbcTimeoutBlock struct {
+	// block height after which the packet times out. the height within the given revision
+	Height int `json:"height"`
+	// the version that the client is currently on (e.g. after resetting the chain this could increment 1 as height drops to 0)
+	Revision int `json:"revision"`
+}
 
 /*
 A thin wrapper around u128 that is using strings for JSON encoding/decoding, such that the full u128 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.
@@ -239,10 +219,16 @@ let c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```
 */
 type Uint128 string
 
-// The data format returned from StakingRequest::AllValidators query
-type AllValidatorsResponse struct {
-	Validators []Validator `json:"validators"`
-}
+/*
+A human readable address.
+
+In Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.
+
+This type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.
+
+This type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.
+*/
+type Addr string
 
 // Response for the [`cosmwasm_std::StakingQuery::Delegation`] query over ICA.
 type IcaDelegationResponse struct {
@@ -250,33 +236,9 @@ type IcaDelegationResponse struct {
 	Delegation *Delegation `json:"delegation,omitempty"`
 }
 
-// Replicates the cosmos-sdk bank module Metadata type
-type DenomMetadata struct {
-	Display string `json:"display"`
-	Name string `json:"name"`
-	Symbol string `json:"symbol"`
-	Uri string `json:"uri"`
-	UriHash string `json:"uri_hash"`
-	Base string `json:"base"`
-	DenomUnits []DenomUnit `json:"denom_units"`
-	Description string `json:"description"`
-}
-
-type BalanceResponse struct {
-	// Always returns a Coin with the requested denom. This may be of 0 amount if no such funds.
-	Amount Coin `json:"amount"`
-}
-
-type IbcPacket struct {
-	// The raw data sent from the other side in the packet
-	Data Binary `json:"data"`
-	// identifies the channel and port on the receiving chain.
-	Dest IbcEndpoint `json:"dest"`
-	// The sequence number of the packet on the given channel
-	Sequence int `json:"sequence"`
-	// identifies the channel and port on the sending chain.
-	Src IbcEndpoint `json:"src"`
-	Timeout IbcTimeout `json:"timeout"`
+type DenomMetadataResponse struct {
+	// The metadata for the queried denom.
+	Metadata DenomMetadata `json:"metadata"`
 }
 
 // `IcaControllerCallbackMsg` is the type of message that this contract can send to other contracts.
@@ -288,35 +250,112 @@ type IcaControllerCallbackMsg struct {
 	// `OnChannelOpenAckCallback` is the callback that this contract makes to other contracts when it receives a channel open acknowledgement.
 	OnChannelOpenAckCallback *IcaControllerCallbackMsg_OnChannelOpenAckCallback `json:"on_channel_open_ack_callback,omitempty"`
 }
+type ExecuteMsg_ReceiveIcaCallback IcaControllerCallbackMsg
 
-// IbcChannel defines all information on a channel. This is generally used in the hand-shake process, but can be queried directly.
-type IbcChannel struct {
-	Order IbcOrder `json:"order"`
-	// Note: in ibcv3 this may be "", in the IbcOpenChannel handshake messages
-	Version string `json:"version"`
-	// The connection upon which this channel was created. If this is a multi-hop channel, we only expose the first hop.
-	ConnectionId string `json:"connection_id"`
-	CounterpartyEndpoint IbcEndpoint `json:"counterparty_endpoint"`
-	Endpoint IbcEndpoint `json:"endpoint"`
+// Replicates the cosmos-sdk bank module Metadata type
+type DenomMetadata struct {
+	Base string `json:"base"`
+	DenomUnits []DenomUnit `json:"denom_units"`
+	Description string `json:"description"`
+	Display string `json:"display"`
+	Name string `json:"name"`
+	Symbol string `json:"symbol"`
+	Uri string `json:"uri"`
+	UriHash string `json:"uri_hash"`
 }
 
-type SupplyResponse struct {
-	// Always returns a Coin with the requested denom. This will be of zero amount if the denom does not exist.
-	Amount Coin `json:"amount"`
+/*
+A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0
+
+The greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)
+*/
+type Decimal string
+
+// The response type for the [`cosmwasm_std::StakingQuery`] queries.
+type StakingQueryResponse struct {
+	// Response for the [`cosmwasm_std::StakingQuery::BondedDenom`] query.
+	BondedDenom *StakingQueryResponse_BondedDenom `json:"bonded_denom,omitempty"`
+	// Response for the [`cosmwasm_std::StakingQuery::AllDelegations`] query.
+	AllDelegations *StakingQueryResponse_AllDelegations `json:"all_delegations,omitempty"`
+	// Response for the [`cosmwasm_std::StakingQuery::Delegation`] query.
+	Delegation *StakingQueryResponse_Delegation `json:"delegation,omitempty"`
+	// Response for the [`cosmwasm_std::StakingQuery::AllValidators`] query.
+	AllValidators *StakingQueryResponse_AllValidators `json:"all_validators,omitempty"`
+	// Response for the [`cosmwasm_std::StakingQuery::Validator`] query.
+	Validator *StakingQueryResponse_Validator `json:"validator,omitempty"`
 }
 
-// Replicates the cosmos-sdk bank module DenomUnit type
-type DenomUnit struct {
-	Exponent int `json:"exponent"`
-	Aliases []string `json:"aliases"`
+// Instances are created in the querier.
+type Validator struct {
+	/*
+	   The operator address of the validator (e.g. cosmosvaloper1...). See https://github.com/cosmos/cosmos-sdk/blob/v0.47.4/proto/cosmos/staking/v1beta1/staking.proto#L95-L96 for more information.
+
+	   This uses `String` instead of `Addr` since the bech32 address prefix is different from the ones that regular user accounts use.
+	*/
+	Address string `json:"address"`
+	Commission Decimal `json:"commission"`
+	// The maximum daily increase of the commission
+	MaxChangeRate Decimal `json:"max_change_rate"`
+	MaxCommission Decimal `json:"max_commission"`
+}
+
+// BondedDenomResponse is data format returned from StakingRequest::BondedDenom query
+type BondedDenomResponse struct {
 	Denom string `json:"denom"`
 }
 
-type AllDenomMetadataResponse struct {
-	NextKey *Binary `json:"next_key,omitempty"`
-	// Always returns metadata for all token denoms on the base chain.
-	Metadata []DenomMetadata `json:"metadata"`
+// The response type for the [`cosmwasm_std::BankQuery`] queries.
+type BankQueryResponse struct {
+	// Response for the [`cosmwasm_std::BankQuery::Supply`] query.
+	Supply *BankQueryResponse_Supply `json:"supply,omitempty"`
+	// Response for the [`cosmwasm_std::BankQuery::Balance`] query.
+	Balance *BankQueryResponse_Balance `json:"balance,omitempty"`
+	// Response for the [`cosmwasm_std::BankQuery::AllBalances`] query.
+	AllBalances *BankQueryResponse_AllBalances `json:"all_balances,omitempty"`
+	// Response for the [`cosmwasm_std::BankQuery::DenomMetadata`] query.
+	DenomMetadata *BankQueryResponse_DenomMetadata `json:"denom_metadata,omitempty"`
+	// Response for the [`cosmwasm_std::BankQuery::AllDenomMetadata`] query.
+	AllDenomMetadata *BankQueryResponse_AllDenomMetadata `json:"all_denom_metadata,omitempty"`
 }
+type BankQueryResponse_AllDenomMetadata AllDenomMetadataResponse
+type StakingQueryResponse_BondedDenom BondedDenomResponse
+
+type IcaQueryResult_Error string
+
+type IcaControllerCallbackMsg_OnTimeoutPacketCallback struct {
+	// The original packet that was sent
+	OriginalPacket IbcPacket `json:"original_packet"`
+	// The relayer that submitted acknowledgement packet
+	Relayer Addr `json:"relayer"`
+}
+type StakingQueryResponse_Delegation IcaDelegationResponse
+type BankQueryResponse_Balance BalanceResponse
+type StakingQueryResponse_AllValidators AllValidatorsResponse
+type StakingQueryResponse_Validator ValidatorResponse
+type Data_Result Binary
+
+type IcaControllerCallbackMsg_OnChannelOpenAckCallback struct {
+	// The tx encoding this ICA channel uses.
+	TxEncoding TxEncoding `json:"tx_encoding"`
+	// The channel that was opened.
+	Channel IbcChannel `json:"channel"`
+	// The address of the interchain account that was created.
+	IcaAddress string `json:"ica_address"`
+}
+type BankQueryResponse_Supply SupplyResponse
+
+type IcaQueryResponse_Stargate struct {
+	// The response bytes.
+	Data Binary `json:"data"`
+	// The query grpc method
+	Path string `json:"path"`
+}
+type IcaQueryResponse_Staking StakingQueryResponse
+type IcaQueryResponse_Bank BankQueryResponse
+type BankQueryResponse_AllBalances AllBalanceResponse
+type BankQueryResponse_DenomMetadata DenomMetadataResponse
+
+type Data_Error string
 
 type IcaQueryResult_Success struct {
 	// The height of the block at which the queries were executed on the counterparty chain.
@@ -324,7 +363,6 @@ type IcaQueryResult_Success struct {
 	// The responses to the queries.
 	Responses []IcaQueryResponse `json:"responses"`
 }
-type Data_Result Binary
 
 type IcaControllerCallbackMsg_OnAcknowledgementPacketCallback struct {
 	// The relayer that submitted acknowledgement packet
@@ -336,42 +374,4 @@ type IcaControllerCallbackMsg_OnAcknowledgementPacketCallback struct {
 	// The responses to the queries.
 	QueryResult *IcaQueryResult `json:"query_result,omitempty"`
 }
-type BankQueryResponse_Supply SupplyResponse
-type BankQueryResponse_DenomMetadata DenomMetadataResponse
-type IcaQueryResponse_Staking StakingQueryResponse
 type StakingQueryResponse_AllDelegations IcaAllDelegationsResponse
-type BankQueryResponse_AllBalances AllBalanceResponse
-type StakingQueryResponse_Validator ValidatorResponse
-type StakingQueryResponse_AllValidators AllValidatorsResponse
-
-type IcaControllerCallbackMsg_OnChannelOpenAckCallback struct {
-	// The tx encoding this ICA channel uses.
-	TxEncoding TxEncoding `json:"tx_encoding"`
-	// The channel that was opened.
-	Channel IbcChannel `json:"channel"`
-	// The address of the interchain account that was created.
-	IcaAddress string `json:"ica_address"`
-}
-type BankQueryResponse_Balance BalanceResponse
-type StakingQueryResponse_BondedDenom BondedDenomResponse
-
-type IcaControllerCallbackMsg_OnTimeoutPacketCallback struct {
-	// The original packet that was sent
-	OriginalPacket IbcPacket `json:"original_packet"`
-	// The relayer that submitted acknowledgement packet
-	Relayer Addr `json:"relayer"`
-}
-type StakingQueryResponse_Delegation IcaDelegationResponse
-
-type Data_Error string
-type BankQueryResponse_AllDenomMetadata AllDenomMetadataResponse
-type IcaQueryResponse_Bank BankQueryResponse
-
-type IcaQueryResponse_Stargate struct {
-	// The response bytes.
-	Data Binary `json:"data"`
-	// The query grpc method
-	Path string `json:"path"`
-}
-
-type IcaQueryResult_Error string

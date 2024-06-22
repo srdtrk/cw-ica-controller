@@ -65,27 +65,8 @@ func (q *queryClient) queryContract(ctx context.Context, rawQueryData []byte, op
 	return out.Data, nil
 }
 
-func (q *queryClient) GetIcaContractState(ctx context.Context, req *QueryMsg_GetIcaContractState, opts ...grpc.CallOption) (*IcaContractState, error) {
-	rawQueryData, err := json.Marshal(&QueryMsg{GetIcaContractState: req})
-	if err != nil {
-		return nil, err
-	}
-
-	rawResponseData, err := q.queryContract(ctx, rawQueryData, opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	var response IcaContractState
-	if err := json.Unmarshal(rawResponseData, &response); err != nil {
-		return nil, err
-	}
-
-	return &response, nil
-}
-
 func (q *queryClient) GetIcaCount(ctx context.Context, req *QueryMsg_GetIcaCount, opts ...grpc.CallOption) (*int, error) {
-	rawQueryData, err := json.Marshal(&QueryMsg{GetIcaCount: req})
+	rawQueryData, err := json.Marshal(map[string]any{"get_ica_count": req})
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +85,7 @@ func (q *queryClient) GetIcaCount(ctx context.Context, req *QueryMsg_GetIcaCount
 }
 
 func (q *queryClient) GetContractState(ctx context.Context, req *QueryMsg_GetContractState, opts ...grpc.CallOption) (*ContractState, error) {
-	rawQueryData, err := json.Marshal(&QueryMsg{GetContractState: req})
+	rawQueryData, err := json.Marshal(map[string]any{"get_contract_state": req})
 	if err != nil {
 		return nil, err
 	}
@@ -115,6 +96,25 @@ func (q *queryClient) GetContractState(ctx context.Context, req *QueryMsg_GetCon
 	}
 
 	var response ContractState
+	if err := json.Unmarshal(rawResponseData, &response); err != nil {
+		return nil, err
+	}
+
+	return &response, nil
+}
+
+func (q *queryClient) GetIcaContractState(ctx context.Context, req *QueryMsg_GetIcaContractState, opts ...grpc.CallOption) (*IcaContractState, error) {
+	rawQueryData, err := json.Marshal(map[string]any{"get_ica_contract_state": req})
+	if err != nil {
+		return nil, err
+	}
+
+	rawResponseData, err := q.queryContract(ctx, rawQueryData, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	var response IcaContractState
 	if err := json.Unmarshal(rawResponseData, &response); err != nil {
 		return nil, err
 	}
