@@ -33,7 +33,6 @@ pub enum ExecuteMsg {
     CreateChannel {
         /// The options to initialize the IBC channel.
         /// If not specified, the options specified in the last channel creation are used.
-        /// Must be `None` if the sender is not the owner.
         #[serde(skip_serializing_if = "Option::is_none")]
         channel_open_init_options: Option<options::ChannelOpenInitOptions>,
     },

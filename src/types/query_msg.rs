@@ -13,7 +13,8 @@ pub use response::*;
 pub fn query_to_protobuf(query: QueryRequest<Empty>) -> (String, Vec<u8>, bool) {
     match query {
         QueryRequest::Bank(bank_query) => convert_to_protobuf::bank(bank_query),
-        QueryRequest::Stargate { path, data } => (path, data.0, true),
+        #[allow(deprecated)]
+        QueryRequest::Stargate { path, data } => (path, data.to_vec(), true),
         QueryRequest::Wasm(_) => panic!("wasmd queries are not marked module safe (yet)"),
         QueryRequest::Ibc(_) => panic!("ibc-go queries are not marked module safe (yet)"),
         QueryRequest::Custom(_) => panic!("custom queries are not supported"),
@@ -218,7 +219,7 @@ mod convert_to_protobuf {
             ),
             BankQuery::AllDenomMetadata { pagination } => {
                 let pagination = pagination.map(|pagination| PageRequest {
-                    key: pagination.key.unwrap_or_default().0,
+                    key: pagination.key.unwrap_or_default().to_vec(),
                     limit: u64::from(pagination.limit),
                     reverse: pagination.reverse,
                     offset: 0,
@@ -359,12 +360,12 @@ pub mod from_protobuf {
             .commission_rates
             .unwrap_or_default();
 
-        Ok(cosmwasm_std::Validator {
-            address: validator.operator_address,
-            commission: Decimal::from_str(&commission_rates.rate)?,
-            max_commission: Decimal::from_str(&commission_rates.max_rate)?,
-            max_change_rate: Decimal::from_str(&commission_rates.max_change_rate)?,
-        })
+        Ok(cosmwasm_std::Validator::create(
+            validator.operator_address,
+            Decimal::from_str(&commission_rates.rate)?,
+            Decimal::from_str(&commission_rates.max_rate)?,
+            Decimal::from_str(&commission_rates.max_change_rate)?,
+        ))
     }
 
     /// Converts the response bytes to a [`IcaQueryResponse`] using the query path.
@@ -378,7 +379,7 @@ pub mod from_protobuf {
     ) -> Result<IcaQueryResponse, ContractError> {
         if is_stargate {
             return Ok(IcaQueryResponse::Stargate {
-                data: Binary(resp.to_vec()),
+                data: Binary::new(resp.to_vec()),
                 path: path.to_string(),
             });
         }
@@ -431,7 +432,7 @@ pub mod from_protobuf {
                             .map(convert_to_metadata)
                             .collect(),
                         resp.pagination
-                            .map(|pagination| Binary(pagination.next_key)),
+                            .map(|pagination| Binary::new(pagination.next_key)),
                     ),
                 )))
             }

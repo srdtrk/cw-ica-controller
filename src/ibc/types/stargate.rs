@@ -47,6 +47,7 @@ pub mod channel {
             ordering,
         );
 
+        #[allow(deprecated)]
         CosmosMsg::Stargate {
             type_url: "/ibc.core.channel.v1.MsgChannelOpenInit".into(),
             value: msg_channel_open_init.encode_to_vec().into(),

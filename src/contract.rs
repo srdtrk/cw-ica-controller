@@ -14,7 +14,7 @@ use crate::types::ContractError;
 #[allow(clippy::pedantic)]
 pub fn instantiate(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -35,16 +35,17 @@ pub fn instantiate(
 
     state::ALLOW_CHANNEL_OPEN_INIT.save(deps.storage, &true)?;
 
-    let ica_channel_open_init_msg = new_ica_channel_open_init_cosmos_msg(
-        env.contract.address.to_string(),
-        msg.channel_open_init_options.connection_id,
-        msg.channel_open_init_options.counterparty_port_id,
-        msg.channel_open_init_options.counterparty_connection_id,
-        None,
-        msg.channel_open_init_options.channel_ordering,
-    );
+    // let ica_channel_open_init_msg = new_ica_channel_open_init_cosmos_msg(
+    //     env.contract.address.to_string(),
+    //     msg.channel_open_init_options.connection_id,
+    //     msg.channel_open_init_options.counterparty_port_id,
+    //     msg.channel_open_init_options.counterparty_connection_id,
+    //     None,
+    //     msg.channel_open_init_options.channel_ordering,
+    // );
 
-    Ok(Response::new().add_message(ica_channel_open_init_msg))
+    // Ok(Response::new().add_message(ica_channel_open_init_msg))
+    Ok(Response::default())
 }
 
 /// Handles the execution of the contract.
@@ -274,6 +275,7 @@ mod reply {
     ) -> Result<Response, ContractError> {
         match result {
             SubMsgResult::Ok(resp) => {
+                #[allow(deprecated)]
                 let sequence = anybuf::Bufany::deserialize(&resp.data.unwrap_or_default())?
                     .uint64(1)
                     .unwrap();

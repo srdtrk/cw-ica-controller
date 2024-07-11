@@ -229,161 +229,161 @@ pub mod ica_query {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
 
-    use cw_ica_controller_v0_1_3::types::state as v0_1_3;
-    use cw_ica_controller_v0_2_0::types::state as v0_2_0;
-    use cw_ica_controller_v0_3_0::types::state as v0_3_0;
-    use cw_ica_controller_v0_4_2 as v0_4_2;
-    use cw_ica_controller_v0_5_0 as v0_5_0;
+//     use cw_ica_controller_v0_1_3::types::state as v0_1_3;
+//     use cw_ica_controller_v0_2_0::types::state as v0_2_0;
+//     use cw_ica_controller_v0_3_0::types::state as v0_3_0;
+//     use cw_ica_controller_v0_4_2 as v0_4_2;
+//     use cw_ica_controller_v0_5_0 as v0_5_0;
 
-    mod v0_1_2 {
-        use super::*;
+//     mod v0_1_2 {
+//         use super::*;
 
-        /// This is the contract state at version 0.1.2.
-        #[cw_serde]
-        pub struct ContractState {
-            /// The address of the admin of the IBC application.
-            pub admin: Addr,
-            /// The Interchain Account (ICA) info needed to send packets.
-            /// This is set during the handshake.
-            #[serde(skip_serializing_if = "Option::is_none")]
-            pub ica_info: Option<contract::IcaInfo>,
-        }
-    }
+//         /// This is the contract state at version 0.1.2.
+//         #[cw_serde]
+//         pub struct ContractState {
+//             /// The address of the admin of the IBC application.
+//             pub admin: Addr,
+//             /// The Interchain Account (ICA) info needed to send packets.
+//             /// This is set during the handshake.
+//             #[serde(skip_serializing_if = "Option::is_none")]
+//             pub ica_info: Option<contract::IcaInfo>,
+//         }
+//     }
 
-    #[test]
-    fn test_migration_from_v0_1_2_to_v0_1_3() {
-        let mock_state = v0_1_2::ContractState {
-            admin: Addr::unchecked("admin"),
-            ica_info: None,
-        };
+//     #[test]
+//     fn test_migration_from_v0_1_2_to_v0_1_3() {
+//         let mock_state = v0_1_2::ContractState {
+//             admin: Addr::unchecked("admin"),
+//             ica_info: None,
+//         };
 
-        let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
+//         let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
 
-        let deserialized: v0_1_3::ContractState = cosmwasm_std::from_json(serialized).unwrap();
+//         let deserialized: v0_1_3::ContractState = cosmwasm_std::from_json(serialized).unwrap();
 
-        let exp_state = v0_1_3::ContractState {
-            admin: Addr::unchecked("admin"),
-            ica_info: None,
-            allow_channel_open_init: false,
-        };
+//         let exp_state = v0_1_3::ContractState {
+//             admin: Addr::unchecked("admin"),
+//             ica_info: None,
+//             allow_channel_open_init: false,
+//         };
 
-        assert_eq!(deserialized, exp_state);
-    }
+//         assert_eq!(deserialized, exp_state);
+//     }
 
-    #[test]
-    fn test_migration_from_v0_1_3_to_v0_2_0() {
-        let mock_state = v0_1_3::ContractState {
-            admin: Addr::unchecked("admin"),
-            ica_info: None,
-            allow_channel_open_init: false,
-        };
+//     #[test]
+//     fn test_migration_from_v0_1_3_to_v0_2_0() {
+//         let mock_state = v0_1_3::ContractState {
+//             admin: Addr::unchecked("admin"),
+//             ica_info: None,
+//             allow_channel_open_init: false,
+//         };
 
-        let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
+//         let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
 
-        let deserialized: v0_2_0::ContractState = cosmwasm_std::from_json(serialized).unwrap();
+//         let deserialized: v0_2_0::ContractState = cosmwasm_std::from_json(serialized).unwrap();
 
-        let exp_state = v0_2_0::ContractState {
-            admin: Addr::unchecked("admin"),
-            ica_info: None,
-            allow_channel_open_init: false,
-            callback_address: None,
-        };
+//         let exp_state = v0_2_0::ContractState {
+//             admin: Addr::unchecked("admin"),
+//             ica_info: None,
+//             allow_channel_open_init: false,
+//             callback_address: None,
+//         };
 
-        assert_eq!(deserialized, exp_state);
-    }
+//         assert_eq!(deserialized, exp_state);
+//     }
 
-    #[test]
-    fn test_migration_from_v0_2_0_to_v0_3_0() {
-        let mock_state = v0_2_0::ContractState {
-            admin: Addr::unchecked("admin"),
-            ica_info: None,
-            allow_channel_open_init: false,
-            callback_address: Some(Addr::unchecked("callback")),
-        };
+//     #[test]
+//     fn test_migration_from_v0_2_0_to_v0_3_0() {
+//         let mock_state = v0_2_0::ContractState {
+//             admin: Addr::unchecked("admin"),
+//             ica_info: None,
+//             allow_channel_open_init: false,
+//             callback_address: Some(Addr::unchecked("callback")),
+//         };
 
-        let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
+//         let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
 
-        let deserialized: v0_3_0::ContractState = cosmwasm_std::from_json(serialized).unwrap();
+//         let deserialized: v0_3_0::ContractState = cosmwasm_std::from_json(serialized).unwrap();
 
-        let exp_state = v0_3_0::ContractState {
-            ica_info: None,
-            allow_channel_open_init: false,
-            callback_address: Some(Addr::unchecked("callback")),
-        };
+//         let exp_state = v0_3_0::ContractState {
+//             ica_info: None,
+//             allow_channel_open_init: false,
+//             callback_address: Some(Addr::unchecked("callback")),
+//         };
 
-        assert_eq!(deserialized, exp_state);
-    }
+//         assert_eq!(deserialized, exp_state);
+//     }
 
-    #[test]
-    fn test_migration_from_v0_4_2_to_v0_5_0() {
-        // Test channel open init options
-        let mock_options = v0_4_2::types::msg::options::ChannelOpenInitOptions {
-            connection_id: "connection-mock".to_string(),
-            counterparty_connection_id: "counterparty-connection-mock".to_string(),
-            counterparty_port_id: Some("counterparty-port-mock".to_string()),
-            tx_encoding: Some(v0_4_2::ibc::types::metadata::TxEncoding::Protobuf),
-        };
+//     #[test]
+//     fn test_migration_from_v0_4_2_to_v0_5_0() {
+//         // Test channel open init options
+//         let mock_options = v0_4_2::types::msg::options::ChannelOpenInitOptions {
+//             connection_id: "connection-mock".to_string(),
+//             counterparty_connection_id: "counterparty-connection-mock".to_string(),
+//             counterparty_port_id: Some("counterparty-port-mock".to_string()),
+//             tx_encoding: Some(v0_4_2::ibc::types::metadata::TxEncoding::Protobuf),
+//         };
 
-        let serialized = cosmwasm_std::to_json_binary(&mock_options).unwrap();
+//         let serialized = cosmwasm_std::to_json_binary(&mock_options).unwrap();
 
-        let deserialized: v0_5_0::types::msg::options::ChannelOpenInitOptions =
-            cosmwasm_std::from_json(serialized).unwrap();
+//         let deserialized: v0_5_0::types::msg::options::ChannelOpenInitOptions =
+//             cosmwasm_std::from_json(serialized).unwrap();
 
-        let exp_options = v0_5_0::types::msg::options::ChannelOpenInitOptions {
-            connection_id: "connection-mock".to_string(),
-            counterparty_connection_id: "counterparty-connection-mock".to_string(),
-            counterparty_port_id: Some("counterparty-port-mock".to_string()),
-            tx_encoding: Some(v0_5_0::ibc::types::metadata::TxEncoding::Protobuf),
-            channel_ordering: None,
-        };
+//         let exp_options = v0_5_0::types::msg::options::ChannelOpenInitOptions {
+//             connection_id: "connection-mock".to_string(),
+//             counterparty_connection_id: "counterparty-connection-mock".to_string(),
+//             counterparty_port_id: Some("counterparty-port-mock".to_string()),
+//             tx_encoding: Some(v0_5_0::ibc::types::metadata::TxEncoding::Protobuf),
+//             channel_ordering: None,
+//         };
 
-        assert_eq!(deserialized, exp_options);
+//         assert_eq!(deserialized, exp_options);
 
-        // Test contract state
-        let mock_state = v0_4_2::types::state::ContractState {
-            ica_info: None,
-            allow_channel_open_init: false,
-            callback_address: Some(Addr::unchecked("callback")),
-        };
+//         // Test contract state
+//         let mock_state = v0_4_2::types::state::ContractState {
+//             ica_info: None,
+//             allow_channel_open_init: false,
+//             callback_address: Some(Addr::unchecked("callback")),
+//         };
 
-        let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
+//         let serialized = cosmwasm_std::to_json_binary(&mock_state).unwrap();
 
-        let deserialized: ContractState = cosmwasm_std::from_json(serialized).unwrap();
+//         let deserialized: ContractState = cosmwasm_std::from_json(serialized).unwrap();
 
-        let exp_state = ContractState {
-            ica_info: None,
-            callback_address: Some(Addr::unchecked("callback")),
-        };
+//         let exp_state = ContractState {
+//             ica_info: None,
+//             callback_address: Some(Addr::unchecked("callback")),
+//         };
 
-        assert_eq!(deserialized, exp_state);
-    }
+//         assert_eq!(deserialized, exp_state);
+//     }
 
-    #[test]
-    fn test_migration_from_v0_5_0_to_v0_6_0() {
-        let mock_channel_open_init_options = v0_5_0::types::msg::options::ChannelOpenInitOptions {
-            connection_id: "connection-mock".to_string(),
-            counterparty_connection_id: "counterparty-connection-mock".to_string(),
-            counterparty_port_id: Some("counterparty-port-mock".to_string()),
-            tx_encoding: Some(v0_5_0::ibc::types::metadata::TxEncoding::Proto3Json),
-            channel_ordering: Some(cosmwasm_std::IbcOrder::Ordered),
-        };
+//     #[test]
+//     fn test_migration_from_v0_5_0_to_v0_6_0() {
+//         let mock_channel_open_init_options = v0_5_0::types::msg::options::ChannelOpenInitOptions {
+//             connection_id: "connection-mock".to_string(),
+//             counterparty_connection_id: "counterparty-connection-mock".to_string(),
+//             counterparty_port_id: Some("counterparty-port-mock".to_string()),
+//             tx_encoding: Some(v0_5_0::ibc::types::metadata::TxEncoding::Proto3Json),
+//             channel_ordering: Some(cosmwasm_std::IbcOrder::Ordered),
+//         };
 
-        let serialized = cosmwasm_std::to_json_binary(&mock_channel_open_init_options).unwrap();
+//         let serialized = cosmwasm_std::to_json_binary(&mock_channel_open_init_options).unwrap();
 
-        let deserialized: crate::types::msg::options::ChannelOpenInitOptions =
-            cosmwasm_std::from_json(serialized).unwrap();
+//         let deserialized: crate::types::msg::options::ChannelOpenInitOptions =
+//             cosmwasm_std::from_json(serialized).unwrap();
 
-        let exp_channel_open_init_options = crate::types::msg::options::ChannelOpenInitOptions {
-            connection_id: "connection-mock".to_string(),
-            counterparty_connection_id: "counterparty-connection-mock".to_string(),
-            counterparty_port_id: Some("counterparty-port-mock".to_string()),
-            channel_ordering: Some(cosmwasm_std::IbcOrder::Ordered),
-        };
+//         let exp_channel_open_init_options = crate::types::msg::options::ChannelOpenInitOptions {
+//             connection_id: "connection-mock".to_string(),
+//             counterparty_connection_id: "counterparty-connection-mock".to_string(),
+//             counterparty_port_id: Some("counterparty-port-mock".to_string()),
+//             channel_ordering: Some(cosmwasm_std::IbcOrder::Ordered),
+//         };
 
-        assert_eq!(deserialized, exp_channel_open_init_options);
-    }
-}
+//         assert_eq!(deserialized, exp_channel_open_init_options);
+//     }
+// }

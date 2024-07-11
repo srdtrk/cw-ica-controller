@@ -37,6 +37,7 @@ use cosmwasm_std::CosmosMsg;
 /// - [`CosmosMsg::Distribution`] with [`cosmwasm_std::DistributionMsg::FundCommunityPool`]
 pub fn convert_to_proto_any(msg: CosmosMsg, from_address: String) -> Result<Any, EncodeError> {
     match msg {
+        #[allow(deprecated)]
         CosmosMsg::Stargate { type_url, value } => Ok(Any {
             type_url,
             value: value.to_vec(),
@@ -67,7 +68,7 @@ mod convert_to_any {
             MsgClearAdmin, MsgExecuteContract, MsgInstantiateContract, MsgInstantiateContract2,
             MsgMigrateContract, MsgUpdateAdmin,
         },
-        ibc::{applications::transfer::v1::MsgTransfer, core::client::v1::Height},
+        // ibc::{applications::transfer::v1::MsgTransfer, core::client::v1::Height},
         prost::EncodeError,
         Any,
     };
@@ -75,6 +76,10 @@ mod convert_to_any {
     use cosmwasm_std::{BankMsg, GovMsg, IbcMsg, VoteOption, WasmMsg};
     #[cfg(feature = "staking")]
     use cosmwasm_std::{DistributionMsg, StakingMsg};
+    use ibc_proto::{
+        cosmos::base::v1beta1::Coin as IbcProtoCoin,
+        ibc::{apps::transfer::v1::MsgTransfer, core::client::v1::Height},
+    };
 
     pub fn bank(msg: BankMsg, from_address: String) -> Result<Any, EncodeError> {
         match msg {
@@ -100,10 +105,11 @@ mod convert_to_any {
                 to_address,
                 amount,
                 timeout,
+                memo,
             } => Any::from_msg(&MsgTransfer {
                 source_port: "transfer".to_string(),
                 source_channel: channel_id,
-                token: Some(ProtoCoin {
+                token: Some(IbcProtoCoin {
                     denom: amount.denom,
                     amount: amount.amount.to_string(),
                 }),
@@ -114,6 +120,7 @@ mod convert_to_any {
                     revision_height: block.height,
                 }),
                 timeout_timestamp: timeout.timestamp().map_or(0, |timestamp| timestamp.nanos()),
+                memo: memo.unwrap_or_default(),
             }),
             _ => panic!("Unsupported IbcMsg"),
         }
@@ -217,10 +224,10 @@ mod convert_to_any {
         }
 
         match msg {
-            GovMsg::Vote { proposal_id, vote } => Any::from_msg(&MsgVote {
+            GovMsg::Vote { proposal_id, option } => Any::from_msg(&MsgVote {
                 voter,
                 proposal_id,
-                option: convert_to_proto_vote_option(&vote) as i32,
+                option: convert_to_proto_vote_option(&option) as i32,
             }),
             GovMsg::VoteWeighted {
                 proposal_id,
