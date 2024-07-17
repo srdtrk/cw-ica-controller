@@ -128,6 +128,8 @@ mod response {
             /// The query grpc method
             path: String,
         },
+        /// Response for a [`cosmwasm_std::WasmQuery`].
+        Wasm(WasmQueryResponse),
         /// Response for a [`cosmwasm_std::StakingQuery`].
         Staking(StakingQueryResponse),
     }
@@ -146,6 +148,23 @@ mod response {
         DenomMetadata(cosmwasm_std::DenomMetadataResponse),
         /// Response for the [`cosmwasm_std::BankQuery::AllDenomMetadata`] query.
         AllDenomMetadata(cosmwasm_std::AllDenomMetadataResponse),
+    }
+
+    /// The response type for the [`cosmwasm_std::WasmQuery`] queries.
+    #[non_exhaustive]
+    #[cw_serde]
+    pub enum WasmQueryResponse {
+        /// Response for the [`cosmwasm_std::WasmQuery::ContractInfo`] query.
+        /// Returns `None` if the contract does not exist.
+        /// The `pinned` field is not supported.
+        ContractInfo(Option<cosmwasm_std::ContractInfoResponse>),
+        /// Response for the [`cosmwasm_std::WasmQuery::CodeInfo`] query.
+        /// Returns `None` if the code does not exist.
+        CodeInfo(Option<cosmwasm_std::CodeInfoResponse>),
+        /// Response for the [`cosmwasm_std::WasmQuery::Raw`] query.
+        RawContractState(Option<cosmwasm_std::Binary>),
+        /// Response for the [`cosmwasm_std::WasmQuery::Smart`] query.
+        SmartContractState(cosmwasm_std::Binary),
     }
 
     /// The response type for the [`cosmwasm_std::StakingQuery`] queries.
@@ -352,7 +371,7 @@ mod convert_to_protobuf {
 pub mod from_protobuf {
     use std::str::FromStr;
 
-    use super::{constants, BankQueryResponse, IcaQueryResponse};
+    use super::{constants, BankQueryResponse, IcaQueryResponse, WasmQueryResponse};
 
     use crate::types::ContractError;
 
@@ -364,11 +383,16 @@ pub mod from_protobuf {
             },
             base::v1beta1::Coin as ProtoCoin,
         },
+        cosmwasm::wasm::v1::{
+            QueryCodeResponse, QueryContractInfoResponse, QueryRawContractStateResponse,
+            QuerySmartContractStateResponse,
+        },
         prost::Message,
     };
     use cosmwasm_std::{
-        AllBalanceResponse, AllDenomMetadataResponse, BalanceResponse, Binary, Coin, DenomMetadata,
-        DenomMetadataResponse, DenomUnit, StdResult, SupplyResponse, Uint128,
+        AllBalanceResponse, AllDenomMetadataResponse, BalanceResponse, Binary, CodeInfoResponse,
+        Coin, ContractInfoResponse, DenomMetadata, DenomMetadataResponse, DenomUnit, StdResult,
+        SupplyResponse, Uint128,
     };
 
     fn convert_to_coin(coin: ProtoCoin) -> StdResult<Coin> {
@@ -437,6 +461,7 @@ pub mod from_protobuf {
 
         match path {
             x if x.starts_with("/cosmos.bank.v1beta1.Query/") => bank_response(path, resp),
+            x if x.starts_with("/cosmwasm.wasm.v1.Query/") => wasm_response(path, resp),
             #[cfg(feature = "staking")]
             x if x.starts_with("/cosmos.staking.v1beta1.Query/") => staking_response(path, resp),
             _ => Err(ContractError::UnknownDataType(path.to_string())),
@@ -495,6 +520,62 @@ pub mod from_protobuf {
                             .map_or_else(|| Ok(Coin::default()), convert_to_coin)?,
                     ),
                 )))
+            }
+            _ => Err(ContractError::UnknownDataType(path.to_string())),
+        }
+    }
+
+    fn wasm_response(path: &str, resp: &[u8]) -> Result<IcaQueryResponse, ContractError> {
+        match path {
+            constants::WASM_CONTRACT_INFO => {
+                let resp = QueryContractInfoResponse::decode(resp)?;
+                Ok(IcaQueryResponse::Wasm(WasmQueryResponse::ContractInfo(
+                    resp.contract_info.map(|info| {
+                        let mut contract_info = ContractInfoResponse::default();
+                        contract_info.code_id = info.code_id;
+                        contract_info.creator = info.creator;
+                        contract_info.admin = if info.admin.is_empty() {
+                            None
+                        } else {
+                            Some(info.admin)
+                        };
+                        contract_info.ibc_port = if info.ibc_port_id.is_empty() {
+                            None
+                        } else {
+                            Some(info.ibc_port_id)
+                        };
+
+                        contract_info
+                    }),
+                )))
+            }
+            constants::WASM_CODE => {
+                let resp = QueryCodeResponse::decode(resp)?;
+                Ok(IcaQueryResponse::Wasm(WasmQueryResponse::CodeInfo(
+                    resp.code_info.map(|info| {
+                        let mut code_info = CodeInfoResponse::default();
+                        code_info.code_id = info.code_id;
+                        code_info.creator = info.creator;
+                        code_info.checksum = info.data_hash.into();
+                        code_info
+                    }),
+                )))
+            }
+            constants::WASM_RAW => {
+                let resp = QueryRawContractStateResponse::decode(resp)?;
+                Ok(IcaQueryResponse::Wasm(WasmQueryResponse::RawContractState(
+                    if resp.data.is_empty() {
+                        None
+                    } else {
+                        Some(resp.data.into())
+                    },
+                )))
+            }
+            constants::WASM_SMART => {
+                let resp = QuerySmartContractStateResponse::decode(resp)?;
+                Ok(IcaQueryResponse::Wasm(
+                    WasmQueryResponse::SmartContractState(resp.data.into()),
+                ))
             }
             _ => Err(ContractError::UnknownDataType(path.to_string())),
         }
