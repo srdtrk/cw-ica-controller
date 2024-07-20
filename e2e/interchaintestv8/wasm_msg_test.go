@@ -302,7 +302,7 @@ func (s *WasmTestSuite) TestSendWasmMsgs() {
 			Address: counterContract2.Address,
 		})
 		s.Require().NoError(err)
-		s.Require().Equal(s.CounterCodeID+1, int(contractInfoResp.ContractInfo.CodeID))
+		s.Require().Equal(s.CounterCodeID+1, contractInfoResp.ContractInfo.CodeID)
 		s.Require().Equal(wasmd2User.FormattedAddress(), contractInfoResp.ContractInfo.Admin)
 	}))
 }
