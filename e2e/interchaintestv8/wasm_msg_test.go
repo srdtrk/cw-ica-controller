@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/base64"
 	"strconv"
+	"testing"
+
+	"github.com/stretchr/testify/suite"
 
 	ibctesting "github.com/cosmos/ibc-go/v8/testing"
 
@@ -21,7 +24,19 @@ import (
 	"github.com/srdtrk/go-codegen/e2esuite/v8/types/simplecounter"
 )
 
-func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context) int {
+type WasmTestSuite struct {
+	ContractTestSuite
+
+	CounterCodeID uint64
+
+	CounterContract *simplecounter.Contract
+}
+
+func TestWithWasmTestSuite(t *testing.T) {
+	suite.Run(t, new(WasmTestSuite))
+}
+
+func (s *WasmTestSuite) SetupWasmTestSuite(ctx context.Context) {
 	chainconfig.DefaultChainSpecs = []*interchaintest.ChainSpec{
 		chainconfig.DefaultChainSpecs[0],
 		{
@@ -97,26 +112,12 @@ func (s *ContractTestSuite) SetupWasmTestSuite(ctx context.Context) int {
 	_, err = s.ChainB.StoreContract(ctx, s.UserB.KeyName(), "./testdata/migratecounter.wasm")
 	s.Require().NoError(err)
 
-	counterCodeID, err := strconv.ParseUint(counterCodeId, 10, 64)
+	s.CounterCodeID, err = strconv.ParseUint(counterCodeId, 10, 64)
 	s.Require().NoError(err)
-
-	return int(counterCodeID)
-}
-
-func (s *ContractTestSuite) TestSendWasmMsgs() {
-	ctx := context.Background()
-
-	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
-	// sets up the contract and does the channel handshake for the contract test suite.
-	counterCodeID := s.SetupWasmTestSuite(ctx)
-	wasmd, wasmd2 := s.ChainA, s.ChainB
-	wasmdUser, wasmd2User := s.UserA, s.UserB
 
 	// Fund the ICA address:
 	s.FundAddressChainB(ctx, s.IcaContractToAddrMap[s.Contract.Address])
-
-	var counterContract *simplecounter.Contract
-	s.Require().True(s.Run("TestInstantiate", func() {
+	s.Require().True(s.Run("Instantiate with ICA", func() {
 		icaAddress := s.IcaContractToAddrMap[s.Contract.Address]
 
 		// Instantiate the contract:
@@ -124,7 +125,7 @@ func (s *ContractTestSuite) TestSendWasmMsgs() {
 			Wasm: &cwicacontroller.CosmosMsg_for_Empty_Wasm{
 				Instantiate: &cwicacontroller.WasmMsg_Instantiate{
 					Admin:  &icaAddress,
-					CodeId: counterCodeID,
+					CodeId: int(s.CounterCodeID),
 					Label:  "counter",
 					Msg:    cwicacontroller.Binary(toBase64(`{"count": 0}`)),
 					Funds:  []cwicacontroller.Coin{},
@@ -138,10 +139,10 @@ func (s *ContractTestSuite) TestSendWasmMsgs() {
 				Messages: []cwicacontroller.CosmosMsg_for_Empty{instantiateMsg},
 			},
 		}
-		_, err := s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCosmosMsgsExecMsg)
+		_, err := s.Contract.Execute(ctx, s.UserA.KeyName(), sendCosmosMsgsExecMsg)
 		s.Require().NoError(err)
 
-		err = testutil.WaitForBlocks(ctx, 5, wasmd, wasmd2)
+		err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
 		s.Require().NoError(err)
 
 		// Check if contract callbacks were executed:
@@ -151,20 +152,30 @@ func (s *ContractTestSuite) TestSendWasmMsgs() {
 		s.Require().Equal(int(0), len(callbackCounter.Error))
 
 		contractByCodeRequest := wasmtypes.QueryContractsByCodeRequest{
-			CodeId: uint64(counterCodeID),
+			CodeId: s.CounterCodeID,
 		}
-		contractByCodeResp, err := e2esuite.GRPCQuery[wasmtypes.QueryContractsByCodeResponse](ctx, wasmd2, &contractByCodeRequest)
+		contractByCodeResp, err := e2esuite.GRPCQuery[wasmtypes.QueryContractsByCodeResponse](ctx, s.ChainB, &contractByCodeRequest)
 		s.Require().NoError(err)
 		s.Require().Len(contractByCodeResp.Contracts, 1)
 
-		counterContract, err = simplecounter.NewContract(contractByCodeResp.Contracts[0], strconv.FormatUint(uint64(counterCodeID), 10), wasmd2)
+		s.CounterContract, err = simplecounter.NewContract(contractByCodeResp.Contracts[0], strconv.FormatUint(s.CounterCodeID, 10), s.ChainB)
 		s.Require().NoError(err)
 
 		// Query the simple counter state:
-		counterState, err := counterContract.QueryClient().GetCount(ctx, &simplecounter.QueryMsg_GetCount{})
+		counterState, err := s.CounterContract.QueryClient().GetCount(ctx, &simplecounter.QueryMsg_GetCount{})
 		s.Require().NoError(err)
 		s.Require().Equal(int(0), counterState.Count)
 	}))
+}
+
+func (s *WasmTestSuite) TestSendWasmMsgs() {
+	ctx := context.Background()
+
+	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
+	// sets up the contract and does the channel handshake for the contract test suite.
+	s.SetupWasmTestSuite(ctx)
+	wasmd, wasmd2 := s.ChainA, s.ChainB
+	wasmdUser, wasmd2User := s.UserA, s.UserB
 
 	var counterContract2 *simplecounter.Contract
 	s.Require().True(s.Run("TestExecuteAndInstantiate2AndClearAdminMsg", func() {
@@ -174,7 +185,7 @@ func (s *ContractTestSuite) TestSendWasmMsgs() {
 		executeMsg := cwicacontroller.CosmosMsg_for_Empty{
 			Wasm: &cwicacontroller.CosmosMsg_for_Empty_Wasm{
 				Execute: &cwicacontroller.WasmMsg_Execute{
-					ContractAddr: counterContract.Address,
+					ContractAddr: s.CounterContract.Address,
 					Msg:          cwicacontroller.Binary(toBase64(`{"increment": {}}`)),
 					Funds:        []cwicacontroller.Coin{},
 				},
@@ -184,7 +195,7 @@ func (s *ContractTestSuite) TestSendWasmMsgs() {
 		clearAdminMsg := cwicacontroller.CosmosMsg_for_Empty{
 			Wasm: &cwicacontroller.CosmosMsg_for_Empty_Wasm{
 				ClearAdmin: &cwicacontroller.WasmMsg_ClearAdmin{
-					ContractAddr: counterContract.Address,
+					ContractAddr: s.CounterContract.Address,
 				},
 			},
 		}
@@ -193,7 +204,7 @@ func (s *ContractTestSuite) TestSendWasmMsgs() {
 			Wasm: &cwicacontroller.CosmosMsg_for_Empty_Wasm{
 				Instantiate2: &cwicacontroller.WasmMsg_Instantiate2{
 					Admin:  &icaAddress,
-					CodeId: counterCodeID,
+					CodeId: int(s.CounterCodeID),
 					Label:  "counter2",
 					Msg:    cwicacontroller.Binary(toBase64(`{"count": 0}`)),
 					Funds:  []cwicacontroller.Coin{},
@@ -221,12 +232,12 @@ func (s *ContractTestSuite) TestSendWasmMsgs() {
 		s.Require().Equal(int(0), len(callbackCounter.Error))
 
 		// Query the simple counter state:
-		counterState, err := counterContract.QueryClient().GetCount(ctx, &simplecounter.QueryMsg_GetCount{})
+		counterState, err := s.CounterContract.QueryClient().GetCount(ctx, &simplecounter.QueryMsg_GetCount{})
 		s.Require().NoError(err)
 		s.Require().Equal(int(1), counterState.Count)
 
 		contractInfoRequest := wasmtypes.QueryContractInfoRequest{
-			Address: counterContract.Address,
+			Address: s.CounterContract.Address,
 		}
 		contractInfoResp, err := e2esuite.GRPCQuery[wasmtypes.QueryContractInfoResponse](ctx, wasmd2, &contractInfoRequest)
 		s.Require().NoError(err)
@@ -234,13 +245,13 @@ func (s *ContractTestSuite) TestSendWasmMsgs() {
 		s.Require().Equal("", contractInfoResp.ContractInfo.Admin)
 
 		contractByCodeRequest := wasmtypes.QueryContractsByCodeRequest{
-			CodeId: uint64(counterCodeID),
+			CodeId: s.CounterCodeID,
 		}
 		contractByCodeResp, err := e2esuite.GRPCQuery[wasmtypes.QueryContractsByCodeResponse](ctx, wasmd2, &contractByCodeRequest)
 		s.Require().NoError(err)
 		s.Require().Len(contractByCodeResp.Contracts, 2)
 
-		counterContract2, err = simplecounter.NewContract(contractByCodeResp.Contracts[1], strconv.FormatUint(uint64(counterCodeID), 10), wasmd2)
+		counterContract2, err = simplecounter.NewContract(contractByCodeResp.Contracts[1], strconv.FormatUint(s.CounterCodeID, 10), wasmd2)
 		s.Require().NoError(err)
 	}))
 
@@ -249,7 +260,7 @@ func (s *ContractTestSuite) TestSendWasmMsgs() {
 			Wasm: &cwicacontroller.CosmosMsg_for_Empty_Wasm{
 				Migrate: &cwicacontroller.WasmMsg_Migrate{
 					ContractAddr: counterContract2.Address,
-					NewCodeId:    counterCodeID + 1,
+					NewCodeId:    int(s.CounterCodeID) + 1,
 					Msg:          cwicacontroller.Binary(toBase64(`{}`)),
 				},
 			},
@@ -291,7 +302,7 @@ func (s *ContractTestSuite) TestSendWasmMsgs() {
 			Address: counterContract2.Address,
 		})
 		s.Require().NoError(err)
-		s.Require().Equal(counterCodeID+1, int(contractInfoResp.ContractInfo.CodeID))
+		s.Require().Equal(s.CounterCodeID+1, int(contractInfoResp.ContractInfo.CodeID))
 		s.Require().Equal(wasmd2User.FormattedAddress(), contractInfoResp.ContractInfo.Admin)
 	}))
 }
