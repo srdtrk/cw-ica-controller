@@ -7,9 +7,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
-
 	"github.com/cosmos/gogoproto/proto"
+	"github.com/stretchr/testify/suite"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -53,7 +52,7 @@ func (s *WasmTestSuite) SetupWasmTestSuite(ctx context.Context) {
 				Images: []ibc.DockerImage{
 					{
 						Repository: "cosmwasm/wasmd", // FOR LOCAL IMAGE USE: Docker Image Name
-						Version:    "v0.51.0",        // FOR LOCAL IMAGE USE: Docker Image Tag
+						Version:    "v0.52.0",        // FOR LOCAL IMAGE USE: Docker Image Tag
 						UidGid:     "1025:1025",
 					},
 				},
