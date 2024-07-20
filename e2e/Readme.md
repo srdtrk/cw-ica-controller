@@ -12,7 +12,7 @@ The end to end tests are currently split into two parts:
 
 These tests are designed to test the ICA contract itself and its interaction with the relayer.
 
-All contract tests are located in `interchaintest/contract_test.go` file. Currently, there are four tests in this file:
+All contract tests are located in `interchaintestv8` direcotry. Currently, the following tests are available:
 
 - TestWithContractTestSuite/TestIcaContractChannelHandshake_Ordered_Protobuf
 - TestWithContractTestSuite/TestIcaContractChannelHandshake_Unordered_Protobuf
@@ -26,11 +26,12 @@ All contract tests are located in `interchaintest/contract_test.go` file. Curren
 - TestWithOwnerTestSuite/TestOwnerPredefinedAction
 - TestWithContractTestSuite/TestSendCosmosMsgs_Ordered_Protobuf
 - TestWithContractTestSuite/TestSendCosmosMsgs_Unordered_Protobuf
-- TestWithWasmTestSuite/TestSendWasmMsgs
 - TestWithContractTestSuite/TestMigrateOrderedToUnordered
 - TestWithContractTestSuite/TestCloseChannel_Protobuf_Unordered
 - TestWithContractTestSuite/TestBankAndStargateQueries
 - TestWithContractTestSuite/TestStakingQueries
+- TestWithWasmTestSuite/TestSendWasmMsgs
+- TestWithWasmTestSuite/TestSendWasmQueries
 
 To run the tests locally, run the following command in the root of the repository:
 

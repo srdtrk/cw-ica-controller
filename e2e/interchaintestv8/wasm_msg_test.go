@@ -3,11 +3,17 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/cosmos/gogoproto/proto"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	icahosttypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/types"
 	ibctesting "github.com/cosmos/ibc-go/v8/testing"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
@@ -90,8 +96,7 @@ func (s *WasmTestSuite) SetupWasmTestSuite(ctx context.Context) {
 	s.Require().NoError(err)
 
 	// Wait for the channel to get set up
-	err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
-	s.Require().NoError(err)
+	s.Require().NoError(testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB))
 
 	// Query the contract state:
 	contractState, err := s.Contract.QueryClient().GetContractState(ctx, &cwicacontroller.QueryMsg_GetContractState{})
@@ -142,8 +147,7 @@ func (s *WasmTestSuite) SetupWasmTestSuite(ctx context.Context) {
 		_, err := s.Contract.Execute(ctx, s.UserA.KeyName(), sendCosmosMsgsExecMsg)
 		s.Require().NoError(err)
 
-		err = testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB)
-		s.Require().NoError(err)
+		s.Require().NoError(testutil.WaitForBlocks(ctx, 5, s.ChainA, s.ChainB))
 
 		// Check if contract callbacks were executed:
 		callbackCounter, err := s.CallbackCounterContract.QueryClient().GetCallbackCounter(ctx, &callbackcounter.QueryMsg_GetCallbackCounter{})
@@ -222,8 +226,7 @@ func (s *WasmTestSuite) TestSendWasmMsgs() {
 		_, err := s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCosmosMsgsExecMsg)
 		s.Require().NoError(err)
 
-		err = testutil.WaitForBlocks(ctx, 5, wasmd, wasmd2)
-		s.Require().NoError(err)
+		s.Require().NoError(testutil.WaitForBlocks(ctx, 5, wasmd, wasmd2))
 
 		// Check if contract callbacks were executed:
 		callbackCounter, err := s.CallbackCounterContract.QueryClient().GetCallbackCounter(ctx, &callbackcounter.QueryMsg_GetCallbackCounter{})
@@ -284,8 +287,7 @@ func (s *WasmTestSuite) TestSendWasmMsgs() {
 		_, err := s.Contract.Execute(ctx, wasmdUser.KeyName(), sendCosmosMsgsExecMsg)
 		s.Require().NoError(err)
 
-		err = testutil.WaitForBlocks(ctx, 5, wasmd, wasmd2)
-		s.Require().NoError(err)
+		s.Require().NoError(testutil.WaitForBlocks(ctx, 5, wasmd, wasmd2))
 
 		// Check if contract callbacks were executed:
 		callbackCounter, err := s.CallbackCounterContract.QueryClient().GetCallbackCounter(ctx, &callbackcounter.QueryMsg_GetCallbackCounter{})
@@ -304,6 +306,79 @@ func (s *WasmTestSuite) TestSendWasmMsgs() {
 		s.Require().NoError(err)
 		s.Require().Equal(s.CounterCodeID+1, contractInfoResp.ContractInfo.CodeID)
 		s.Require().Equal(wasmd2User.FormattedAddress(), contractInfoResp.ContractInfo.Admin)
+	}))
+}
+
+// TestSendWasmQueries tests the wasm query functionality of the contract
+// The following queries are tested:
+// - WasmQuery::Smart
+// TODO: - WasmQuery::Raw
+// TODO: - WasmQuery::ContractInfo
+// TODO: - WasmQuery::CodeInfo
+func (s *WasmTestSuite) TestSendWasmQueries() {
+	ctx := context.Background()
+
+	// This starts the chains, relayer, creates the user accounts, creates the ibc clients and connections,
+	// sets up the contract and does the channel handshake for the contract test suite.
+	s.SetupWasmTestSuite(ctx)
+	wasmd, wasmd2 := s.ChainA, s.ChainB
+	wasmdUser, _ := s.UserA, s.UserB
+
+	s.Require().True(s.Run("WasmQuery::Smart", func() {
+		// Execute the contract:
+		executeMsg := cwicacontroller.ExecuteMsg{
+			SendCosmosMsgs: &cwicacontroller.ExecuteMsg_SendCosmosMsgs{
+				Queries: []cwicacontroller.QueryRequest_for_Empty{
+					{
+						Wasm: &cwicacontroller.QueryRequest_for_Empty_Wasm{
+							Smart: &cwicacontroller.WasmQuery_Smart{
+								ContractAddr: s.CounterContract.Address,
+								Msg:          cwicacontroller.Binary(toBase64(`{"get_count": {}}`)),
+							},
+						},
+					},
+				},
+			},
+		}
+
+		_, err := s.Contract.Execute(ctx, wasmdUser.KeyName(), executeMsg)
+		s.Require().NoError(err)
+
+		s.Require().NoError(testutil.WaitForBlocks(ctx, 5, wasmd, wasmd2))
+
+		// Check if contract callbacks were executed:
+		callbackCounter, err := s.CallbackCounterContract.QueryClient().GetCallbackCounter(ctx, &callbackcounter.QueryMsg_GetCallbackCounter{})
+		s.Require().NoError(err)
+		s.Require().Equal(int(0), len(callbackCounter.Error))
+		s.Require().Equal(int(0), len(callbackCounter.Timeout))
+		s.Require().Equal(int(2), len(callbackCounter.Success))
+
+		s.Require().True(s.Run("verify query result", func() {
+			expResp, err := s.CounterContract.QueryClient().GetCount(ctx, &simplecounter.QueryMsg_GetCount{})
+			s.Require().NoError(err)
+
+			icaAck := &sdk.TxMsgData{}
+			s.Require().True(s.Run("unmarshal ica response", func() {
+				err := proto.Unmarshal(callbackCounter.Success[0].OnAcknowledgementPacketCallback.IcaAcknowledgement.Result.Unwrap(), icaAck)
+				s.Require().NoError(err)
+				s.Require().Len(icaAck.GetMsgResponses(), 1)
+			}))
+
+			queryTxResp := &icahosttypes.MsgModuleQuerySafeResponse{}
+			s.Require().True(s.Run("unmarshal MsgModuleQuerySafeResponse", func() {
+				err := proto.Unmarshal(icaAck.MsgResponses[0].Value, queryTxResp)
+				s.Require().NoError(err)
+				s.Require().Len(queryTxResp.Responses, 1)
+			}))
+
+			contractResp := &simplecounter.GetCountResponse{}
+			s.Require().True(s.Run("unmarshal and verify bank query response", func() {
+				smartResp := &wasmtypes.QuerySmartContractStateResponse{}
+				s.Require().NoError(proto.Unmarshal(queryTxResp.Responses[0], smartResp))
+				s.Require().NoError(json.Unmarshal(smartResp.Data, contractResp))
+				s.Require().Equal(expResp.Count, contractResp.Count)
+			}))
+		}))
 	}))
 }
 
