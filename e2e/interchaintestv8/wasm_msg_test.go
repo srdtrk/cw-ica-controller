@@ -7,12 +7,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/suite"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	icahosttypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/types"
 	ibctesting "github.com/cosmos/ibc-go/v8/testing"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
@@ -356,31 +352,28 @@ func (s *WasmTestSuite) TestSendWasmQueries() {
 			expResp, err := s.CounterContract.QueryClient().GetCount(ctx, &simplecounter.QueryMsg_GetCount{})
 			s.Require().NoError(err)
 
-			icaAck := &sdk.TxMsgData{}
-			s.Require().True(s.Run("unmarshal ica response", func() {
-				err := proto.Unmarshal(callbackCounter.Success[0].OnAcknowledgementPacketCallback.IcaAcknowledgement.Result.Unwrap(), icaAck)
-				s.Require().NoError(err)
-				s.Require().Len(icaAck.GetMsgResponses(), 1)
-			}))
+			s.Require().NotNil(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult)
+			s.Require().Nil(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Error)
+			s.Require().NotNil(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success)
+			s.Require().Len(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses, 1)
 
-			queryTxResp := &icahosttypes.MsgModuleQuerySafeResponse{}
-			s.Require().True(s.Run("unmarshal MsgModuleQuerySafeResponse", func() {
-				err := proto.Unmarshal(icaAck.MsgResponses[0].Value, queryTxResp)
-				s.Require().NoError(err)
-				s.Require().Len(queryTxResp.Responses, 1)
-			}))
-
-			contractResp := &simplecounter.GetCountResponse{}
-			s.Require().True(s.Run("unmarshal and verify bank query response", func() {
-				smartResp := &wasmtypes.QuerySmartContractStateResponse{}
-				s.Require().NoError(proto.Unmarshal(queryTxResp.Responses[0], smartResp))
-				s.Require().NoError(json.Unmarshal(smartResp.Data, contractResp))
-				s.Require().Equal(expResp.Count, contractResp.Count)
-			}))
+			var countResp simplecounter.GetCountResponse
+			s.Require().NotNil(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.SmartContractState)
+			s.T().Logf("SmartContractState: %s", fromBase64(string(*callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.SmartContractState)))
+			s.Require().NoError(json.Unmarshal(fromBase64(string(*callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.SmartContractState)), &countResp))
+			s.Require().Equal(expResp.Count, countResp.Count)
 		}))
 	}))
 }
 
 func toBase64(msg string) string {
 	return base64.StdEncoding.EncodeToString([]byte(msg))
+}
+
+func fromBase64(data string) []byte {
+	b, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		panic(err)
+	}
+	return b
 }

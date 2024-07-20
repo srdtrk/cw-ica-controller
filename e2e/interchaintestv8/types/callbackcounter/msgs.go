@@ -43,8 +43,8 @@ type Uint128 string
 
 // In IBC each package must set at least one type of timeout: the timestamp or the block height. Using this rather complex enum instead of two timeout fields we ensure that at least one timeout is set.
 type IbcTimeout struct {
-	Block *IbcTimeoutBlock `json:"block,omitempty"`
-	Timestamp *Timestamp `json:"timestamp,omitempty"`
+	Block     *IbcTimeoutBlock `json:"block,omitempty"`
+	Timestamp *Timestamp       `json:"timestamp,omitempty"`
 }
 
 /*
@@ -66,9 +66,9 @@ type IbcChannel struct {
 	// Note: in ibcv3 this may be "", in the IbcOpenChannel handshake messages
 	Version string `json:"version"`
 	// The connection upon which this channel was created. If this is a multi-hop channel, we only expose the first hop.
-	ConnectionId string `json:"connection_id"`
+	ConnectionId         string      `json:"connection_id"`
 	CounterpartyEndpoint IbcEndpoint `json:"counterparty_endpoint"`
-	Endpoint IbcEndpoint `json:"endpoint"`
+	Endpoint             IbcEndpoint `json:"endpoint"`
 }
 
 /*
@@ -92,9 +92,9 @@ type IbcTimeoutBlock struct {
 
 // Replicates the cosmos-sdk bank module DenomUnit type
 type DenomUnit struct {
-	Aliases []string `json:"aliases"`
-	Denom string `json:"denom"`
-	Exponent int `json:"exponent"`
+	Aliases  []string `json:"aliases"`
+	Denom    string   `json:"denom"`
+	Exponent int      `json:"exponent"`
 }
 
 // Instances are created in the querier.
@@ -134,7 +134,7 @@ The essential data from wasmd's [CodeInfo]/[CodeInfoResponse].
 type CodeInfoResponse struct {
 	// The hash of the Wasm blob
 	Checksum HexBinary `json:"checksum"`
-	CodeId int `json:"code_id"`
+	CodeId   int       `json:"code_id"`
 	// The address that initially stored the code
 	Creator string `json:"creator"`
 }
@@ -148,8 +148,8 @@ type ContractInfoResponse struct {
 	// if set, the contract is pinned to the cache, and thus uses less gas when called
 	Pinned bool `json:"pinned"`
 	// admin who can run migrations (if any)
-	Admin *string `json:"admin,omitempty"`
-	CodeId int `json:"code_id"`
+	Admin  *string `json:"admin,omitempty"`
+	CodeId int     `json:"code_id"`
 	// address that instantiated this contract
 	Creator string `json:"creator"`
 	// set if this contract has bound an IBC port
@@ -256,17 +256,17 @@ type IcaQueryResult struct {
 
 type IbcEndpoint struct {
 	ChannelId string `json:"channel_id"`
-	PortId string `json:"port_id"`
+	PortId    string `json:"port_id"`
 }
 
 // The response type for the [`cosmwasm_std::WasmQuery`] queries.
 type WasmQueryResponse struct {
 	// Response for the [`cosmwasm_std::WasmQuery::ContractInfo`] query. Returns `None` if the contract does not exist. The `pinned` field is not supported.
-	ContractInfo *WasmQueryResponse_ContractInfo `json:"contract_info,omitempty"`
+	ContractInfo *ContractInfoResponse `json:"contract_info,omitempty"`
 	// Response for the [`cosmwasm_std::WasmQuery::CodeInfo`] query. Returns `None` if the code does not exist.
-	CodeInfo *WasmQueryResponse_CodeInfo `json:"code_info,omitempty"`
+	CodeInfo *CodeInfoResponse `json:"code_info,omitempty"`
 	// Response for the [`cosmwasm_std::WasmQuery::Raw`] query.
-	RawContractState *WasmQueryResponse_RawContractState `json:"raw_contract_state,omitempty"`
+	RawContractState *Binary `json:"raw_contract_state,omitempty"`
 	// Response for the [`cosmwasm_std::WasmQuery::Smart`] query.
 	SmartContractState *WasmQueryResponse_SmartContractState `json:"smart_contract_state,omitempty"`
 }
@@ -279,8 +279,8 @@ type IbcPacket struct {
 	// The sequence number of the packet on the given channel
 	Sequence int `json:"sequence"`
 	// identifies the channel and port on the sending chain.
-	Src IbcEndpoint `json:"src"`
-	Timeout IbcTimeout `json:"timeout"`
+	Src     IbcEndpoint `json:"src"`
+	Timeout IbcTimeout  `json:"timeout"`
 }
 type ExecuteMsg_ReceiveIcaCallback IcaControllerCallbackMsg
 
@@ -306,7 +306,7 @@ type AllValidatorsResponse struct {
 type AllDenomMetadataResponse struct {
 	// Always returns metadata for all token denoms on the base chain.
 	Metadata []DenomMetadata `json:"metadata"`
-	NextKey *Binary `json:"next_key,omitempty"`
+	NextKey  *Binary         `json:"next_key,omitempty"`
 }
 
 type BalanceResponse struct {
@@ -326,21 +326,21 @@ type IcaControllerCallbackMsg struct {
 
 // Replicates the cosmos-sdk bank module Metadata type
 type DenomMetadata struct {
-	Name string `json:"name"`
-	Symbol string `json:"symbol"`
-	Uri string `json:"uri"`
-	UriHash string `json:"uri_hash"`
-	Base string `json:"base"`
-	DenomUnits []DenomUnit `json:"denom_units"`
-	Description string `json:"description"`
-	Display string `json:"display"`
+	Name        string      `json:"name"`
+	Symbol      string      `json:"symbol"`
+	Uri         string      `json:"uri"`
+	UriHash     string      `json:"uri_hash"`
+	Base        string      `json:"base"`
+	DenomUnits  []DenomUnit `json:"denom_units"`
+	Description string      `json:"description"`
+	Display     string      `json:"display"`
 }
 
 type QueryMsg_GetCallbackCounter struct{}
 
 type Coin struct {
 	Amount Uint128 `json:"amount"`
-	Denom string `json:"denom"`
+	Denom  string  `json:"denom"`
 }
 
 // `Data` is the response to an ibc packet. It either contains a result or an error.
