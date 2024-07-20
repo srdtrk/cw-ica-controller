@@ -302,7 +302,7 @@ The end to end tests are for testing the contract's functionality in an environm
 This contract follows [semantic versioning](https://semver.org/), but with the following deviations:
 
 - A major version will not be tagged until the contract is audited.
-- Any API breaking changes or state-machine breaking changes will result in a minor version bump.
+- All API breaking changes and most state-machine breaking changes will result in a minor version bump.
 
 ## Limitations
 
