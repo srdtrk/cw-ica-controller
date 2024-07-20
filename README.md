@@ -1,4 +1,4 @@
-# CosmWasm ICA Controller Contract
+# `CosmWasm` ICA Controller Contract
 
 <div align="center">
 
@@ -10,13 +10,13 @@
 
 ![cw-ica-controller](./docs/static/img/cw-ica-controller.svg)
 
-This is a CosmWasm smart contract that communicates with the golang `ica/host` module on the counterparty chain to create and manage **one** interchain account. This contract can also execute callbacks based on the result of the interchain account transaction. Because this is a CosmWasm implementation of the entire ICA controller, the chain that this contract is deployed on need **not** have the ICA module enabled. Moreover, the counterparty chain need not have CosmWasm support. This contract can be deployed on chains that support CosmWasm `v1.4+`.
+This is a `CosmWasm` smart contract that communicates with the golang `ica/host` module on the counterparty chain to create and manage **one** interchain account. This contract can also execute callbacks based on the result of the interchain account transaction. Because this is a `CosmWasm` implementation of the entire ICA controller, the chain that this contract is deployed on need **not** have the ICA module enabled. Moreover, the counterparty chain need not have `CosmWasm` support. This contract can be deployed on chains that support `CosmWasm` `v1.4+`.
 
 **A documentation website for this contract is [here](https://srdtrk.github.io/cw-ica-controller/).**
 
 ## Table of Contents
 
-- [CosmWasm ICA Controller Contract](#cosmwasm-ica-controller-contract)
+- [`CosmWasm` ICA Controller Contract](#cosmwasm-ica-controller-contract)
   - [Table of Contents](#table-of-contents)
   - [Usage](#usage)
     - [Create an interchain account](#create-an-interchain-account)
@@ -101,9 +101,9 @@ Learn more about channel closing and reopening [here](#channel-closing-and-reope
 
 `ExecuteMsg::SendCosmosMsgs` is used to commit a packet to be sent to the host chain. It accepts `cosmwasm_std::CosmosMsg`s to be sent to the host chain. (The contract then these messages to protobuf messages and sends them to the host chain. You can execute any custom message using `CosmosMsg::Stargate`).
 
-In CosmWasm contracts, `CosmosMsg` are used to execute transactions on the chain that the contract is deployed on. In this contract, we use `CosmosMsg`s to execute transactions on the host (counterparty) chain. This is done by converting the `CosmosMsg`s to a protobuf ICA tx. The ICA tx is then sent to the host chain. The host chain then executes the ICA tx and sends the result back to this contract.
+In `CosmWasm` contracts, `CosmosMsg` are used to execute transactions on the chain that the contract is deployed on. In this contract, we use `CosmosMsg`s to execute transactions on the host (counterparty) chain. This is done by converting the `CosmosMsg`s to a protobuf ICA tx. The ICA tx is then sent to the host chain. The host chain then executes the ICA tx and sends the result back to this contract.
 
-This execute message allows the user to submit an array of [`cosmwasm_std::CosmosMsg`](https://github.com/CosmWasm/cosmwasm/blob/v1.5.0/packages/std/src/results/cosmos_msg.rs#L27) which are then converted by the contract to an atomic ICA tx.
+This execute message allows the user to submit an array of [`cosmwasm_std::CosmosMsg`](https://github.com/`CosmWasm`/cosmwasm/blob/v1.5.0/packages/std/src/results/cosmos_msg.rs#L27) which are then converted by the contract to an atomic ICA tx.
 
 ```rust, ignore
 pub enum ExecuteMsg {
@@ -175,12 +175,11 @@ This contract also supports querying the host chain. To do this, you can submit 
 
 This feature only works if the host (counterparty) chain is on ibc-go v7.5+. If the host chain is on an older version, then the packet will return an error acknowledgement.
 
-Similarly to `CosmosMsg`, in CosmWasm contracts, `QueryRequest` are used to execute queries on the chain that the contract is deployed on. In this contract, we use `QueryRequest`s to execute queries as transactions on the host (counterparty) chain. This is done by converting the `QueryRequests`s to a protobuf ICA tx. The ICA tx is then sent to the host chain. The host chain then executes the ICA tx and sends the result back to this contract.
+Similarly to `CosmosMsg`, in `CosmWasm` contracts, `QueryRequest` are used to execute queries on the chain that the contract is deployed on. In this contract, we use `QueryRequest`s to execute queries as transactions on the host (counterparty) chain. This is done by converting the `QueryRequests`s to a protobuf ICA tx. The ICA tx is then sent to the host chain. The host chain then executes the ICA tx and sends the result back to this contract.
 
 Note that if both `messages` and `queries` are provided, the `queries` are executed after the `messages`.
 
-<!-- TODO: Update link below. -->
-Unlike the `messages`, not all query requests are supported, as query execution is not generally deterministic in CosmosSDK. See the documentation for the supported query requests [here](https://srdtrk.github.io/cw-ica-controller/).
+Unlike the `messages`, not all query requests are supported, as query execution is not generally deterministic in `CosmosSDK`. See the documentation for the supported query requests [here](https://srdtrk.github.io/cw-ica-controller/main/contract-api/execute-msg#queries).
 
 ### Execute a callback
 
@@ -217,7 +216,7 @@ pub enum ExecuteMsg {
 ```
 
 Any contract that imports the `cw-ica-controller` as a library needs to disable the `default-features` of the `cw-ica-controller` crate.
-This is because the `default-features` of the `cw-ica-controller` crate includes the CosmWasm entry points.
+This is because the `default-features` of the `cw-ica-controller` crate includes the `CosmWasm` entry points.
 
 ```toml
 [dependencies]
@@ -270,7 +269,7 @@ Buying and selling and NFT from Xion on Injective using Nomos SDK and ICA contro
 
 ## Building
 
-We use [cosmwasm/optimizer](https://github.com/CosmWasm/optimizer) docker image to build the contract. This project uses `just` as the task runner. To install `just`, run the following command:
+We use [cosmwasm/optimizer](https://github.com/`CosmWasm`/optimizer) docker image to build the contract. This project uses `just` as the task runner. To install `just`, run the following command:
 
 ```sh
 cargo install just
@@ -307,10 +306,10 @@ This contract follows [semantic versioning](https://semver.org/), but with the f
 
 ## Limitations
 
-This contract is not meant to be used in production. It is meant to be used as a reference implementation for how to build a CosmWasm contract that can communicate with the golang ica/host module. The following are some of the limitations of this contract:
+This contract is not meant to be used in production. It is meant to be used as a reference implementation for how to build a `CosmWasm` contract that can communicate with the golang ica/host module. The following are some of the limitations of this contract:
 
 - The contract cannot create multiple interchain accounts. It can only create one.
 
 ## Acknowledgements
 
-Much thanks to [Art3mix](https://github.com/Art3miX) and [CyberHoward](https://github.com/CyberHoward) for all the helpful discussions. Also thanks to [0xekez](https://github.com/0xekez) for their work on [cw-ibc-example](https://github.com/0xekez/cw-ibc-example) which was a great reference for CosmWasm IBC endpoints and interchaintest.
+Much thanks to [Art3mix](https://github.com/Art3miX) and [CyberHoward](https://github.com/CyberHoward) for all the helpful discussions. Also thanks to [0xekez](https://github.com/0xekez) for their work on [cw-ibc-example](https://github.com/0xekez/cw-ibc-example) which was a great reference for `CosmWasm` IBC endpoints and interchaintest.
