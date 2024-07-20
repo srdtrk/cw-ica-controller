@@ -359,9 +359,64 @@ func (s *WasmTestSuite) TestSendWasmQueries() {
 
 			var countResp simplecounter.GetCountResponse
 			s.Require().NotNil(callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.SmartContractState)
-			s.T().Logf("SmartContractState: %s", fromBase64(string(*callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.SmartContractState)))
 			s.Require().NoError(json.Unmarshal(fromBase64(string(*callbackCounter.Success[1].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.SmartContractState)), &countResp))
 			s.Require().Equal(expResp.Count, countResp.Count)
+		}))
+	}))
+
+	s.Require().True(s.Run("WasmQuery::{ContractInfo, Raw}", func() {
+		// Execute the contract:
+		executeMsg := cwicacontroller.ExecuteMsg{
+			SendCosmosMsgs: &cwicacontroller.ExecuteMsg_SendCosmosMsgs{
+				Queries: []cwicacontroller.QueryRequest_for_Empty{
+					// {Wasm: &cwicacontroller.QueryRequest_for_Empty_Wasm{
+					// 	CodeInfo: &cwicacontroller.WasmQuery_CodeInfo{
+					// 		CodeId: int(s.CounterCodeID),
+					// 	},
+					// }},
+					{Wasm: &cwicacontroller.QueryRequest_for_Empty_Wasm{
+						ContractInfo: &cwicacontroller.WasmQuery_ContractInfo{
+							ContractAddr: s.CounterContract.Address,
+						},
+					}},
+					{
+						Wasm: &cwicacontroller.QueryRequest_for_Empty_Wasm{
+							Raw: &cwicacontroller.WasmQuery_Raw{
+								ContractAddr: s.CounterContract.Address,
+								Key:          cwicacontroller.Binary(toBase64("state")),
+							},
+						},
+					},
+				},
+			},
+		}
+
+		_, err := s.Contract.Execute(ctx, wasmdUser.KeyName(), executeMsg)
+		s.Require().NoError(err)
+
+		s.Require().NoError(testutil.WaitForBlocks(ctx, 5, wasmd, wasmd2))
+
+		// Check if contract callbacks were executed:
+		callbackCounter, err := s.CallbackCounterContract.QueryClient().GetCallbackCounter(ctx, &callbackcounter.QueryMsg_GetCallbackCounter{})
+		s.Require().NoError(err)
+		s.Require().Equal(int(0), len(callbackCounter.Error))
+		s.Require().Equal(int(0), len(callbackCounter.Timeout))
+		s.Require().Equal(int(3), len(callbackCounter.Success))
+
+		s.Require().True(s.Run("verify query result", func() {
+			s.Require().NotNil(callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult)
+			s.Require().Nil(callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Error)
+			s.Require().NotNil(callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success)
+			s.Require().Len(callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses, 2)
+
+			icaAddress := s.IcaContractToAddrMap[s.Contract.Address]
+			s.Require().NotNil(callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo)
+			s.Require().Equal(icaAddress, *callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo.Admin)
+			s.Require().Equal(icaAddress, callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo.Creator)
+			s.Require().Equal(int(s.CounterCodeID), callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo.CodeId)
+			s.Require().False(callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo.Pinned)
+			s.Require().Nil(callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo.IbcPort)
+			// TODO: add assertion for raw query
 		}))
 	}))
 }
