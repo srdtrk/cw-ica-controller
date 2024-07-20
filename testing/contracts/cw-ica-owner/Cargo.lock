@@ -311,7 +311,7 @@ dependencies = [
 
 [[package]]
 name = "cw-ica-controller"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
  "anybuf",
  "cosmos-sdk-proto",
