@@ -45,7 +45,7 @@ jobs:
           - TestWithOwnerTestSuite/TestOwnerPredefinedAction
           - TestWithContractTestSuite/TestSendCosmosMsgs_Ordered_Protobuf
           - TestWithContractTestSuite/TestSendCosmosMsgs_Unordered_Protobuf
-          - TestWithContractTestSuite/TestSendWasmMsgsProtobufEncoding
+          - TestWithContractTestSuite/TestSendWasmMsgs
           - TestWithContractTestSuite/TestMigrateOrderedToUnordered
           - TestWithContractTestSuite/TestCloseChannel_Protobuf_Unordered
           - TestWithContractTestSuite/TestBankAndStargateQueries
