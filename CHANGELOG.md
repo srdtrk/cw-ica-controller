@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## v0.6.1 (2024-07-21)
+
+### State Breaking Changes
+
+- Introduced support for `QueryRequest::Wasm` in ICA queries. (https://github.com/srdtrk/cw-ica-controller/pull/131)
+
 ## v0.6.0 (2024-06-18)
 
 ### Features
