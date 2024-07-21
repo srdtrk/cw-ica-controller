@@ -1,6 +1,6 @@
 [package]
 name = "cw-ica-controller"
-version = "0.6.0"
+version = "0.6.1"
 authors = ["srdtrk <srdtrk@hotmail.com>"]
 edition = "2021"
 description = "This is a CosmWasm implementation of an ICS-27 interchain accounts controller."
@@ -43,7 +43,6 @@ optimize = """docker run --rm -v "$(pwd)":/code \
 cosmwasm-schema = "1.5.0"
 cosmwasm-std = { version = "1.5.0", features = [
     "cosmwasm_1_4",
-    "stargate",
     "ibc3",
 ] }
 cw-storage-plus = "1.1.0"

@@ -45,11 +45,12 @@ jobs:
           - TestWithOwnerTestSuite/TestOwnerPredefinedAction
           - TestWithContractTestSuite/TestSendCosmosMsgs_Ordered_Protobuf
           - TestWithContractTestSuite/TestSendCosmosMsgs_Unordered_Protobuf
-          - TestWithContractTestSuite/TestSendWasmMsgsProtobufEncoding
           - TestWithContractTestSuite/TestMigrateOrderedToUnordered
           - TestWithContractTestSuite/TestCloseChannel_Protobuf_Unordered
           - TestWithContractTestSuite/TestBankAndStargateQueries
           - TestWithContractTestSuite/TestStakingQueries
+          - TestWithWasmTestSuite/TestSendWasmMsgs
+          - TestWithWasmTestSuite/TestSendWasmQueries
     name: ${{ matrix.test }}
     runs-on: ubuntu-latest
     steps:

@@ -14,7 +14,7 @@ pub fn query_to_protobuf(query: QueryRequest<Empty>) -> (String, Vec<u8>, bool) 
     match query {
         QueryRequest::Bank(bank_query) => convert_to_protobuf::bank(bank_query),
         QueryRequest::Stargate { path, data } => (path, data.0, true),
-        QueryRequest::Wasm(_) => panic!("wasmd queries are not marked module safe (yet)"),
+        QueryRequest::Wasm(wasm_query) => convert_to_protobuf::wasm(wasm_query),
         QueryRequest::Ibc(_) => panic!("ibc-go queries are not marked module safe (yet)"),
         QueryRequest::Custom(_) => panic!("custom queries are not supported"),
         #[cfg(feature = "staking")]
@@ -84,6 +84,15 @@ pub mod constants {
     /// The query path for the `BondedDenom` query.
     #[cfg(feature = "staking")]
     pub const STAKING_PARAMS: &str = "/cosmos.staking.v1beta1.Query/Params";
+
+    /// The query path for the `ContractInfo` query.
+    pub const WASM_CONTRACT_INFO: &str = "/cosmwasm.wasm.v1.Query/ContractInfo";
+    /// The query path for the `CodeInfo` query.
+    pub const WASM_CODE: &str = "/cosmwasm.wasm.v1.Query/Code";
+    /// The query path for the Raw query.
+    pub const WASM_RAW: &str = "/cosmwasm.wasm.v1.Query/RawContractState";
+    /// The query path for the Smart query.
+    pub const WASM_SMART: &str = "/cosmwasm.wasm.v1.Query/SmartContractState";
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -119,6 +128,8 @@ mod response {
             /// The query grpc method
             path: String,
         },
+        /// Response for a [`cosmwasm_std::WasmQuery`].
+        Wasm(WasmQueryResponse),
         /// Response for a [`cosmwasm_std::StakingQuery`].
         Staking(StakingQueryResponse),
     }
@@ -137,6 +148,23 @@ mod response {
         DenomMetadata(cosmwasm_std::DenomMetadataResponse),
         /// Response for the [`cosmwasm_std::BankQuery::AllDenomMetadata`] query.
         AllDenomMetadata(cosmwasm_std::AllDenomMetadataResponse),
+    }
+
+    /// The response type for the [`cosmwasm_std::WasmQuery`] queries.
+    #[non_exhaustive]
+    #[cw_serde]
+    pub enum WasmQueryResponse {
+        /// Response for the [`cosmwasm_std::WasmQuery::ContractInfo`] query.
+        /// Returns `None` if the contract does not exist.
+        /// The `pinned` field is not supported.
+        ContractInfo(Option<cosmwasm_std::ContractInfoResponse>),
+        /// Response for the [`cosmwasm_std::WasmQuery::CodeInfo`] query.
+        /// Returns `None` if the code does not exist.
+        CodeInfo(Option<cosmwasm_std::CodeInfoResponse>),
+        /// Response for the [`cosmwasm_std::WasmQuery::Raw`] query.
+        RawContractState(Option<cosmwasm_std::Binary>),
+        /// Response for the [`cosmwasm_std::WasmQuery::Smart`] query.
+        SmartContractState(cosmwasm_std::Binary),
     }
 
     /// The response type for the [`cosmwasm_std::StakingQuery`] queries.
@@ -183,15 +211,20 @@ mod response {
 
 mod convert_to_protobuf {
     use cosmos_sdk_proto::{
-        cosmos::bank::v1beta1::{
-            QueryAllBalancesRequest, QueryBalanceRequest, QueryDenomMetadataRequest,
-            QueryDenomsMetadataRequest,
+        cosmos::{
+            bank::v1beta1::{
+                QueryAllBalancesRequest, QueryBalanceRequest, QueryDenomMetadataRequest,
+                QueryDenomsMetadataRequest, QuerySupplyOfRequest,
+            },
+            base::query::v1beta1::PageRequest,
         },
-        cosmos::{bank::v1beta1::QuerySupplyOfRequest, base::query::v1beta1::PageRequest},
+        cosmwasm::wasm::v1::{
+            QueryContractInfoRequest, QueryRawContractStateRequest, QuerySmartContractStateRequest,
+        },
         prost::Message,
     };
 
-    use cosmwasm_std::BankQuery;
+    use cosmwasm_std::{BankQuery, WasmQuery};
 
     use super::constants;
 
@@ -237,6 +270,41 @@ mod convert_to_protobuf {
                 false,
             ),
             _ => panic!("Unsupported BankQuery"),
+        }
+    }
+
+    pub fn wasm(wasm_query: WasmQuery) -> (String, Vec<u8>, bool) {
+        match wasm_query {
+            WasmQuery::Raw { contract_addr, key } => (
+                constants::WASM_RAW.to_string(),
+                QueryRawContractStateRequest {
+                    address: contract_addr,
+                    query_data: key.into(),
+                }
+                .encode_to_vec(),
+                false,
+            ),
+            WasmQuery::Smart { contract_addr, msg } => (
+                constants::WASM_SMART.to_string(),
+                QuerySmartContractStateRequest {
+                    address: contract_addr,
+                    query_data: msg.into(),
+                }
+                .encode_to_vec(),
+                false,
+            ),
+            WasmQuery::ContractInfo { contract_addr } => (
+                constants::WASM_CONTRACT_INFO.to_string(),
+                QueryContractInfoRequest {
+                    address: contract_addr,
+                }
+                .encode_to_vec(),
+                false,
+            ),
+            WasmQuery::CodeInfo { .. } => {
+                panic!("CodeInfo query is not supported due to response size.")
+            }
+            _ => panic!("Unsupported WasmQuery"),
         }
     }
 
@@ -300,7 +368,7 @@ mod convert_to_protobuf {
 pub mod from_protobuf {
     use std::str::FromStr;
 
-    use super::{constants, BankQueryResponse, IcaQueryResponse};
+    use super::{constants, BankQueryResponse, IcaQueryResponse, WasmQueryResponse};
 
     use crate::types::ContractError;
 
@@ -312,11 +380,16 @@ pub mod from_protobuf {
             },
             base::v1beta1::Coin as ProtoCoin,
         },
+        cosmwasm::wasm::v1::{
+            QueryContractInfoResponse, QueryRawContractStateResponse,
+            QuerySmartContractStateResponse,
+        },
         prost::Message,
     };
     use cosmwasm_std::{
-        AllBalanceResponse, AllDenomMetadataResponse, BalanceResponse, Binary, Coin, DenomMetadata,
-        DenomMetadataResponse, DenomUnit, StdResult, SupplyResponse, Uint128,
+        AllBalanceResponse, AllDenomMetadataResponse, BalanceResponse, Binary, Coin,
+        ContractInfoResponse, DenomMetadata, DenomMetadataResponse, DenomUnit, StdResult,
+        SupplyResponse, Uint128,
     };
 
     fn convert_to_coin(coin: ProtoCoin) -> StdResult<Coin> {
@@ -385,6 +458,7 @@ pub mod from_protobuf {
 
         match path {
             x if x.starts_with("/cosmos.bank.v1beta1.Query/") => bank_response(path, resp),
+            x if x.starts_with("/cosmwasm.wasm.v1.Query/") => wasm_response(path, resp),
             #[cfg(feature = "staking")]
             x if x.starts_with("/cosmos.staking.v1beta1.Query/") => staking_response(path, resp),
             _ => Err(ContractError::UnknownDataType(path.to_string())),
@@ -443,6 +517,50 @@ pub mod from_protobuf {
                             .map_or_else(|| Ok(Coin::default()), convert_to_coin)?,
                     ),
                 )))
+            }
+            _ => Err(ContractError::UnknownDataType(path.to_string())),
+        }
+    }
+
+    fn wasm_response(path: &str, resp: &[u8]) -> Result<IcaQueryResponse, ContractError> {
+        match path {
+            constants::WASM_CONTRACT_INFO => {
+                let resp = QueryContractInfoResponse::decode(resp)?;
+                Ok(IcaQueryResponse::Wasm(WasmQueryResponse::ContractInfo(
+                    resp.contract_info.map(|info| {
+                        let mut contract_info = ContractInfoResponse::default();
+                        contract_info.code_id = info.code_id;
+                        contract_info.creator = info.creator;
+                        contract_info.admin = if info.admin.is_empty() {
+                            None
+                        } else {
+                            Some(info.admin)
+                        };
+                        contract_info.ibc_port = if info.ibc_port_id.is_empty() {
+                            None
+                        } else {
+                            Some(info.ibc_port_id)
+                        };
+
+                        contract_info
+                    }),
+                )))
+            }
+            constants::WASM_RAW => {
+                let resp = QueryRawContractStateResponse::decode(resp)?;
+                Ok(IcaQueryResponse::Wasm(WasmQueryResponse::RawContractState(
+                    if resp.data.is_empty() {
+                        None
+                    } else {
+                        Some(resp.data.into())
+                    },
+                )))
+            }
+            constants::WASM_SMART => {
+                let resp = QuerySmartContractStateResponse::decode(resp)?;
+                Ok(IcaQueryResponse::Wasm(
+                    WasmQueryResponse::SmartContractState(resp.data.into()),
+                ))
             }
             _ => Err(ContractError::UnknownDataType(path.to_string())),
         }

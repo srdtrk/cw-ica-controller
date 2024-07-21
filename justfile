@@ -29,13 +29,18 @@ build-test-contracts:
 
 # Generate JSON schema files for all contracts in the project
 generate-schemas:
-  echo "Generating JSON schema files..."
-  echo "Generating schema for cw-ica-controller..."
+  @echo "Generating JSON schema files..."
+  @echo "Generating schema for cw-ica-controller..."
   cargo schema
-  echo "Generating schema for cw-ica-owner..."
+  @echo "Generating schema for cw-ica-owner..."
   cd testing/contracts/cw-ica-owner && cargo schema
-  echo "Generating schema for callback-counter..."
+  @echo "Generating schema for callback-counter..."
   cd testing/contracts/callback-counter && cargo schema
+  @echo "Generate go code for e2e tests..."
+  go-codegen interchaintest add-contract schema/cw-ica-controller.json --suite-dir e2e/interchaintestv8
+  go-codegen interchaintest add-contract testing/contracts/callback-counter/schema/callback-counter.json --suite-dir e2e/interchaintestv8
+  go-codegen interchaintest add-contract testing/contracts/cw-ica-owner/schema/cw-ica-owner.json --suite-dir e2e/interchaintestv8
+  @echo "Go code generated for e2e tests"
 
 # Run the unit tests
 unit-tests:
