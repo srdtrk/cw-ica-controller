@@ -307,9 +307,8 @@ func (s *WasmTestSuite) TestSendWasmMsgs() {
 // TestSendWasmQueries tests the wasm query functionality of the contract
 // The following queries are tested:
 // - WasmQuery::Smart
-// TODO: - WasmQuery::Raw
-// TODO: - WasmQuery::ContractInfo
-// TODO: - WasmQuery::CodeInfo
+// - WasmQuery::Raw
+// - WasmQuery::ContractInfo
 func (s *WasmTestSuite) TestSendWasmQueries() {
 	ctx := context.Background()
 

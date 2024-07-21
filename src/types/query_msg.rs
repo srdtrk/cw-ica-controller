@@ -219,8 +219,7 @@ mod convert_to_protobuf {
             base::query::v1beta1::PageRequest,
         },
         cosmwasm::wasm::v1::{
-            QueryCodeRequest, QueryContractInfoRequest, QueryRawContractStateRequest,
-            QuerySmartContractStateRequest,
+            QueryContractInfoRequest, QueryRawContractStateRequest, QuerySmartContractStateRequest,
         },
         prost::Message,
     };
@@ -302,11 +301,9 @@ mod convert_to_protobuf {
                 .encode_to_vec(),
                 false,
             ),
-            WasmQuery::CodeInfo { code_id } => (
-                constants::WASM_CODE.to_string(),
-                QueryCodeRequest { code_id }.encode_to_vec(),
-                false,
-            ),
+            WasmQuery::CodeInfo { .. } => {
+                panic!("CodeInfo query is not supported due to response size.")
+            }
             _ => panic!("Unsupported WasmQuery"),
         }
     }
@@ -384,14 +381,14 @@ pub mod from_protobuf {
             base::v1beta1::Coin as ProtoCoin,
         },
         cosmwasm::wasm::v1::{
-            QueryCodeResponse, QueryContractInfoResponse, QueryRawContractStateResponse,
+            QueryContractInfoResponse, QueryRawContractStateResponse,
             QuerySmartContractStateResponse,
         },
         prost::Message,
     };
     use cosmwasm_std::{
-        AllBalanceResponse, AllDenomMetadataResponse, BalanceResponse, Binary, CodeInfoResponse,
-        Coin, ContractInfoResponse, DenomMetadata, DenomMetadataResponse, DenomUnit, StdResult,
+        AllBalanceResponse, AllDenomMetadataResponse, BalanceResponse, Binary, Coin,
+        ContractInfoResponse, DenomMetadata, DenomMetadataResponse, DenomUnit, StdResult,
         SupplyResponse, Uint128,
     };
 
@@ -546,18 +543,6 @@ pub mod from_protobuf {
                         };
 
                         contract_info
-                    }),
-                )))
-            }
-            constants::WASM_CODE => {
-                let resp = QueryCodeResponse::decode(resp)?;
-                Ok(IcaQueryResponse::Wasm(WasmQueryResponse::CodeInfo(
-                    resp.code_info.map(|info| {
-                        let mut code_info = CodeInfoResponse::default();
-                        code_info.code_id = info.code_id;
-                        code_info.creator = info.creator;
-                        code_info.checksum = info.data_hash.into();
-                        code_info
                     }),
                 )))
             }
