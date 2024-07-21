@@ -365,7 +365,6 @@ func (s *WasmTestSuite) TestSendWasmQueries() {
 	}))
 
 	s.Require().True(s.Run("WasmQuery::{ContractInfo, Raw}", func() {
-		// Execute the contract:
 		executeMsg := cwicacontroller.ExecuteMsg{
 			SendCosmosMsgs: &cwicacontroller.ExecuteMsg_SendCosmosMsgs{
 				Queries: []cwicacontroller.QueryRequest_for_Empty{
@@ -379,14 +378,12 @@ func (s *WasmTestSuite) TestSendWasmQueries() {
 							ContractAddr: s.CounterContract.Address,
 						},
 					}},
-					{
-						Wasm: &cwicacontroller.QueryRequest_for_Empty_Wasm{
-							Raw: &cwicacontroller.WasmQuery_Raw{
-								ContractAddr: s.CounterContract.Address,
-								Key:          cwicacontroller.Binary(toBase64("state")),
-							},
+					{Wasm: &cwicacontroller.QueryRequest_for_Empty_Wasm{
+						Raw: &cwicacontroller.WasmQuery_Raw{
+							ContractAddr: s.CounterContract.Address,
+							Key:          cwicacontroller.Binary(toBase64("state")),
 						},
-					},
+					}},
 				},
 			},
 		}
@@ -410,13 +407,23 @@ func (s *WasmTestSuite) TestSendWasmQueries() {
 			s.Require().Len(callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses, 2)
 
 			icaAddress := s.IcaContractToAddrMap[s.Contract.Address]
+			// ContractInfo query:
 			s.Require().NotNil(callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo)
 			s.Require().Equal(icaAddress, *callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo.Admin)
 			s.Require().Equal(icaAddress, callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo.Creator)
 			s.Require().Equal(int(s.CounterCodeID), callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo.CodeId)
 			s.Require().False(callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo.Pinned)
 			s.Require().Nil(callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo.IbcPort)
-			// TODO: add assertion for raw query
+			// Raw query:
+			type CounterState struct {
+				Count int    `json:"count"`
+				Owner string `json:"owner"`
+			}
+			expState := CounterState{Count: 0, Owner: icaAddress}
+			s.Require().NotNil(callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[1].Wasm.RawContractState)
+			var state CounterState
+			s.Require().NoError(json.Unmarshal(callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[1].Wasm.RawContractState.Unwrap(), &state))
+			s.Require().Equal(expState, state)
 		}))
 	}))
 }
