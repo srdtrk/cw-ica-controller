@@ -47,17 +47,17 @@ cosmwasm-std = { version = "2.1", features = [
 ] }
 cw-storage-plus = "2.0"
 cw2 = "2.0"
-schemars = "0.8.10"
+schemars = "0.8"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
-serde-json-wasm = "1.0.0"
-thiserror = "1.0.50"
+serde-json-wasm = "1.0"
+thiserror = "1.0"
 cosmos-sdk-proto = { version = "0.23", default-features = false, features = ["cosmwasm", "std"] }
 semver = "1.0"
 cw-ownable = { version = "0.6.0", git = "https://github.com/larry0x/cw-plus-plus.git", rev = "718351d4e9d66edbf3b6dbea2d13b56ef732f51c" }
 cw-ica-controller-derive = "0.4.2"
 prost = { version = "0.13", optional = true }
-anybuf = "0.5.0"
-serde_with = "3.8.1"
+anybuf = "0.5"
+serde_with = "3.8"
 
 [dev-dependencies]
 base64 = "0.13.1"

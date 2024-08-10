@@ -22,7 +22,7 @@ use super::types::{events, packet::acknowledgement::Data as AcknowledgementData}
 /// - The acknowledgement data is invalid.
 /// - [`ibc_packet_ack::success`] or [`ibc_packet_ack::error`] returns an error.
 #[entry_point]
-#[allow(clippy::needless_pass_by_value)] // entry point needs this signature
+#[allow(clippy::needless_pass_by_value)]
 pub fn ibc_packet_ack(
     deps: DepsMut,
     _env: Env,
@@ -48,15 +48,14 @@ pub fn ibc_packet_ack(
 /// - [`ibc_packet_timeout::callback`] returns an error.
 /// - The channel state cannot be loaded or saved.
 #[entry_point]
-#[allow(clippy::needless_pass_by_value)] // entry point needs this signature
+#[allow(clippy::needless_pass_by_value)]
 pub fn ibc_packet_timeout(
     deps: DepsMut,
     _env: Env,
     msg: IbcPacketTimeoutMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
-    let mut channel_state = state::CHANNEL_STATE.load(deps.storage)?;
-
     // If the channel is ordered, close it.
+    let mut channel_state = state::CHANNEL_STATE.load(deps.storage)?;
     if channel_state.is_ordered() {
         channel_state.close();
         state::CHANNEL_STATE.save(deps.storage, &channel_state)?;
@@ -66,9 +65,11 @@ pub fn ibc_packet_timeout(
 }
 
 /// Implements the IBC module's `OnRecvPacket` handler.
+///
+/// # Panics
 /// Always panics because the ICA controller cannot receive packets.
 #[entry_point]
-#[allow(clippy::pedantic)]
+#[allow(clippy::needless_pass_by_value, clippy::missing_errors_doc)]
 pub fn ibc_packet_receive(
     _deps: DepsMut,
     _env: Env,

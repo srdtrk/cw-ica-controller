@@ -39,7 +39,7 @@ mod contract {
 
         /// Checks if the address is the admin
         pub fn verify_admin(&self, sender: impl Into<String>) -> Result<(), ContractError> {
-            if self.admin == sender.into() {
+            if self.admin.to_string() == sender.into() {
                 Ok(())
             } else {
                 Err(ContractError::Unauthorized {})
