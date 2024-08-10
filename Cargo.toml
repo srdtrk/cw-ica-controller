@@ -5,7 +5,7 @@ authors = ["srdtrk <srdtrk@hotmail.com>"]
 edition = "2021"
 description = "This is a CosmWasm implementation of an ICS-27 interchain accounts controller."
 repository = "https://github.com/srdtrk/cw-ica-controller"
-license = "Apache-2.0"
+license = "MIT"
 readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
