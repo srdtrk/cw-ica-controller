@@ -354,13 +354,15 @@ mod tests {
 
     use super::*;
     use cosmwasm_std::testing::{message_info, mock_dependencies, mock_env};
-    use cosmwasm_std::{Addr, Api, StdError, SubMsg};
+    use cosmwasm_std::{Api, StdError, SubMsg};
 
     #[test]
     fn test_instantiate() {
         let mut deps = mock_dependencies();
+
+        let creator = deps.api.addr_make("creator");
+        let info = message_info(&creator, &[]);
         let env = mock_env();
-        let info = message_info(&Addr::unchecked("creator"), &[]);
 
         let channel_open_init_options = ChannelOpenInitOptions {
             connection_id: "connection-0".to_string(),
@@ -415,8 +417,9 @@ mod tests {
     fn test_update_callback_address() {
         let mut deps = mock_dependencies();
 
+        let creator = deps.api.addr_make("creator");
+        let info = message_info(&creator, &[]);
         let env = mock_env();
-        let info = message_info(&Addr::unchecked("creator"), &[]);
 
         let channel_open_init_options = ChannelOpenInitOptions {
             connection_id: "connection-0".to_string(),
@@ -439,7 +442,7 @@ mod tests {
         .unwrap();
 
         // Ensure the contract admin can update the callback address
-        let new_callback_address = "new_callback_address".to_string();
+        let new_callback_address = deps.api.addr_make("new_callback_address").to_string();
         let msg = ExecuteMsg::UpdateCallbackAddress {
             callback_address: Some(new_callback_address.clone()),
         };
@@ -454,7 +457,8 @@ mod tests {
         );
 
         // Ensure a non-admin cannot update the callback address
-        let info = message_info(&Addr::unchecked("non-admin"), &[]);
+        let non_admin = deps.api.addr_make("non-admin");
+        let info = message_info(&non_admin, &[]);
         let msg = ExecuteMsg::UpdateCallbackAddress {
             callback_address: Some("new_callback_address".to_string()),
         };
@@ -472,7 +476,8 @@ mod tests {
     fn test_migrate() {
         let mut deps = mock_dependencies();
 
-        let info = message_info(&Addr::unchecked("creator"), &[]);
+        let creator = deps.api.addr_make("creator");
+        let info = message_info(&creator, &[]);
 
         let channel_open_init_options = ChannelOpenInitOptions {
             connection_id: "connection-0".to_string(),
@@ -526,7 +531,8 @@ mod tests {
     fn test_migrate_with_encoding() {
         let mut deps = mock_dependencies();
 
-        let info = message_info(&Addr::unchecked("creator"), &[]);
+        let creator = deps.api.addr_make("creator");
+        let info = message_info(&creator, &[]);
 
         let channel_open_init_options = ChannelOpenInitOptions {
             connection_id: "connection-0".to_string(),
