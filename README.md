@@ -5,12 +5,11 @@
   [![E2E Status](https://github.com/srdtrk/cw-ica-controller/actions/workflows/e2e.yml/badge.svg?branch=main)](https://github.com/srdtrk/cw-ica-controller/tree/main/e2e)
   [![Tag](https://img.shields.io/github/tag/srdtrk/cw-ica-controller.svg)](https://github.com/srdtrk/cw-ica-controller/releases/latest)
   [![License: Apache-2.0](https://img.shields.io/github/license/srdtrk/cw-ica-controller.svg)](https://github.com/srdtrk/cw-ica-controller/blob/main/LICENSE)
-  [![Lines of Code](https://tokei.rs/b1/github/srdtrk/cw-ica-controller)](https://github.com/srdtrk/cw-ica-controller)
 </div>
 
 ![cw-ica-controller](./docs/static/img/cw-ica-controller.svg)
 
-This is a `CosmWasm` smart contract that communicates with the golang `ica/host` module on the counterparty chain to create and manage **one** interchain account. This contract can also execute callbacks based on the result of the interchain account transaction. Because this is a `CosmWasm` implementation of the entire ICA controller, the chain that this contract is deployed on need **not** have the ICA module enabled. Moreover, the counterparty chain need not have `CosmWasm` support. This contract can be deployed on chains that support `CosmWasm` `v1.4+`.
+This is a `CosmWasm` smart contract that communicates with the golang `ica/host` module on the counterparty chain to create and manage **one** interchain account. This contract can also execute callbacks based on the result of the interchain account transaction. Because this is a `CosmWasm` implementation of the entire ICA controller, the chain that this contract is deployed on need **not** have the ICA module enabled. Moreover, the counterparty chain need not have `CosmWasm` support. This contract uses `CosmWasm` `v2.1` but can be deployed on chains that support `CosmWasm` `v1.4+`.
 
 **A documentation website for this contract is [here](https://srdtrk.github.io/cw-ica-controller/).**
 

@@ -408,8 +408,8 @@ func (s *WasmTestSuite) TestSendWasmQueries() {
 			icaAddress := s.IcaContractToAddrMap[s.Contract.Address]
 			// ContractInfo query:
 			s.Require().NotNil(callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo)
-			s.Require().Equal(icaAddress, *callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo.Admin)
-			s.Require().Equal(icaAddress, callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo.Creator)
+			s.Require().Equal(icaAddress, string(*callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo.Admin))
+			s.Require().Equal(icaAddress, string(callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo.Creator))
 			s.Require().Equal(int(s.CounterCodeID), callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo.CodeId)
 			s.Require().False(callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo.Pinned)
 			s.Require().Nil(callbackCounter.Success[2].OnAcknowledgementPacketCallback.QueryResult.Success.Responses[0].Wasm.ContractInfo.IbcPort)

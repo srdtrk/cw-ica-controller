@@ -21,29 +21,16 @@ incremental = false
 overflow-checks = true
 
 [features]
-# for more explicit tests, cargo test --features=backtraces
-backtraces = ["cosmwasm-std/backtraces"]
 # use library feature to disable all instantiate/execute/query exports
 library = []
 
-[package.metadata.scripts]
-optimize = """docker run --rm -v "$(pwd)":/code \
-  --mount type=volume,source="$(basename "$(pwd)")_cache",target=/target \
-  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/optimizer:0.15.1
-"""
-
 [dependencies]
-cosmwasm-schema = "1.4.0"
-cosmwasm-std = { version = "1.4.0", features = [
-    "cosmwasm_1_3",
-    # Enable this if you only deploy to chains that have CosmWasm 1.4 or higher
-    # "cosmwasm_1_4",
-] }
-cw-storage-plus = "1.1.0"
-cw2 = "1.1.0"
+cosmwasm-schema = "2.1"
+cosmwasm-std = { version = "2.1", features = ["cosmwasm_1_4"] }
+cw-storage-plus = "2.0"
+cw2 = "2.0"
 cw-ica-controller = { path = "../../..", default-features = false, features = ["query", "staking"] }
-schemars = "0.8.10"
-serde = { version = "1.0.145", default-features = false, features = ["derive"] }
-serde-json-wasm = "0.5.1"
-thiserror = { version = "1.0.31" }
+schemars = "0.8"
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+serde-json-wasm = "1.0"
+thiserror = "1.0"

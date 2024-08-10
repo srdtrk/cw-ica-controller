@@ -407,7 +407,7 @@ func (s *ContractTestSuite) IcaContractExecutionTestWithOrdering(ordering cwicac
 			Gov: &cwicacontroller.CosmosMsg_for_Empty_Gov{
 				Vote: &cwicacontroller.GovMsg_Vote{
 					ProposalId: 1,
-					Vote:       "yes",
+					Option:     cwicacontroller.VoteOption_Yes,
 				},
 			},
 		}

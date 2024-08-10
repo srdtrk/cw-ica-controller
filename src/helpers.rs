@@ -165,8 +165,12 @@ impl CwIcaControllerCode {
         let creator_cannonical = api.addr_canonicalize(env.contract.address.as_str())?;
 
         let contract_addr = api.addr_humanize(
-            &instantiate2_address(&code_info.checksum, &creator_cannonical, salt.as_bytes())
-                .map_err(|e| StdError::generic_err(e.to_string()))?,
+            &instantiate2_address(
+                code_info.checksum.as_slice(),
+                &creator_cannonical,
+                salt.as_bytes(),
+            )
+            .map_err(|e| StdError::generic_err(e.to_string()))?,
         )?;
 
         let instantiate_msg = WasmMsg::Instantiate2 {
