@@ -19,8 +19,8 @@ use cosmwasm_std::CosmosMsg;
 /// ## List of supported [`CosmosMsg`]
 ///
 /// - [`CosmosMsg::Stargate`]
-/// - [`CosmosMsg::Bank`] with [`BankMsg::Send`]
-/// - [`CosmosMsg::Ibc`] with [`IbcMsg::Transfer`]
+/// - [`CosmosMsg::Bank`] with [`cosmwasm_std::BankMsg::Send`]
+/// - [`CosmosMsg::Ibc`] with [`cosmwasm_std::IbcMsg::Transfer`]
 /// - [`CosmosMsg::Wasm`] with [`cosmwasm_std::WasmMsg::Execute`]
 /// - [`CosmosMsg::Wasm`] with [`cosmwasm_std::WasmMsg::Instantiate`]
 /// - [`CosmosMsg::Wasm`] with [`cosmwasm_std::WasmMsg::Instantiate2`]
@@ -37,6 +37,7 @@ use cosmwasm_std::CosmosMsg;
 /// - [`CosmosMsg::Distribution`] with [`cosmwasm_std::DistributionMsg::FundCommunityPool`]
 pub fn convert_to_proto_any(msg: CosmosMsg, from_address: String) -> Result<Any, EncodeError> {
     match msg {
+        #[allow(deprecated)]
         CosmosMsg::Stargate { type_url, value } => Ok(Any {
             type_url,
             value: value.to_vec(),
@@ -100,6 +101,7 @@ mod convert_to_any {
                 to_address,
                 amount,
                 timeout,
+                .. // TODO: support memo with ibc-proto
             } => Any::from_msg(&MsgTransfer {
                 source_port: "transfer".to_string(),
                 source_channel: channel_id,
@@ -217,10 +219,13 @@ mod convert_to_any {
         }
 
         match msg {
-            GovMsg::Vote { proposal_id, vote } => Any::from_msg(&MsgVote {
+            GovMsg::Vote {
+                proposal_id,
+                option,
+            } => Any::from_msg(&MsgVote {
                 voter,
                 proposal_id,
-                option: convert_to_proto_vote_option(&vote) as i32,
+                option: convert_to_proto_vote_option(&option) as i32,
             }),
             GovMsg::VoteWeighted {
                 proposal_id,

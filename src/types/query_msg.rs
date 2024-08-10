@@ -13,7 +13,8 @@ pub use response::*;
 pub fn query_to_protobuf(query: QueryRequest<Empty>) -> (String, Vec<u8>, bool) {
     match query {
         QueryRequest::Bank(bank_query) => convert_to_protobuf::bank(bank_query),
-        QueryRequest::Stargate { path, data } => (path, data.0, true),
+        #[allow(deprecated)]
+        QueryRequest::Stargate { path, data } => (path, data.into(), true),
         QueryRequest::Wasm(wasm_query) => convert_to_protobuf::wasm(wasm_query),
         QueryRequest::Ibc(_) => panic!("ibc-go queries are not marked module safe (yet)"),
         QueryRequest::Custom(_) => panic!("custom queries are not supported"),
@@ -251,7 +252,7 @@ mod convert_to_protobuf {
             ),
             BankQuery::AllDenomMetadata { pagination } => {
                 let pagination = pagination.map(|pagination| PageRequest {
-                    key: pagination.key.unwrap_or_default().0,
+                    key: pagination.key.unwrap_or_default().into(),
                     limit: u64::from(pagination.limit),
                     reverse: pagination.reverse,
                     offset: 0,
@@ -432,12 +433,12 @@ pub mod from_protobuf {
             .commission_rates
             .unwrap_or_default();
 
-        Ok(cosmwasm_std::Validator {
-            address: validator.operator_address,
-            commission: Decimal::from_str(&commission_rates.rate)?,
-            max_commission: Decimal::from_str(&commission_rates.max_rate)?,
-            max_change_rate: Decimal::from_str(&commission_rates.max_change_rate)?,
-        })
+        Ok(cosmwasm_std::Validator::create(
+            validator.operator_address,
+            Decimal::from_str(&commission_rates.rate)?,
+            Decimal::from_str(&commission_rates.max_rate)?,
+            Decimal::from_str(&commission_rates.max_change_rate)?,
+        ))
     }
 
     /// Converts the response bytes to a [`IcaQueryResponse`] using the query path.
@@ -451,7 +452,7 @@ pub mod from_protobuf {
     ) -> Result<IcaQueryResponse, ContractError> {
         if is_stargate {
             return Ok(IcaQueryResponse::Stargate {
-                data: Binary(resp.to_vec()),
+                data: Binary::from(resp),
                 path: path.to_string(),
             });
         }
@@ -505,7 +506,7 @@ pub mod from_protobuf {
                             .map(convert_to_metadata)
                             .collect(),
                         resp.pagination
-                            .map(|pagination| Binary(pagination.next_key)),
+                            .map(|pagination| Binary::new(pagination.next_key)),
                     ),
                 )))
             }
@@ -528,21 +529,21 @@ pub mod from_protobuf {
                 let resp = QueryContractInfoResponse::decode(resp)?;
                 Ok(IcaQueryResponse::Wasm(WasmQueryResponse::ContractInfo(
                     resp.contract_info.map(|info| {
-                        let mut contract_info = ContractInfoResponse::default();
-                        contract_info.code_id = info.code_id;
-                        contract_info.creator = info.creator;
-                        contract_info.admin = if info.admin.is_empty() {
-                            None
-                        } else {
-                            Some(info.admin)
-                        };
-                        contract_info.ibc_port = if info.ibc_port_id.is_empty() {
-                            None
-                        } else {
-                            Some(info.ibc_port_id)
-                        };
-
-                        contract_info
+                        ContractInfoResponse::new(
+                            info.code_id,
+                            cosmwasm_std::Addr::unchecked(info.creator),
+                            if info.admin.is_empty() {
+                                None
+                            } else {
+                                Some(cosmwasm_std::Addr::unchecked(info.admin))
+                            },
+                            false,
+                            if info.ibc_port_id.is_empty() {
+                                None
+                            } else {
+                                Some(info.ibc_port_id)
+                            },
+                        )
                     }),
                 )))
             }

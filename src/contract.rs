@@ -274,6 +274,7 @@ mod reply {
     ) -> Result<Response, ContractError> {
         match result {
             SubMsgResult::Ok(resp) => {
+                #[allow(deprecated)] // TODO: Remove deprecated `.data` field
                 let sequence = anybuf::Bufany::deserialize(&resp.data.unwrap_or_default())?
                     .uint64(1)
                     .unwrap();
@@ -352,14 +353,14 @@ mod tests {
     use crate::types::msg::options::ChannelOpenInitOptions;
 
     use super::*;
-    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{Api, StdError, SubMsg};
+    use cosmwasm_std::testing::{message_info, mock_dependencies, mock_env};
+    use cosmwasm_std::{Addr, Api, StdError, SubMsg};
 
     #[test]
     fn test_instantiate() {
         let mut deps = mock_dependencies();
         let env = mock_env();
-        let info = mock_info("creator", &[]);
+        let info = message_info(&Addr::unchecked("creator"), &[]);
 
         let channel_open_init_options = ChannelOpenInitOptions {
             connection_id: "connection-0".to_string(),
@@ -415,7 +416,7 @@ mod tests {
         let mut deps = mock_dependencies();
 
         let env = mock_env();
-        let info = mock_info("creator", &[]);
+        let info = message_info(&Addr::unchecked("creator"), &[]);
 
         let channel_open_init_options = ChannelOpenInitOptions {
             connection_id: "connection-0".to_string(),
@@ -453,7 +454,7 @@ mod tests {
         );
 
         // Ensure a non-admin cannot update the callback address
-        let info = mock_info("non-admin", &[]);
+        let info = message_info(&Addr::unchecked("non-admin"), &[]);
         let msg = ExecuteMsg::UpdateCallbackAddress {
             callback_address: Some("new_callback_address".to_string()),
         };
@@ -471,7 +472,7 @@ mod tests {
     fn test_migrate() {
         let mut deps = mock_dependencies();
 
-        let info = mock_info("creator", &[]);
+        let info = message_info(&Addr::unchecked("creator"), &[]);
 
         let channel_open_init_options = ChannelOpenInitOptions {
             connection_id: "connection-0".to_string(),
@@ -525,7 +526,7 @@ mod tests {
     fn test_migrate_with_encoding() {
         let mut deps = mock_dependencies();
 
-        let info = mock_info("creator", &[]);
+        let info = message_info(&Addr::unchecked("creator"), &[]);
 
         let channel_open_init_options = ChannelOpenInitOptions {
             connection_id: "connection-0".to_string(),
