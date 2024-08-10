@@ -13,12 +13,12 @@ import (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type QueryClient interface {
-	// GetIcaCount is the client API for the QueryMsg_GetIcaCount query message
-	GetIcaCount(ctx context.Context, req *QueryMsg_GetIcaCount, opts ...grpc.CallOption) (*int, error)
 	// GetContractState is the client API for the QueryMsg_GetContractState query message
 	GetContractState(ctx context.Context, req *QueryMsg_GetContractState, opts ...grpc.CallOption) (*ContractState, error)
 	// GetIcaContractState is the client API for the QueryMsg_GetIcaContractState query message
 	GetIcaContractState(ctx context.Context, req *QueryMsg_GetIcaContractState, opts ...grpc.CallOption) (*IcaContractState, error)
+	// GetIcaCount is the client API for the QueryMsg_GetIcaCount query message
+	GetIcaCount(ctx context.Context, req *QueryMsg_GetIcaCount, opts ...grpc.CallOption) (*int, error)
 }
 
 type queryClient struct {
@@ -65,25 +65,6 @@ func (q *queryClient) queryContract(ctx context.Context, rawQueryData []byte, op
 	return out.Data, nil
 }
 
-func (q *queryClient) GetContractState(ctx context.Context, req *QueryMsg_GetContractState, opts ...grpc.CallOption) (*ContractState, error) {
-	rawQueryData, err := json.Marshal(map[string]any{"get_contract_state": req})
-	if err != nil {
-		return nil, err
-	}
-
-	rawResponseData, err := q.queryContract(ctx, rawQueryData, opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	var response ContractState
-	if err := json.Unmarshal(rawResponseData, &response); err != nil {
-		return nil, err
-	}
-
-	return &response, nil
-}
-
 func (q *queryClient) GetIcaContractState(ctx context.Context, req *QueryMsg_GetIcaContractState, opts ...grpc.CallOption) (*IcaContractState, error) {
 	rawQueryData, err := json.Marshal(map[string]any{"get_ica_contract_state": req})
 	if err != nil {
@@ -115,6 +96,25 @@ func (q *queryClient) GetIcaCount(ctx context.Context, req *QueryMsg_GetIcaCount
 	}
 
 	var response int
+	if err := json.Unmarshal(rawResponseData, &response); err != nil {
+		return nil, err
+	}
+
+	return &response, nil
+}
+
+func (q *queryClient) GetContractState(ctx context.Context, req *QueryMsg_GetContractState, opts ...grpc.CallOption) (*ContractState, error) {
+	rawQueryData, err := json.Marshal(map[string]any{"get_contract_state": req})
+	if err != nil {
+		return nil, err
+	}
+
+	rawResponseData, err := q.queryContract(ctx, rawQueryData, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	var response ContractState
 	if err := json.Unmarshal(rawResponseData, &response); err != nil {
 		return nil, err
 	}
