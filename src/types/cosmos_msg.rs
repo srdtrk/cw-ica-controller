@@ -68,9 +68,13 @@ mod convert_to_any {
             MsgClearAdmin, MsgExecuteContract, MsgInstantiateContract, MsgInstantiateContract2,
             MsgMigrateContract, MsgUpdateAdmin,
         },
-        ibc::{applications::transfer::v1::MsgTransfer, core::client::v1::Height},
         prost::EncodeError,
         Any,
+    };
+
+    use ibc_proto::{
+        cosmos::base::v1beta1::Coin as IbcCoin,
+        ibc::{apps::transfer::v1::MsgTransfer, core::client::v1::Height},
     };
 
     use cosmwasm_std::{BankMsg, GovMsg, IbcMsg, VoteOption, WasmMsg};
@@ -101,11 +105,11 @@ mod convert_to_any {
                 to_address,
                 amount,
                 timeout,
-                .. // TODO: support memo with ibc-proto
+                memo,
             } => Any::from_msg(&MsgTransfer {
                 source_port: "transfer".to_string(),
                 source_channel: channel_id,
-                token: Some(ProtoCoin {
+                token: Some(IbcCoin {
                     denom: amount.denom,
                     amount: amount.amount.to_string(),
                 }),
@@ -116,6 +120,7 @@ mod convert_to_any {
                     revision_height: block.height,
                 }),
                 timeout_timestamp: timeout.timestamp().map_or(0, |timestamp| timestamp.nanos()),
+                memo: memo.unwrap_or_default(),
             }),
             _ => panic!("Unsupported IbcMsg"),
         }
