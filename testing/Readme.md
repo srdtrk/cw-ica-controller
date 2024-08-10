@@ -15,22 +15,8 @@ This contract is used to test how the `cw-ica-controller` could be controlled by
 
 ## Building the Contracts
 
-The contracts are built automatically in the github CI. To build the contracts manually, run the following commands in the root directory of this repository:
+The test contracts are built in the github CI. To build the contracts manually, run the following command:
 
-### `callback-counter`
-
-```text
-docker run --rm -v "$(pwd)":/code \
-  --mount type=volume,source="devcontract_cache_burner",target=/code/contracts/burner/target \
-  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/optimizer:0.15.1 ./testing/contracts/callback-counter
-```
-
-### `cw-ica-owner`
-
-```text
-docker run --rm -v "$(pwd)":/code \
-  --mount type=volume,source="devcontract_cache_burner",target=/code/contracts/burner/target \
-  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/optimizer:0.15.1 ./testing/contracts/cw-ica-owner
+```sh
+just build-test-contracts
 ```
