@@ -214,6 +214,7 @@ mod execute {
         let send_packet_msg = ica_packet.to_ibc_msg(&env, ica_info.channel_id, timeout_seconds)?;
 
         let send_packet_submsg = if has_queries {
+            // TODO: use payload when we switch to cosmwasm_2_0 feature
             SubMsg::reply_on_success(send_packet_msg, keys::reply_ids::SEND_QUERY_PACKET)
         } else {
             SubMsg::new(send_packet_msg)
