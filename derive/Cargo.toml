@@ -5,7 +5,7 @@ version = "0.4.2"
 edition = "2021"
 description = "This crate contains macros for deriving cw-ica-controller interfaces."
 repository = "https://github.com/srdtrk/cw-ica-controller"
-license = "MIT"
+license = "MIT OR Apache-2.0"
 readme = "Readme.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
