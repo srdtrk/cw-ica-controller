@@ -43,12 +43,16 @@ const config: Config = {
           routeBasePath: "/",
           sidebarCollapsed: false,
           // Select the latest version
-          lastVersion: "v0.6.x",
+          lastVersion: "v0.20.x",
           versions: {
             current: {
               label: 'main',
               path: 'main',
               banner: 'unreleased',
+            },
+            "v0.20.x": {
+              label: 'v0.20.x',
+              path: 'v0.20',
             },
             "v0.6.x": {
               label: 'v0.6.x',

@@ -1,0 +1,64 @@
+---
+title: QueryMsg
+sidebar_label: QueryMsg
+sidebar_position: 3
+slug: /contract-api/query-msg
+---
+
+# `QueryMsg`
+
+The `QueryMsg` is the message that allows you to see the state of the contract. Therefore, it is important to
+understand the state of the contract.
+
+## `GetChannel`
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/msg.rs#L105-L107
+```
+
+This message is used to query the state of the ICS-27 channel as tracked by the contract. It returns
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/state.rs#L158-L166
+```
+
+## `GetContractState`
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.4.0/src/types/msg.rs#L108-L110
+```
+
+This message is used to query the state of the contract. It returns
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/state.rs#L39-L50
+```
+
+Lets look at the fields of the `ContractState`:
+
+### `ica_info`
+
+This field will be empty if the channel handshake has not been completed. Otherwise, it will contain the
+following information:
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.5.0/src/types/state.rs#L90-L96
+```
+
+### `callback_address`
+
+This is the contract address that the `cw-ica-controller` contract will send callbacks to. If this field is empty,
+then the contract will not send callbacks.
+
+## `Ownership`
+
+```rust reference
+https://github.com/larry0x/cw-plus-plus/blob/ownable-v0.5.0/packages/ownable/derive/src/lib.rs#L142-L144
+```
+
+This message type is provided by the [cw-ownable](https://crates.io/crates/cw-ownable) crate. It allows to query
+the ownership of the contract. It returns `Ownership<String>`:
+
+```rust reference
+https://github.com/larry0x/cw-plus-plus/blob/ownable-v0.5.0/packages/ownable/src/lib.rs#L14-L29
+```
