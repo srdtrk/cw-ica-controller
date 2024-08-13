@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## v0.20.0 (2024-08-13)
+
+### API Breaking Changes
+
+- Upgraded CosmWasm to version 2.1. (https://github.com/srdtrk/cw-ica-controller/pull/133)
+
 ## v0.6.1 (2024-07-21)
 
 ### State Breaking Changes
