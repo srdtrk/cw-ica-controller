@@ -1,0 +1,94 @@
+---
+title: Channel Opening Handshake
+sidebar_label: Channel Opening Handshake
+sidebar_position: 3
+slug: /how-it-works/channel-handshake
+---
+
+import HighlightTag from '@site/src/components/HighlightTag';
+
+# Channel Opening Handshake
+
+<HighlightTag type="advanced"/><HighlightTag type="protocol"/>
+
+The channel opening handshake is a 4-step process (see [ICS-004](https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channel-and-packet-semantics#opening-handshake) to learn more):
+
+1. **Channel Open Init** (source chain)
+2. **Channel Open Try** (destination chain)
+3. **Channel Open Ack** (source chain)
+4. **Channel Open Confirm** (destination chain)
+
+Naturally, this contract only implements the first and third steps of the channel opening handshake, as the second and
+fourth steps are handled by the counterparty ICA host module.
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.4.2/src/ibc/handshake.rs#L15-L46
+```
+
+## Channel Open Init
+
+### Authorization
+
+A channel open init message can be sent to any IBC module by any user, and it is up to the module to decide
+whether to accept the request or not.
+
+In the case of `cw-ica-controller`, only the contract itself can send a channel open init message. Since the sender of
+`MsgChannelOpenInit` is not passed to the contract (or any other IBC module), we enforce this by having a [state
+variable](https://github.com/srdtrk/cw-ica-controller/blob/v0.4.2/src/types/state.rs#L41) that keeps track of whether
+or not to accept channel open init messages. This variable is only set to true by the contract itself right before
+it is about to send a channel open init message in [`InstantiateMsg`](../contract-api/01-instantiate-msg.mdx) or
+[`ExecuteMsg::CreateChannel`](../contract-api/02-execute-msg.mdx#createchannel).
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.4.2/src/contract.rs#L130-L133
+```
+
+### Version Metadata and Ordering
+
+Whenever a new channel is created, the submitter of `MsgChannelOpenInit` must propose a version string and ordering.
+
+In IBC, the version string is used to determine whether or not the two modules on either side of the channel are
+compatible. The two modules are compatible if and only if they both support and agree on the same version string.
+Moreover, the version string may carry arbitrary metadata encoded in JSON format. This metadata can be used to
+carry key information about the channel, such as the encoding format, the application version, etc.
+
+The format of the version string for ICS-27 is specified [here](https://github.com/cosmos/ibc/tree/main/spec/app/ics-027-interchain-accounts#metadata-negotiation-summary).
+The following rust code shows the version metadata struct used to encode the version string:
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.4.2/src/ibc/types/metadata.rs#L19-L50
+```
+
+Since it is the contract itself that submits the `MsgChannelOpenInit`, the contract constructs the version string
+based on the `channel_open_init_options` that are passed to it in [`InstantiateMsg`](../contract-api/01-instantiate-msg.mdx) or [`ExecuteMsg::CreateChannel`](../contract-api/02-execute-msg.mdx#createchannel).
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/main/src/ibc/types/stargate.rs#L25-L57
+```
+
+The actual entry point for the `MsgChannelOpenInit` only does validation checks on channel parameters. For example,
+it checks that the channel is not already open.
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.4.2/src/ibc/handshake.rs#L71-L126
+```
+
+## Channel Open Ack
+
+Unlike the `MsgChannelOpenInit`, the `MsgChannelOpenAck` is submitted by a relayer, and we do not need to worry about
+authorization. This step comes after the `MsgChannelOpenTry` is submitted by the counterparty ICA host module. In the
+`Try` step, the counterparty ICA host module may propose a different version string. Therefore, the contract must
+validate the version string and channel parameters once again in the `MsgChannelOpenAck`.
+
+:::note
+
+The interchain account address is passed to the contract in this step through the version string. In `Init` step,
+`cw-ica-controller` leaves the interchain account address empty, and the counterparty ICA host module fills it in.
+
+:::
+
+After validating the version string, the contract then stores the channel parameters in its state.
+
+```rust reference
+https://github.com/srdtrk/cw-ica-controller/blob/v0.4.2/src/ibc/handshake.rs#L128-L188
+```
