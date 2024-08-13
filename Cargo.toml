@@ -54,7 +54,7 @@ thiserror = "1.0"
 cosmos-sdk-proto = { version = "0.23", default-features = false, features = ["cosmwasm", "std"] }
 ibc-proto = { version = "0.47", default-features = false, features = ["std", "serde"] }
 semver = "1.0"
-cw-ownable = { version = "0.6.0", git = "https://github.com/larry0x/cw-plus-plus.git", rev = "718351d4e9d66edbf3b6dbea2d13b56ef732f51c" }
+cw-ownable = "2.0"
 cw-ica-controller-derive = "0.4.2"
 prost = { version = "0.13", optional = true }
 anybuf = "0.5"
