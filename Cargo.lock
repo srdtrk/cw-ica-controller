@@ -469,7 +469,7 @@ dependencies = [
 
 [[package]]
 name = "cw-ica-controller"
-version = "0.7.0"
+version = "0.20.0"
 dependencies = [
  "anybuf",
  "base64 0.13.1",
