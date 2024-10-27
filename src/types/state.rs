@@ -30,6 +30,7 @@ pub const ALLOW_CHANNEL_OPEN_INIT: Item<bool> = Item::new("allow_channel_open_in
 pub const ALLOW_CHANNEL_CLOSE_INIT: Item<bool> = Item::new("allow_channel_close_init");
 
 /// The item used to store the paths of an ICA query until its `SendPacket` response is received.
+///
 /// Once the response is received, it is moved to the [`PENDING_QUERIES`] map and deleted from this item.
 /// This is used to ensure that the correct sequence is recorded for the response.
 #[cfg(feature = "query")]

@@ -16,6 +16,7 @@ use super::metadata::TxEncoding;
 pub const DEFAULT_TIMEOUT_SECONDS: u64 = 600;
 
 /// `IcaPacketData` is comprised of a raw transaction, type of transaction and optional memo field.
+///
 /// Currently, the host only supports [protobuf](super::metadata::TxEncoding::Protobuf) or
 /// [proto3json](super::metadata::TxEncoding::Proto3Json) serialized Cosmos transactions.
 /// This contract only supports the protobuf encoding.
@@ -47,7 +48,7 @@ pub struct IcaPacketData {
 impl IcaPacketData {
     /// Creates a new [`IcaPacketData`]
     #[must_use]
-    pub fn new(data: Vec<u8>, memo: Option<String>) -> Self {
+    pub const fn new(data: Vec<u8>, memo: Option<String>) -> Self {
         Self {
             r#type: 1,
             data,

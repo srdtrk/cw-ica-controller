@@ -15,27 +15,34 @@ This is a `CosmWasm` smart contract that communicates with the golang `ica/host`
 
 ## Table of Contents
 
+<!-- TOC -->
+
 - [`CosmWasm` ICA Controller Contract](#cosmwasm-ica-controller-contract)
-  - [Table of Contents](#table-of-contents)
-  - [Usage](#usage)
-    - [Create an interchain account](#create-an-interchain-account)
-      - [Using `InstantiateMsg`](#using-instantiatemsg)
-      - [Using `ExecuteMsg::CreateChannel`](#using-executemsgcreatechannel)
-    - [Execute an interchain account transaction](#execute-an-interchain-account-transaction)
-      - [Querying the host chain](#querying-the-host-chain)
-    - [Execute a callback](#execute-a-callback)
-    - [Channel Closing and Reopening](#channel-closing-and-reopening)
-      - [Channel Closing](#channel-closing)
-      - [Channel Reopening](#channel-reopening)
-  - [Demo](#demo)
-    - [Injective Illuminate Hackathon](#injective-illuminate-hackathon)
-    - [XION ABSTRACTATHON](#xion-abstractathon)
-  - [Testing](#testing)
-    - [Unit tests](#unit-tests)
-    - [End to end tests](#end-to-end-tests)
-  - [Releases](#releases)
-  - [Limitations](#limitations)
-  - [Acknowledgements](#acknowledgements)
+    - [Table of Contents](#table-of-contents)
+    - [Usage](#usage)
+        - [Create an interchain account](#create-an-interchain-account)
+            - [Using `InstantiateMsg`](#using-instantiatemsg)
+            - [Using `ExecuteMsg::CreateChannel`](#using-executemsgcreatechannel)
+        - [Execute an interchain account transaction](#execute-an-interchain-account-transaction)
+            - [Querying the host chain](#querying-the-host-chain)
+        - [Execute a callback](#execute-a-callback)
+        - [Channel Closing and Reopening](#channel-closing-and-reopening)
+            - [Channel Closing](#channel-closing)
+            - [Channel Reopening](#channel-reopening)
+    - [Demo](#demo)
+        - [Injective Illuminate Hackathon](#injective-illuminate-hackathon)
+        - [XION ABSTRACTATHON](#xion-abstractathon)
+    - [Building](#building)
+        - [Prerequisites](#prerequisites)
+        - [Building the contract](#building-the-contract)
+    - [Testing](#testing)
+        - [Unit tests](#unit-tests)
+        - [End to end tests](#end-to-end-tests)
+    - [Releases](#releases)
+    - [Limitations](#limitations)
+    - [Acknowledgements](#acknowledgements)
+
+<!-- /TOC -->
 
 ## Usage
 
@@ -268,6 +275,23 @@ Buying and selling and NFT from Xion on Injective using Nomos SDK and ICA contro
 
 ## Building
 
+### Prerequisites
+
+This project requires the following dependencies:
+
+- [Rust](https://www.rust-lang.org/tools/install)
+- [Docker](https://www.docker.com/)
+- [Just](https://just.systems/man/en/introduction.html) (optional)
+- [go](https://go.dev/) (for the end to end tests)
+
+Nix users can install the dependencies (except docker) in a shell by running:
+
+```sh
+nix-shell shell.nix
+```
+
+### Building the contract
+
 We use [cosmwasm/optimizer](https://github.com/`CosmWasm`/optimizer) docker image to build the contract. This project uses `just` as the task runner. To install `just`, run the following command:
 
 ```sh
@@ -305,7 +329,7 @@ This contract follows [semantic versioning](https://semver.org/), but with the f
 
 ## Limitations
 
-This contract is not meant to be used in production. It is meant to be used as a reference implementation for how to build a `CosmWasm` contract that can communicate with the golang ica/host module. The following are some of the limitations of this contract:
+The following are some of the limitations of this contract:
 
 - The contract cannot create multiple interchain accounts. It can only create one.
 
