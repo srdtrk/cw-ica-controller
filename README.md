@@ -17,12 +17,12 @@ This is a `CosmWasm` smart contract that communicates with the golang `ica/host`
 
 <!-- TOC -->
 
-- [CosmWasm ICA Controller Contract](#cosmwasm-ica-controller-contract)
+- [`CosmWasm` ICA Controller Contract](#cosmwasm-ica-controller-contract)
     - [Table of Contents](#table-of-contents)
     - [Usage](#usage)
         - [Create an interchain account](#create-an-interchain-account)
-            - [Using InstantiateMsg](#using-instantiatemsg)
-            - [Using ExecuteMsg::CreateChannel](#using-executemsgcreatechannel)
+            - [Using `InstantiateMsg`](#using-instantiatemsg)
+            - [Using `ExecuteMsg::CreateChannel`](#using-executemsgcreatechannel)
         - [Execute an interchain account transaction](#execute-an-interchain-account-transaction)
             - [Querying the host chain](#querying-the-host-chain)
         - [Execute a callback](#execute-a-callback)
